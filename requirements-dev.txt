@@ -4,3 +4,4 @@ pre-commit==3.3.3
 pytest==7.4.0
 mypy==1.4.1
 mypy-extensions==1.0.0
+Flake8-pyproject==1.2.3
