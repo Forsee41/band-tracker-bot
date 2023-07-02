@@ -1,16 +1,11 @@
-import dotenv
-from typing import NamedTuple
 import os
+from typing import NamedTuple
 
 
 class EnvVars(NamedTuple):
     TG_BOT_TOKEN: str
     EVENTS_API_LOGIN: str
     EVENTS_API_SECRET: str
-
-
-def load_dotenv() -> None:
-    dotenv.load_dotenv()
 
 
 def load_env_vars() -> EnvVars:

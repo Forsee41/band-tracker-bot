@@ -1,8 +1,9 @@
 import logging
 
+from dotenv import load_dotenv
 from telegram.error import InvalidToken
 
-from band_tracker.config.env_loader import load_dotenv, load_env_vars
+from band_tracker.config.env_loader import load_env_vars
 from band_tracker.config.log import load_log_config
 from band_tracker.core.app import build_app, run_bot
 
