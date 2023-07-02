@@ -1,6 +1,10 @@
-from band_tracker.config.log import load_log_config
-from band_tracker.config.env_loader import load_dotenv, load_env_vars
 import logging
+
+from telegram.error import InvalidToken
+
+from band_tracker.config.env_loader import load_dotenv, load_env_vars
+from band_tracker.config.log import load_log_config
+from band_tracker.core.app import build_app, run_bot
 
 
 def main() -> None:
@@ -13,7 +17,14 @@ def main() -> None:
     except EnvironmentError as e:
         log.critical(e)
         return
-    assert env_vars
+
+    app = build_app(token=env_vars.TG_BOT_TOKEN)
+
+    try:
+        run_bot(app)
+    except InvalidToken:
+        log.critical("Telegram token was rejected by the server")
+        return
 
 
 if __name__ == "__main__":
