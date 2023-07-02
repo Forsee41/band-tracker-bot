@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from band_tracker.core.enums import EventType
 
 
+@dataclass
 class EventStats:
     listing_count: int
     avg_price: int
@@ -10,6 +12,7 @@ class EventStats:
     highest_price: int
 
 
+@dataclass
 class Event:
     id: str
     name: str
@@ -24,3 +27,7 @@ class Event:
     @property
     def has_passed(self) -> bool:
         return self.date <= datetime.now()
+
+    @property
+    def is_available(self) -> bool:
+        return self.stats.listing_count > 0

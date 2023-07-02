@@ -6,3 +6,4 @@ mypy==1.4.1
 mypy-extensions==1.0.0
 Flake8-pyproject==1.2.3
 flake8==6.0.0
+autoflake==2.2.0

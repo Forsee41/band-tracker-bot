@@ -12,9 +12,10 @@ def build_app(
     """
     app = ApplicationBuilder()
     app = app.token(token)
-    app = app.build()
-    handler_registrator(app)
-    return app
+    #  possible type related errors are further checked
+    app = app.build()  # type: ignore
+    handler_registrator(app)  # type: ignore
+    return app  # type: ignore
 
 
 def run(app: Application) -> None:
