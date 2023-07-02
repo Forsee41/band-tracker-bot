@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from band_tracker.core.enums import EventSource, Genre
+from band_tracker.core.enums import EventSource
 
 
 @dataclass
@@ -12,7 +12,7 @@ class Artist:
     link: str | None
     upcoming_events_amount: int
     score: float
-    genres: list[Genre]
+    genres: list[str]
     _source_specific_data: dict[EventSource, dict]
 
     def get_source_specific_data(self, source: EventSource) -> dict:
