@@ -13,7 +13,7 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id, text="Test handler works!"
         )
     else:
-        log.warning("Test handlse can't find an effective chat of an update")
+        log.warning("Test handler can't find an effective chat of an update")
 
 
 handlers = [CommandHandler("test", test)]
