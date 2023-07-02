@@ -1,15 +1,24 @@
+from typing import Callable
+
 from telegram.ext import Application, ApplicationBuilder
 
-from band_tracker.handlers.registrator import register_handlers
 
-
-def build_app(token: str) -> Application:
+def build_app(
+    token: str, handler_registrator: Callable[[Application], None]
+) -> Application:
+    """
+    Builds an application base and registers common handlers via provided handler
+    registrator.
+    """
     app = ApplicationBuilder()
     app = app.token(token)
     app = app.build()
-    register_handlers(app)
+    handler_registrator(app)
     return app
 
 
-def run_bot(app: Application) -> None:
+def run(app: Application) -> None:
+    """
+    Registers repeatable tasks and starts an event loop.
+    """
     app.run_polling()
