@@ -15,7 +15,7 @@ class Base(DeclarativeBase):
 
 
 class ArtistDB(Base):
-    __tablename__ = "Artist"
+    __tablename__ = "artist"
 
     id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
@@ -28,12 +28,12 @@ class ArtistDB(Base):
 
     subscribers: Mapped[list["UserDB"]] = relationship(
         back_populates="subscriptions",
-        secondary="Subscription",
+        secondary="subscription",
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
-    genres: Mapped[list["GenreDB"]] = relationship(secondary="ArtistGenre")
+    genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
     events: Mapped[list["EventDB"]] = relationship(
-        secondary="EventArtist", back_populates="artists"
+        secondary="event_artist", back_populates="artists"
     )
     sg_data: Mapped["ArtistSGDataDB"] = relationship(
         back_populates="artist", cascade="all, delete-orphan"
@@ -41,7 +41,7 @@ class ArtistDB(Base):
 
 
 class EventDB(Base):
-    __tablename__ = "Event"
+    __tablename__ = "event"
 
     id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
@@ -49,16 +49,14 @@ class EventDB(Base):
     venue: Mapped[str] = mapped_column(String, nullable=True)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=True)
-    type_: Mapped[str] = mapped_column(String, nullable=True).label(
-        "type"
-    )  # type: ignore
+    type_: Mapped[str] = mapped_column("type", String, nullable=True)
     score: Mapped[float] = mapped_column(Float, nullable=True)
 
     sg_data: Mapped["EventSGDataDB"] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )
     artists: Mapped[list["ArtistDB"]] = relationship(
-        secondary="EventArtist", back_populates="events"
+        secondary="event_artist", back_populates="events"
     )
     stats: Mapped["EventStatsDB"] = relationship(back_populates="event")
 
@@ -68,7 +66,7 @@ class EventDB(Base):
 
 
 class UserDB(Base):
-    __tablename__ = "User"
+    __tablename__ = "user"
 
     id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
@@ -79,14 +77,14 @@ class UserDB(Base):
     )
 
     subscriptions: Mapped[list["ArtistDB"]] = relationship(
-        back_populates="subscribers", secondary="Subscription"
+        back_populates="subscribers", secondary="subscription"
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="user")
     settings: Mapped["UserSettingsDB"] = relationship(back_populates="user")
 
 
 class GenreDB(Base):
-    __tablename__ = "Genre"
+    __tablename__ = "genre"
 
     id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
@@ -95,26 +93,26 @@ class GenreDB(Base):
 
 
 class ArtistGenreDB(Base):
-    __tablename__ = "ArtistGenre"
+    __tablename__ = "artist_genre"
 
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Artist.id", ondelete="CASCADE"),
+        ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
     genre_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Genre.id", ondelete="CASCADE"),
+        ForeignKey("genre.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
 
 class ArtistSGDataDB(Base):
-    __tablename__ = "ArtistSGData"
+    __tablename__ = "artist_sg_data"
 
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Artist.id", ondelete="CASCADE"),
+        ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
     slug: Mapped[str] = mapped_column(String, nullable=True)
@@ -124,26 +122,26 @@ class ArtistSGDataDB(Base):
 
 
 class EventArtistDB(Base):
-    __tablename__ = "EventArtist"
+    __tablename__ = "event_artist"
 
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Artist.id", ondelete="CASCADE"),
+        ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Event.id", ondelete="CASCADE"),
+        ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
 
 class EventStatsDB(Base):
-    __tablename__ = "EventStats"
+    __tablename__ = "event_stats"
 
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Event.id", ondelete="CASCADE"),
+        ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
     listing_cnt: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -155,11 +153,11 @@ class EventStatsDB(Base):
 
 
 class EventSGDataDB(Base):
-    __tablename__ = "EventSGData"
+    __tablename__ = "event_sg_data"
 
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Event.id", ondelete="CASCADE"),
+        ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
     slug: Mapped[str] = mapped_column(String, nullable=True)
@@ -169,12 +167,11 @@ class EventSGDataDB(Base):
 
 
 class UserSettingsDB(Base):
-    __tablename__ = "UserSettings"
+    __tablename__ = "user_settings"
 
     user_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("User.id"),
-        ondelete="CASCADE",
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
     )
     is_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -183,38 +180,36 @@ class UserSettingsDB(Base):
 
 
 class SubscriptionDB(Base):
-    __tablename__ = "Subscription"
+    __tablename__ = "subscription"
 
     user_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("User.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
     )
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Artist.id", ondelete="CASCADE"),
+        ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
 
 class FollowDB(Base):
-    __tablename__ = "Follow"
+    __tablename__ = "follow"
 
     user_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("User.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
     )
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
-        ForeignKey("Artist.id", ondelete="CASCADE"),
+        ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
     range_: Mapped[Range] = mapped_column(
-        EnumDB(Range), nullable=False, default=Range.WORLDWIDE
-    ).label(
-        "range"
-    )  # type: ignore
+        "range", EnumDB(Range), nullable=False, default=Range.WORLDWIDE
+    )
 
     user: Mapped[UserDB] = relationship(back_populates="follows")
     artist: Mapped[ArtistDB] = relationship(back_populates="follows")
