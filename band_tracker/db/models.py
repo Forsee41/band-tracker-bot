@@ -49,7 +49,9 @@ class EventDB(Base):
     venue: Mapped[str] = mapped_column(String, nullable=True)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=True)
-    type_: Mapped[str] = mapped_column(String, nullable=True)
+    type_: Mapped[str] = mapped_column(String, nullable=True).label(
+        "type"
+    )  # type: ignore
     score: Mapped[float] = mapped_column(Float, nullable=True)
 
     sg_data: Mapped["EventSGDataDB"] = relationship(
