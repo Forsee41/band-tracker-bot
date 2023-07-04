@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from typing import TypeAlias
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime
@@ -8,7 +9,7 @@ from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID as UUID_PG
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
-Base = declarative_base()
+Base: TypeAlias = declarative_base()  # type: ignore
 
 
 class ArtistDB(Base):
@@ -187,7 +188,7 @@ class FollowDB:
         EnumDB, nullable=False, default=Range.WORLDWIDE
     ).label(
         "range"
-    )  # pyright: ignore
+    )  # type: ignore
 
     user: Mapped[UserDB]  # TODO
     artist: Mapped[ArtistDB]  # TODO
