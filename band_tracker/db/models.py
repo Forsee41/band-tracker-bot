@@ -43,7 +43,7 @@ class ArtistDB(Base):
     )
 
 
-class EventDB:
+class EventDB(Base):
     __tablename__ = "Event"
 
     id: Mapped[UUID] = mapped_column(
@@ -68,7 +68,7 @@ class EventDB:
         return self.date <= datetime.now()
 
 
-class UserDB:
+class UserDB(Base):
     __tablename__ = "User"
 
     id: Mapped[UUID] = mapped_column(
@@ -88,7 +88,7 @@ class UserDB:
     settings: Mapped["UserSettingsDB"] = relationship(back_populates="user")
 
 
-class GenreDB:
+class GenreDB(Base):
     __tablename__ = "Genre"
 
     id: Mapped[UUID] = mapped_column(
@@ -97,7 +97,7 @@ class GenreDB:
     name: Mapped[str] = mapped_column(String, nullable=False)
 
 
-class ArtistGenreDB:
+class ArtistGenreDB(Base):
     __tablename__ = "ArtistGenre"
 
     artist_id: Mapped[UUID] = mapped_column(
@@ -108,7 +108,7 @@ class ArtistGenreDB:
     )
 
 
-class ArtistSGDataDB:
+class ArtistSGDataDB(Base):
     __tablename__ = "ArtistSGData"
 
     artist_id: Mapped[UUID] = mapped_column(
@@ -120,7 +120,7 @@ class ArtistSGDataDB:
     artist: Mapped[ArtistDB] = relationship(back_populates="sg_data")
 
 
-class EventArtistDB:
+class EventArtistDB(Base):
     __tablename__ = "EventArtist"
 
     artist_id: Mapped[UUID] = mapped_column(
@@ -131,7 +131,7 @@ class EventArtistDB:
     )
 
 
-class EventStatsDB:
+class EventStatsDB(Base):
     __tablename__ = "EventStats"
 
     event_id: Mapped[UUID] = mapped_column(
@@ -145,7 +145,7 @@ class EventStatsDB:
     event: Mapped[EventDB] = relationship(back_populates="stats")
 
 
-class EventSGDataDB:
+class EventSGDataDB(Base):
     __tablename__ = "EventSGData"
 
     event_id: Mapped[UUID] = mapped_column(
@@ -157,7 +157,7 @@ class EventSGDataDB:
     event: Mapped[EventDB] = relationship(back_populates="sg_data")
 
 
-class UserSettingsDB:
+class UserSettingsDB(Base):
     __tablename__ = "UserSettings"
 
     user_id: Mapped[UUID] = mapped_column(
@@ -168,7 +168,7 @@ class UserSettingsDB:
     user: Mapped[UserDB] = relationship(back_populates="settings")
 
 
-class SubscriptionDB:
+class SubscriptionDB(Base):
     __tablename__ = "Subscription"
 
     user_id: Mapped[UUID] = mapped_column(
@@ -179,7 +179,7 @@ class SubscriptionDB:
     )
 
 
-class FollowDB:
+class FollowDB(Base):
     __tablename__ = "Follow"
 
     user_id: Mapped[UUID] = mapped_column(
