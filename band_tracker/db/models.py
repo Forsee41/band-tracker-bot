@@ -179,7 +179,7 @@ class FollowDB:
         UUID_PG(as_uuid=True), ForeignKey("Artist.id"), primary_key=True
     )
     range_: Mapped[Range] = mapped_column(
-        EnumDB, nullable=False, default=Range.WORLDWIDE
+        EnumDB(Range), nullable=False, default=Range.WORLDWIDE
     ).label(
         "range"
     )  # type: ignore
