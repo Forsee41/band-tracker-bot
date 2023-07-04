@@ -1,16 +1,17 @@
 from datetime import datetime
-from typing import TypeAlias
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as EnumDB
 from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID as UUID_PG
-from sqlalchemy.orm import Mapped, declarative_base, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from band_tracker.core.enums import Range
 
-Base: TypeAlias = declarative_base()  # type: ignore
+
+class Base(DeclarativeBase):
+    """Base ORM class, contains subclasses' metadata"""
 
 
 class ArtistDB(Base):
@@ -25,11 +26,21 @@ class ArtistDB(Base):
     upcoming_events_count: Mapped[int] = mapped_column(Integer, nullable=False)
     score: Mapped[float] = mapped_column(Float, nullable=True)
 
-    subscribers: Mapped[list["UserDB"]]  # TODO
-    followers: Mapped[list["FollowDB"]]  # TODO
-    genres: Mapped[list["GenreDB"]]  # TODO
-    events: Mapped[list["EventDB"]]  # TODO
-    sg_data: Mapped["ArtistSGDataDB"]  # TODO
+    subscribers: Mapped[list["UserDB"]] = relationship(
+        back_populates="subscriptions",
+        secondary="Subscription",
+        cascade="all, delete-orphan",
+    )
+    follows: Mapped[list["FollowDB"]] = relationship(
+        back_populates="artist", cascade="all, delete-orphan"
+    )
+    genres: Mapped[list["GenreDB"]] = relationship(secondary="ArtistGenre")
+    events: Mapped[list["EventDB"]] = relationship(
+        secondary="EventArtist", back_populates="artists"
+    )
+    sg_data: Mapped["ArtistSGDataDB"] = relationship(
+        back_populates="artist", cascade="all, delete-orphan"
+    )
 
 
 class EventDB:
@@ -44,9 +55,13 @@ class EventDB:
     type_: Mapped[str] = mapped_column(String, nullable=True)
     score: Mapped[float] = mapped_column(Float, nullable=True)
 
-    sg_data: Mapped["EventSGDataDB"]  # TODO
-    artists: Mapped[list[ArtistDB]]  # TODO
-    stats: Mapped["EventStatsDB"]  # TODO
+    sg_data: Mapped["EventSGDataDB"] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
+    artists: Mapped[list["ArtistDB"]] = relationship(
+        secondary="EventArtist", back_populates="events"
+    )
+    stats: Mapped["EventStatsDB"] = relationship(back_populates="event")
 
     @property
     def is_finished(self) -> bool:
@@ -64,9 +79,13 @@ class UserDB:
         DateTime, nullable=False, default=datetime.now()
     )
 
-    subscriptions: Mapped[list[ArtistDB]]  # TODO
-    follows: Mapped[list["FollowDB"]]  # TODO
-    settings: Mapped["UserSettingsDB"]  # TODO
+    subscriptions: Mapped[list["ArtistDB"]] = relationship(
+        back_populates="subscribers", secondary="Subscription"
+    )
+    follows: Mapped[list["FollowDB"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    settings: Mapped["UserSettingsDB"] = relationship(back_populates="user")
 
 
 class GenreDB:
@@ -88,9 +107,6 @@ class ArtistGenreDB:
         UUID_PG(as_uuid=True), ForeignKey("Genre.id"), primary_key=True
     )
 
-    artist: Mapped[ArtistDB]  # TODO
-    genre: Mapped[GenreDB]  # TODO
-
 
 class ArtistSGDataDB:
     __tablename__ = "ArtistSGData"
@@ -101,7 +117,7 @@ class ArtistSGDataDB:
     slug: Mapped[str] = mapped_column(String, nullable=True)
     id: Mapped[str] = mapped_column(String, nullable=False)
 
-    artist: Mapped[ArtistDB]  # TODO
+    artist: Mapped[ArtistDB] = relationship(back_populates="sg_data")
 
 
 class EventArtistDB:
@@ -113,9 +129,6 @@ class EventArtistDB:
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), ForeignKey("Event.id"), primary_key=True
     )
-
-    event: Mapped[EventDB]  # TODO
-    artist: Mapped[ArtistDB]  # TODO
 
 
 class EventStatsDB:
@@ -129,7 +142,7 @@ class EventStatsDB:
     price_max: Mapped[int] = mapped_column(Integer, nullable=False)
     price_min: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    event: Mapped[EventDB]  # TODO
+    event: Mapped[EventDB] = relationship(back_populates="stats")
 
 
 class EventSGDataDB:
@@ -141,7 +154,7 @@ class EventSGDataDB:
     slug: Mapped[str] = mapped_column(String, nullable=True)
     id: Mapped[str] = mapped_column(String, nullable=False)
 
-    event: Mapped[EventDB]  # TODO
+    event: Mapped[EventDB] = relationship(back_populates="sg_data")
 
 
 class UserSettingsDB:
@@ -152,7 +165,7 @@ class UserSettingsDB:
     )
     is_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    user: Mapped[UserDB]  # TODO
+    user: Mapped[UserDB] = relationship(back_populates="settings")
 
 
 class SubscriptionDB:
@@ -164,9 +177,6 @@ class SubscriptionDB:
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), ForeignKey("Artist.id"), primary_key=True
     )
-
-    user: Mapped[UserDB]  # TODO
-    artist: Mapped[ArtistDB]  # TODO
 
 
 class FollowDB:
@@ -184,5 +194,5 @@ class FollowDB:
         "range"
     )  # type: ignore
 
-    user: Mapped[UserDB]  # TODO
-    artist: Mapped[ArtistDB]  # TODO
+    user: Mapped[UserDB] = relationship(back_populates="follows")
+    artist: Mapped[ArtistDB] = relationship(back_populates="follows")
