@@ -18,10 +18,10 @@ class ArtistDB(Base):
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    spotify: Mapped[str] = mapped_column(String, nullable=False)
-    url: Mapped[str] = mapped_column(String, nullable=False)
+    spotify: Mapped[str] = mapped_column(String, nullable=True)
+    url: Mapped[str] = mapped_column(String, nullable=True)
     upcoming_events_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    score: Mapped[float] = mapped_column(Float, nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=True)
 
     subscribers: Mapped[list["UserDB"]]  # TODO
     followers: Mapped[list["FollowDB"]]  # TODO
@@ -36,11 +36,11 @@ class EventDB:
     id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
     )
-    venue: Mapped[str] = mapped_column(String, nullable=False)
+    venue: Mapped[str] = mapped_column(String, nullable=True)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    title: Mapped[str] = mapped_column(String, nullable=False)
-    type_: Mapped[str] = mapped_column(String, nullable=False)
-    score: Mapped[float] = mapped_column(Float, nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=True)
+    type_: Mapped[str] = mapped_column(String, nullable=True)
+    score: Mapped[float] = mapped_column(Float, nullable=True)
 
     sg_data: Mapped["EventSGDataDB"]  # TODO
     artists: Mapped[list[ArtistDB]]  # TODO
@@ -58,7 +58,9 @@ class UserDB:
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    join_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    join_date: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now()
+    )
 
     subscriptions: Mapped[list[ArtistDB]]  # TODO
     follows: Mapped[list["FollowDB"]]  # TODO
@@ -94,7 +96,7 @@ class ArtistSGDataDB:
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), ForeignKey("Artist.id"), primary_key=True
     )
-    slug: Mapped[str] = mapped_column(String, nullable=False)
+    slug: Mapped[str] = mapped_column(String, nullable=True)
     id: Mapped[str] = mapped_column(String, nullable=False)
 
     artist: Mapped[ArtistDB]  # TODO
@@ -134,7 +136,7 @@ class EventSGDataDB:
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), ForeignKey("Event.id"), primary_key=True
     )
-    slug: Mapped[str] = mapped_column(String, nullable=False)
+    slug: Mapped[str] = mapped_column(String, nullable=True)
     id: Mapped[str] = mapped_column(String, nullable=False)
 
     event: Mapped[EventDB]  # TODO
@@ -146,7 +148,7 @@ class UserSettingsDB:
     user_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True), ForeignKey("User.id"), primary_key=True
     )
-    is_muted: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    is_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     user: Mapped[UserDB]  # TODO
 
