@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from typing import TypeAlias
 from uuid import UUID, uuid4
 
@@ -8,6 +7,8 @@ from sqlalchemy import Enum as EnumDB
 from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID as UUID_PG
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
+
+from band_tracker.core.enums import Range
 
 Base: TypeAlias = declarative_base()  # type: ignore
 
@@ -166,13 +167,6 @@ class SubscriptionDB:
 
     user: Mapped[UserDB]  # TODO
     artist: Mapped[ArtistDB]  # TODO
-
-
-class Range(Enum):
-    CITY = "CITY"
-    COUNTRY = "COUNTRY"
-    REGION = "REGION"
-    WORLDWIDE = "WORLDWIDE"
 
 
 class FollowDB:
