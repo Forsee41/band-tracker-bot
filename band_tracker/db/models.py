@@ -22,9 +22,10 @@ class ArtistDB(Base):
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     spotify: Mapped[str] = mapped_column(String, nullable=True)
-    url: Mapped[str] = mapped_column(String, nullable=True)
+    tickets_link: Mapped[str] = mapped_column(String, nullable=False)
+    inst_link: Mapped[str] = mapped_column(String, nullable=True)
+    youtube_link: Mapped[str] = mapped_column(String, nullable=True)
     upcoming_events_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    score: Mapped[float] = mapped_column(Float, nullable=True)
 
     subscribers: Mapped[list["UserDB"]] = relationship(
         back_populates="subscriptions",
@@ -32,10 +33,11 @@ class ArtistDB(Base):
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
+    images: Mapped[list["ArtistImageDB"]] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
         secondary="event_artist", back_populates="artists"
     )
-    sg_data: Mapped["ArtistSGDataDB"] = relationship(
+    tm_data: Mapped["ArtistTMDataDB"] = relationship(
         back_populates="artist", cascade="all, delete-orphan"
     )
 
@@ -47,22 +49,23 @@ class EventDB(Base):
         UUID_PG(as_uuid=True), primary_key=True, default=uuid4()
     )
     venue: Mapped[str] = mapped_column(String, nullable=True)
-    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=True)
-    type_: Mapped[str] = mapped_column("type", String, nullable=True)
     score: Mapped[float] = mapped_column(Float, nullable=True)
+    ticket_url: Mapped[str] = mapped_column(String, nullable=False)
 
-    sg_data: Mapped["EventSGDataDB"] = relationship(
+    tm_data: Mapped["EventTMDataDB"] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )
     artists: Mapped[list["ArtistDB"]] = relationship(
         secondary="event_artist", back_populates="events"
     )
-    stats: Mapped["EventStatsDB"] = relationship(back_populates="event")
+    sales: Mapped["SalesDB"] = relationship(back_populates="event")
+    images: Mapped["EventImageDB"] = relationship(back_populates="event")
 
     @property
     def is_finished(self) -> bool:
-        return self.date <= datetime.now()
+        return self.start_date <= datetime.now()
 
 
 class UserDB(Base):
@@ -92,6 +95,32 @@ class GenreDB(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
 
 
+class ArtistImageDB(Base):
+    __tablename__ = "artist_image"
+
+    artist_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("artist.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    url: Mapped[str] = mapped_column(String, primary_key=True)
+
+    artist: Mapped[ArtistDB] = relationship(back_populates="images")
+
+
+class EventImageDB(Base):
+    __tablename__ = "event_image"
+
+    event_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("event.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    url: Mapped[str] = mapped_column(String, primary_key=True)
+
+    event: Mapped[EventDB] = relationship(back_populates="images")
+
+
 class ArtistGenreDB(Base):
     __tablename__ = "artist_genre"
 
@@ -107,18 +136,17 @@ class ArtistGenreDB(Base):
     )
 
 
-class ArtistSGDataDB(Base):
-    __tablename__ = "artist_sg_data"
+class ArtistTMDataDB(Base):
+    __tablename__ = "artist_tm_data"
 
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    slug: Mapped[str] = mapped_column(String, nullable=True)
     id: Mapped[str] = mapped_column(String, nullable=False)
 
-    artist: Mapped[ArtistDB] = relationship(back_populates="sg_data")
+    artist: Mapped[ArtistDB] = relationship(back_populates="tm_data")
 
 
 class EventArtistDB(Base):
@@ -136,34 +164,32 @@ class EventArtistDB(Base):
     )
 
 
-class EventStatsDB(Base):
-    __tablename__ = "event_stats"
+class SalesDB(Base):
+    __tablename__ = "sales"
 
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    listing_cnt: Mapped[int] = mapped_column(Integer, nullable=False)
-    price_avg: Mapped[int] = mapped_column(Integer, nullable=False)
-    price_max: Mapped[int] = mapped_column(Integer, nullable=False)
-    price_min: Mapped[int] = mapped_column(Integer, nullable=False)
+    on_sale: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    price_max: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    price_min: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    event: Mapped[EventDB] = relationship(back_populates="stats")
+    event: Mapped[EventDB] = relationship(back_populates="sales")
 
 
-class EventSGDataDB(Base):
-    __tablename__ = "event_sg_data"
+class EventTMDataDB(Base):
+    __tablename__ = "event_tm_data"
 
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    slug: Mapped[str] = mapped_column(String, nullable=True)
     id: Mapped[str] = mapped_column(String, nullable=False)
 
-    event: Mapped[EventDB] = relationship(back_populates="sg_data")
+    event: Mapped[EventDB] = relationship(back_populates="tm_data")
 
 
 class UserSettingsDB(Base):
