@@ -3,3 +3,4 @@ alembic==1.11.1
 SQLAlchemy==2.0.17
 httpx==0.24.1
 python-dotenv==1.0.0
+psycopg2-binary==2.9.6
