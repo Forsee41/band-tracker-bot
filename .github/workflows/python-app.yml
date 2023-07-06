@@ -18,7 +18,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: ndeloof/install-compose-action@v0.0.1
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v3
@@ -33,7 +32,7 @@ jobs:
 
       - name: Run Postgres
         run: |
-          docker-compose -f docker-compose-actions.yaml up -d
+          docker run postgres:14.1-alpine --network="host" --name test_db -p 5433:5432 --env POSTGRES_USER=test_postgres --env POSTGRES_PASSWORD=test_postgres --env POSTGRES_DB=test_postgres
           sleep 1
           alembic upgrade head
 
