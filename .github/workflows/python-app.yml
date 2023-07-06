@@ -31,21 +31,10 @@ jobs:
           pip install flake8 pytest
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
-      - name: Run docker-compose
+      - name: Run Postgres
         run: |
           docker-compose -f docker-compose-actions.yaml up -d
-
-      - name: Wait for PostgreSQL
-        run: |
-          for i in {1..10}; do
-            nc -z localhost 5433 && echo Success && exit 0
-            echo -n .
-            sleep 1
-          done
-          echo Failed waiting for Postgres && exit 1
-
-      - name: Run migrations
-        run: |
+          sleep 1
           alembic upgrade head
 
       - name: Lint with flake8
