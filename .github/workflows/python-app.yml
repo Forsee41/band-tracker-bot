@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Postgres
         run: |
-          docker run postgres:14.1-alpine --network="host" --name test_db -p 5433:5432 --env POSTGRES_USER=test_postgres --env POSTGRES_PASSWORD=test_postgres --env POSTGRES_DB=test_postgres
+          docker run --network="host" --name test_db -p 5433:5432 -e POSTGRES_USER='test_postgres' -e POSTGRES_PASSWORD='test_postgres' -e POSTGRES_DB='test_postgres' postgres:14.1-alpine
           sleep 1
           alembic upgrade head
 
