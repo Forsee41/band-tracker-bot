@@ -33,8 +33,6 @@ jobs:
       - name: Run Postgres
         run: |
           docker run -d --name test_db -p 5433:5432 -e POSTGRES_USER='test_postgres' -e POSTGRES_PASSWORD='test_postgres' -e POSTGRES_DB='test_postgres' postgres:14.1-alpine
-          sleep 1
-          alembic upgrade head
 
       - name: Lint with flake8
         run: |

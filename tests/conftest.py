@@ -3,6 +3,7 @@ import os
 import pytest
 from dotenv import load_dotenv
 
+import band_tracker.db.models
 from band_tracker.db.dal import DAL
 from band_tracker.db.session import AsyncSessionmaker
 
@@ -23,6 +24,15 @@ def db_creds(load_dotenv_) -> dict:
         "database": os.getenv("TEST_DB_NAME"),
     }
     return db_creds
+
+
+@pytest.fixture(scope="session", autouse=True)
+def create_tables(sessionmaker) -> None:
+    engine = sessionmaker.engine
+    try:
+        band_tracker.db.models.Base.metadata.create_all(engine)
+    except Exception:
+        pass
 
 
 @pytest.fixture(scope="session")
