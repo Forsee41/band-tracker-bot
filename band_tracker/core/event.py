@@ -1,28 +1,14 @@
-from dataclasses import dataclass
 from datetime import datetime
 
-from band_tracker.core.enums import EventType
+from pydantic import BaseModel, HttpUrl
 
 
-@dataclass
-class EventStats:
-    listing_count: int
-    avg_price: int
-    lowest_price: int
-    highest_price: int
-
-
-@dataclass
-class Event:
+class Event(BaseModel):
     id: str
-    name: str
-    artists: list[str]
+    title: str
     date: datetime
     venue: str
-    stats: EventStats
-    title: str
-    type_: EventType
-    rating: float
+    ticket_url: HttpUrl | None
 
     @property
     def has_passed(self) -> bool:

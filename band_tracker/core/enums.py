@@ -10,11 +10,13 @@ class Range(Enum):
 
 class EventType(Enum):
     concert: None
-    other: None
+    fest: None
+    # remove?
 
 
 class EventSource(Enum):
     seatgeek_api: None
+    ticketmaster_api: None
 
 
 class TrackingDistance(Enum):
