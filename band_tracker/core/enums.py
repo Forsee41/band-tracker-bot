@@ -8,13 +8,8 @@ class Range(Enum):
     WORLDWIDE = "WORLDWIDE"
 
 
-class EventType(Enum):
-    concert: None
-    other: None
-
-
 class EventSource(Enum):
-    seatgeek_api: None
+    ticketmaster_api = "ticketmaster_api"
 
 
 class TrackingDistance(Enum):
