@@ -19,7 +19,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: isbang/compose-action@v1.4.1
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -28,6 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
+        sudo apt-get install docker-compose-plugin
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
     - name: Lint with flake8
       run: |
