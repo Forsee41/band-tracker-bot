@@ -19,6 +19,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: isbang/compose-action@v1.4.1
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -35,5 +36,12 @@ jobs:
         # exit-zero treats all errors as warnings.
         flake8 band_tracker tests --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     - name: Test with pytest
+      env:
+        TEST_DB_LOGIN: 'test_postgres'
+        TEST_DB_PASSWORD: 'test_postgres'
+        TEST_DB_IP: 'localhost'
+        TEST_DB_PORT: '5433'
+        TEST_DB_NAME: 'test_postgres'
       run: |
+        docker-compose -f docker-compose-actions.yaml up -d &&
         python -m pytest

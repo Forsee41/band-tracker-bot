@@ -9,9 +9,10 @@ class Artist:
     name: str
     shortname: str | None
     spotify_link: str | None
-    link: str | None
+    tickets_link: str | None
     upcoming_events_amount: int
     score: float
+    images: list[str]
     genres: list[str]
     _source_specific_data: dict[EventSource, dict]
 

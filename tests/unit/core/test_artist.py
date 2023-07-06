@@ -10,11 +10,12 @@ class TestArtist:
             name="",
             shortname="",
             spotify_link="",
-            link="",
             upcoming_events_amount=2,
             score=0.5,
             genres=[],
             _source_specific_data={},
+            tickets_link="",
+            images=[],
         )
         assert artist.has_upcoming_events
 

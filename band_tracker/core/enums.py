@@ -14,7 +14,8 @@ class EventType(Enum):
 
 
 class EventSource(Enum):
-    seatgeek_api: None
+    seatgeek_api = "Seatgeek"
+    ticketmaster = "Ticketmaster"
 
 
 class TrackingDistance(Enum):
