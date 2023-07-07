@@ -35,8 +35,8 @@ class Artist(BaseModel):
         Returns a source-specific data of an Artist (like specific id, slug, etc.),
         or an empty dict if one is not present
         """
-        if source in self._source_specific_data:
-            return self._source_specific_data[source]
+        if source in self.source_specific_data:
+            return self.source_specific_data[source]
         else:
             return {}
 
