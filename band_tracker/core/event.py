@@ -24,7 +24,7 @@ class Event(BaseModel):
     @field_validator("source_specific_data")
     def id_presence(cls, _source_specific_data_value, values):
         id_db = _source_specific_data_value.get(EventSource.ticketmaster_api).get("id")
-        id_api = values.get("id")
+        id_api = values.data.get("id")
         if not (id_api or id_db):
             raise ValueError("either one of the id's should be defined")
         return _source_specific_data_value

@@ -22,7 +22,7 @@ class TestClient:
                     inst_link="http://www.instagram.com/theorblive",
                     youtube_link="https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg",
                     upcoming_events_amount=8,
-                    _source_specific_data={
+                    source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171RCf"}
                     },
                 ),
@@ -36,8 +36,8 @@ class TestClient:
                     inst_link=None,
                     youtube_link=None,
                     upcoming_events_amount=6,
-                    _source_specific_data={
-                        EventSource.ticketmaster_api: {"id": "K8vZ9171RCf"}
+                    source_specific_data={
+                        EventSource.ticketmaster_api: {"id": "K8vZ9171OI0"}
                     },
                 ),
             ),
@@ -53,7 +53,7 @@ class TestClient:
             date=datetime(2023, 7, 15),
             venue="Ruoff Music Center",
             ticket_url="https://concerts.livenation.com/shania-twain-queen-of-me-tour-noblesville-indiana-07-15-2023/event/05005D55DD6D454E",
-            _source_specific_data={
+            source_specific_data={
                 EventSource.ticketmaster_api: {"id": "vvG1fZ949qhf4C"}
             },
         )

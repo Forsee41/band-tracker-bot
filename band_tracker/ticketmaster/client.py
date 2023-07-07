@@ -28,7 +28,7 @@ def get_artist(raw_artist: dict) -> Artist:
         "inst_link": link_helper("instagram"),
         "youtube_link": link_helper("youtube"),
         "upcoming_events_amount": raw_artist.get("upcomingEvents").get("_total"),
-        "_source_specific_data": {
+        "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
     }
@@ -46,7 +46,7 @@ def get_event(raw_event: dict) -> Event:
         ),
         "venue": raw_event.get("_embedded").get("venues")[0].get("name"),
         "ticket_url": raw_event.get("url"),
-        "_source_specific_data": {
+        "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_event.get("id")}
         },
     }
