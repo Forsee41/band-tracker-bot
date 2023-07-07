@@ -15,7 +15,7 @@ class TestDAL:
             inst_link="https://inst.com",
             youtube_link="https://youtube.com",
             upcoming_events_amount=0,
-            _source_specific_data={
+            source_specific_data={
                 EventSource.ticketmaster_api: {"id": "ticketmaster_id"}
             },
         )
