@@ -8,7 +8,6 @@ from band_tracker.db.dal import DAL
 class TestDAL:
     async def test_add_artist(self, dal: DAL) -> None:
         artist = Artist(
-            id="",
             name="name",
             spotify_link="https://spotify.com",
             tickets_link="https://tickets_url.com",
