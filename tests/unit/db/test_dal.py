@@ -10,14 +10,14 @@ class TestDAL:
         artist = Artist(
             id="",
             name="name",
-            shortname="shortname",
-            spotify_link="spotify",
-            tickets_link="tickets_url",
+            spotify_link="https://spotify.com",
+            tickets_link="https://tickets_url.com",
+            inst_link="https://inst.com",
+            youtube_link="https://youtube.com",
             upcoming_events_amount=0,
-            score=0,
-            images=["url1", "url2"],
-            genres=[],
-            _source_specific_data={EventSource.ticketmaster: {"id": "ticketmaster_id"}},
+            _source_specific_data={
+                EventSource.ticketmaster_api: {"id": "ticketmaster_id"}
+            },
         )
         await dal.add_artist(artist)
 

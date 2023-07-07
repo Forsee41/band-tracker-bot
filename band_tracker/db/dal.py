@@ -12,7 +12,7 @@ class DAL:
 
     async def add_artist(self, artist: Artist) -> UUID:
         artist_tm_data = artist.get_source_specific_data(
-            source=EventSource.ticketmaster
+            source=EventSource.ticketmaster_api
         )
         artist_db = ArtistDB(
             name=artist.name,
