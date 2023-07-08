@@ -52,7 +52,7 @@ class DAL:
         return uuid
 
     async def get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
-        stmt = select(ArtistDB).where(ArtistDB.tm_data.id == tm_id)
+        stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artist_db = scalars.first()
@@ -80,7 +80,7 @@ class DAL:
             artist_id = await self.add_artist(artist)
             return artist_id
 
-        stmt = select(ArtistDB).where(ArtistDB.tm_data.id == tm_id)
+        stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artist_db = scalars.first()
