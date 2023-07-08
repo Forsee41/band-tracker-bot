@@ -41,6 +41,10 @@ jobs:
           # secondary checks
           flake8 band_tracker tests --count --max-complexity=10 --max-line-length=88 --statistics
 
+      - name: Typecheck with pyright
+        run: |
+          pyright band_tracker tests
+
       - name: Test with pytest
         env:
           TEST_DB_LOGIN: 'test_postgres'
