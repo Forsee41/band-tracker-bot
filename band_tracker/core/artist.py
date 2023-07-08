@@ -1,4 +1,5 @@
-from typing import Any, Optional, TypeAlias
+from typing import Any, TypeAlias
+from uuid import UUID
 
 from pydantic import BaseModel, FieldValidationInfo, HttpUrl, field_validator
 
@@ -8,7 +9,7 @@ SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 
 class Artist(BaseModel):
-    id: Optional[str] = None
+    id: UUID | None = None
     name: str
     spotify_link: HttpUrl | None
     tickets_link: HttpUrl | None

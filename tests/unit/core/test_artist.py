@@ -7,7 +7,6 @@ from band_tracker.core.enums import EventSource
 class TestArtist:
     def test_upcoming_events_positive(self) -> None:
         artist = Artist(
-            id="",
             name="",
             spotify_link=None,
             tickets_link=None,
