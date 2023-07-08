@@ -12,7 +12,6 @@ class EventSource(Enum):
     ticketmaster_api = "ticketmaster_api"
 
 
-
 class TrackingDistance(Enum):
     city: None
     country: None
