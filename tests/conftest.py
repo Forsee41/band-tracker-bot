@@ -15,7 +15,7 @@ def load_dotenv_() -> None:
 
 
 @pytest.fixture(scope="session")
-def db_creds(load_dotenv_) -> dict:
+def db_creds(load_dotenv_: None) -> dict:
     assert load_dotenv_ is None
     db_creds = {
         "login": os.getenv("TEST_DB_LOGIN"),
