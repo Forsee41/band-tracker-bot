@@ -1,6 +1,7 @@
 import pytest
 
 from band_tracker.core.artist import Artist
+from band_tracker.core.enums import EventSource
 
 
 class TestArtist:
@@ -13,7 +14,9 @@ class TestArtist:
             inst_link=None,
             youtube_link=None,
             upcoming_events_amount=2,
-            _source_specific_data=None,
+            source_specific_data={
+                EventSource.ticketmaster_api: {"id": {"ticketmaster_id"}}
+            },
         )
         assert artist.has_upcoming_events
 
