@@ -1,12 +1,59 @@
+import asyncio
 import os
+from typing import Generator, Never
 
 import pytest
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine, text
 
 from band_tracker.db.dal import DAL
 from band_tracker.db.models import Base
 from band_tracker.db.session import AsyncSessionmaker
+
+
+@pytest.fixture(scope="function", autouse=True)
+async def clean_tables(sync_engine: Engine) -> None:
+    table_names = [
+        "artist",
+        "artist_genre",
+        "artist_image",
+        "artist_tm_data",
+        "event",
+        "event_artist",
+        "event_image",
+        "event_tm_data",
+        "follow",
+        "genre",
+        "sales",
+        "subscription",
+        '"user"',
+        "user_settings",
+    ]
+    tables_str = ", ".join(table_names)
+    with sync_engine.connect() as connection:
+        connection.execute(text(f"TRUNCATE TABLE {tables_str};"))
+
+
+@pytest.fixture(scope="session")
+def event_loop(request: Never) -> Generator:
+    assert request
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
+def sync_engine(db_creds: dict) -> Engine:
+    login = db_creds["login"]
+    pw = db_creds["password"]
+    ip = db_creds["ip"]
+    port = db_creds["port"]
+    db = db_creds["database"]
+    db_url = f"postgresql://" f"{login}:" f"{pw}@" f"{ip}:" f"{port}/" f"{db}"
+
+    engine = create_engine(db_url)
+    return engine
 
 
 @pytest.fixture(scope="session")
@@ -28,16 +75,8 @@ def db_creds(load_dotenv_: None) -> dict:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def create_tables(db_creds: dict) -> None:
-    login = db_creds["login"]
-    pw = db_creds["password"]
-    ip = db_creds["ip"]
-    port = db_creds["port"]
-    db = db_creds["database"]
-    db_url = f"postgresql://" f"{login}:" f"{pw}@" f"{ip}:" f"{port}/" f"{db}"
-
-    engine = create_engine(db_url)
-    Base.metadata.create_all(engine)
+def create_tables(sync_engine: Engine) -> None:
+    Base.metadata.create_all(sync_engine)
 
 
 @pytest.fixture(scope="session")
