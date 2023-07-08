@@ -18,6 +18,8 @@ class DAL:
             name=artist.name,
             spotify=str(artist.spotify_link),
             tickets_link=str(artist.tickets_link),
+            inst_link=str(artist.inst_link),
+            youtube_link=str(artist.youtube_link),
             upcoming_events_count=artist.upcoming_events_amount,
         )
         async with self.sessionmaker.session() as session:
