@@ -2,9 +2,10 @@ from typing import Any, Optional, TypeAlias
 
 from pydantic import (
     BaseModel,
+    Field,
     FieldValidationInfo,
     HttpUrl,
-    NonNegativeInt,
+    StrictStr,
     field_validator,
 )
 
@@ -15,14 +16,24 @@ SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 class Artist(BaseModel):
     id: Optional[str] = None
-    name: str
-    spotify_link: HttpUrl | None
-    tickets_link: HttpUrl | None
-    inst_link: HttpUrl | None
-    youtube_link: HttpUrl | None
-    upcoming_events_amount: NonNegativeInt
-    source_specific_data: SourceSpecificArtistData = {EventSource.ticketmaster_api: {}}
-    images: list[HttpUrl] = []
+    name: StrictStr
+    socials: dict[str, Optional[HttpUrl]] = Field(None)
+    tickets_link: HttpUrl = Field(None)
+    source_specific_data: SourceSpecificArtistData = Field(
+        {EventSource.ticketmaster_api: {}}
+    )
+    images: list[HttpUrl] = Field(None)
+
+    @field_validator("socials")
+    def validate_socials(
+        cls, value: dict[str, Optional[HttpUrl]]
+    ) -> dict[str, Optional[HttpUrl]]:
+        required_keys = {"inst_link", "youtube_link", "spotify_link"}
+        if set(value.keys()) != required_keys:
+            raise ValueError(
+                "socials must contain keys for Instagram, YouTube, and Spotify"
+            )
+        return value
 
     @field_validator("source_specific_data")
     def id_presence(
@@ -48,7 +59,3 @@ class Artist(BaseModel):
             return self.source_specific_data[source]
         else:
             return {}
-
-    @property
-    def has_upcoming_events(self) -> bool:
-        return self.upcoming_events_amount > 0
