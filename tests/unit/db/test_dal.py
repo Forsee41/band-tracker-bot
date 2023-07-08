@@ -25,6 +25,8 @@ class TestDAL:
                 EventSource.ticketmaster_api: {"id": "ticketmaster_id"}
             },
             images=[],
+            genres=None,
+            aliases=None,
         )
         await dal.add_artist(artist)
 
