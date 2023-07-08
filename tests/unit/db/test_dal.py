@@ -16,7 +16,6 @@ class TestDAL:
             tickets_link=HttpUrl("https://tickets_url.com"),
             inst_link=HttpUrl("https://inst.com"),
             youtube_link=HttpUrl("https://youtube.com"),
-            upcoming_events_amount=13,
             source_specific_data={
                 EventSource.ticketmaster_api: {"id": "ticketmaster_id"}
             },

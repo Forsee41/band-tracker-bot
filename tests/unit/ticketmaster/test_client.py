@@ -29,7 +29,6 @@ class TestClient:
                     youtube_link=HttpUrl(
                         "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
                     ),
-                    upcoming_events_amount=8,
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171RCf"}
                     },
@@ -46,7 +45,6 @@ class TestClient:
                     ),
                     inst_link=None,
                     youtube_link=None,
-                    upcoming_events_amount=6,
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171OI0"}
                     },

@@ -28,7 +28,6 @@ class ArtistDB(Base):
     tickets_link: Mapped[str] = mapped_column(String, nullable=False)
     inst_link: Mapped[str] = mapped_column(String, nullable=True)
     youtube_link: Mapped[str] = mapped_column(String, nullable=True)
-    upcoming_events_count: Mapped[int] = mapped_column(Integer, nullable=False)
 
     subscribers: Mapped[list["UserDB"]] = relationship(
         back_populates="subscriptions",

@@ -1,12 +1,6 @@
 from typing import Any, Optional, TypeAlias
 
-from pydantic import (
-    BaseModel,
-    FieldValidationInfo,
-    HttpUrl,
-    NonNegativeInt,
-    field_validator,
-)
+from pydantic import BaseModel, FieldValidationInfo, HttpUrl, field_validator
 
 from band_tracker.core.enums import EventSource
 
@@ -20,7 +14,6 @@ class Artist(BaseModel):
     tickets_link: HttpUrl | None
     inst_link: HttpUrl | None
     youtube_link: HttpUrl | None
-    upcoming_events_amount: NonNegativeInt
     source_specific_data: SourceSpecificArtistData = {EventSource.ticketmaster_api: {}}
     images: list[HttpUrl] = []
 
@@ -48,7 +41,3 @@ class Artist(BaseModel):
             return self.source_specific_data[source]
         else:
             return {}
-
-    @property
-    def has_upcoming_events(self) -> bool:
-        return self.upcoming_events_amount > 0

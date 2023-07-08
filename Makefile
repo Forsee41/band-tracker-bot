@@ -16,3 +16,6 @@ test:
 down:
 	docker compose -f docker-compose-dev.yaml down &> /dev/null
 
+up:
+	docker compose -f docker-compose-dev.yaml up -d &> /dev/null
+
