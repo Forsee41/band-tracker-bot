@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime
+
 from pydantic import BaseModel
 
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import EventSource
-from band_tracker.core.event import Event
 from band_tracker.core.errors import DeserializationError
+from band_tracker.core.event import Event
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ def get_artist(raw_artist: dict) -> Artist:
 
     def link_helper() -> dict:
         """helper function providing links for specified resources or
-                                            None if there is no external Links found
+            None if there is no external Links found
         :return: dict with links or None if not found
         """
         external_links = raw_artist.get("externalLinks")
@@ -88,8 +89,14 @@ def get_event(raw_event: dict) -> Event:
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_event.get("id")}
         },
-        "venue_city": raw_event.get("_embedded", {}).get("venues", {})[0].get("city", {}).get("name"),
-        "venue_country": raw_event.get("_embedded", {}).get("venues", {})[0].get("country", {}).get("name"),
+        "venue_city": raw_event.get("_embedded", {})
+        .get("venues", {})[0]
+        .get("city", {})
+        .get("name"),
+        "venue_country": raw_event.get("_embedded", {})
+        .get("venues", {})[0]
+        .get("country", {})
+        .get("name"),
     }
     return Event.model_validate(modified_event)
 
