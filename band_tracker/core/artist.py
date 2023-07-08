@@ -13,19 +13,18 @@ class Artist(BaseModel):
     inst_link: HttpUrl | None
     youtube_link: HttpUrl | None
     upcoming_events_amount: NonNegativeInt
-    source_specific_data: dict[EventSource, dict] = lambda: dict[
-        EventSource.ticketmaster_api, {}
-    ]
+    source_specific_data: dict[EventSource, dict] = {EventSource.ticketmaster_api: {}}
+    images: list[HttpUrl] = []
 
-    @field_validator("id")
-    def prevent_Id_to_be_None(cls, id_value):
-        assert id_value is not None, "id must not be None"
-        return id_value
+    # @field_validator("id")
+    # def prevent_Id_to_be_None(cls, id_value):
+    #     assert id_value is not None, "id must not be None"
+    #     return id_value
 
     @field_validator("source_specific_data")
     def id_presence(cls, _source_specific_data_value, values):
         id_db = _source_specific_data_value.get(EventSource.ticketmaster_api).get("id")
-        id_api = values.get("id")
+        id_api = values.data.get("id")
         if not (id_api or id_db):
             raise ValueError("either one of the id's should be defined")
         return _source_specific_data_value
@@ -35,8 +34,8 @@ class Artist(BaseModel):
         Returns a source-specific data of an Artist (like specific id, slug, etc.),
         or an empty dict if one is not present
         """
-        if source in self._source_specific_data:
-            return self._source_specific_data[source]
+        if source in self.source_specific_data:
+            return self.source_specific_data[source]
         else:
             return {}
 

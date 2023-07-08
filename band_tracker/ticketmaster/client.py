@@ -3,9 +3,35 @@ from datetime import datetime
 
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import EventSource
+from band_tracker.core.errors import DeserializationError
 from band_tracker.core.event import Event
 
 log = logging.getLogger(__name__)
+
+
+def _get_artist_event_amount(raw_artist: dict) -> int:
+    try:
+        upcoming_events: dict = raw_artist["upcomingEvents"]
+    except KeyError:
+        raise DeserializationError(
+            "Raw artist doesn't have an upcomingEvents field",
+            api=EventSource.ticketmaster_api,
+        )
+    try:
+        total_events_amount = upcoming_events["_total"]
+    except KeyError:
+        raise DeserializationError(
+            "upcomingEvents field of raw artist doesn't have a _total field",
+            api=EventSource.ticketmaster_api,
+        )
+    try:
+        total_events_amount_int = int(total_events_amount)
+    except ValueError:
+        raise DeserializationError(
+            "total upcoming events value cannot be casted to int",
+            api=EventSource.ticketmaster_api,
+        )
+    return total_events_amount_int
 
 
 def get_artist(raw_artist: dict) -> Artist:
@@ -21,14 +47,16 @@ def get_artist(raw_artist: dict) -> Artist:
             return external_links.get(resource)[0]["url"]
         return None
 
+    events_amount = _get_artist_event_amount(raw_artist=raw_artist)
+
     modified_artist = {
         "name": raw_artist.get("name"),
         "spotify_link": link_helper("spotify"),
         "tickets_link": raw_artist.get("url"),
         "inst_link": link_helper("instagram"),
         "youtube_link": link_helper("youtube"),
-        "upcoming_events_amount": raw_artist.get("upcomingEvents").get("_total"),
-        "_source_specific_data": {
+        "upcoming_events_amount": events_amount,
+        "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
     }
@@ -42,11 +70,14 @@ def get_event(raw_event: dict) -> Event:
     modified_event = {
         "title": raw_event.get("name"),
         "date": datetime.strptime(
-            raw_event.get("dates").get("start").get("localDate"), format_string
+            raw_event.get("dates").get("start").get("localDate"),  # type: ignore TODO
+            format_string,
         ),
-        "venue": raw_event.get("_embedded").get("venues")[0].get("name"),
+        "venue": raw_event.get("_embedded")
+        .get("venues")[0]  # type: ignore TODO
+        .get("name"),
         "ticket_url": raw_event.get("url"),
-        "_source_specific_data": {
+        "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_event.get("id")}
         },
     }
