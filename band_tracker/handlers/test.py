@@ -6,7 +6,7 @@ from telegram.ext import CommandHandler, ContextTypes
 log = logging.getLogger(__name__)
 
 
-async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_chat:
         log.info("Test handler invoked")
         await context.bot.send_message(
