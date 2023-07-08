@@ -13,14 +13,13 @@ class Artist(BaseModel):
     inst_link: HttpUrl | None
     youtube_link: HttpUrl | None
     upcoming_events_amount: NonNegativeInt
-    source_specific_data: dict[EventSource, dict] = lambda: dict[
-        EventSource.ticketmaster_api, {}
-    ]
+    source_specific_data: dict[EventSource, dict] = {EventSource.ticketmaster_api: {}}
+    images: list[HttpUrl] = []
 
-    @field_validator("id")
-    def prevent_Id_to_be_None(cls, id_value):
-        assert id_value is not None, "id must not be None"
-        return id_value
+    # @field_validator("id")
+    # def prevent_Id_to_be_None(cls, id_value):
+    #     assert id_value is not None, "id must not be None"
+    #     return id_value
 
     @field_validator("source_specific_data")
     def id_presence(cls, _source_specific_data_value, values):

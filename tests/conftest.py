@@ -47,7 +47,6 @@ def sessionmaker(db_creds: dict) -> AsyncSessionmaker:
 
 
 @pytest.fixture(scope="class")
-def dal(create_tables, sessionmaker: AsyncSessionmaker) -> DAL:
-    assert create_tables is None
+def dal(sessionmaker: AsyncSessionmaker) -> DAL:
     dal = DAL(sessionmaker)
     return dal
