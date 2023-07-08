@@ -11,12 +11,12 @@ class TestDAL:
         artist = Artist(
             name="name",
             socials={
-                "spotify_link": HttpUrl(
+                "spotify": HttpUrl(
                     "https://open.spotify.com/artist"
                     "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
                 ),
-                "inst_link": HttpUrl("http://www.instagram.com/theorblive"),
-                "youtube_link": HttpUrl(
+                "instagram": HttpUrl("http://www.instagram.com/theorblive"),
+                "youtube": HttpUrl(
                     "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
                 ),
             },

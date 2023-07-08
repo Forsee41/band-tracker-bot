@@ -24,6 +24,8 @@ class Event(BaseModel):
     source_specific_data: SourceSpecificEventData = Field(
         {EventSource.ticketmaster_api: {}}
     )
+    venue_city: StrictStr = Field(None)
+    venue_country: StrictStr = Field(None)
 
     @field_validator("source_specific_data")
     def id_presence(

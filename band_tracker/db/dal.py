@@ -17,6 +17,7 @@ class DAL:
         artist_db = ArtistDB(
             name=artist.name,
             tickets_link=str(artist.tickets_link),
+            upcoming_events_count=0
         )
         async with self.sessionmaker.session() as session:
             session.add(artist_db)

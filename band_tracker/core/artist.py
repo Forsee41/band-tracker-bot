@@ -17,22 +17,25 @@ SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 class Artist(BaseModel):
     id: Optional[str] = None
     name: StrictStr
-    socials: dict[str, Optional[HttpUrl]] = Field(None)
+    socials: dict[str, Optional[HttpUrl]]
     tickets_link: HttpUrl = Field(None)
     source_specific_data: SourceSpecificArtistData = Field(
         {EventSource.ticketmaster_api: {}}
     )
     images: list[HttpUrl] = Field(None)
+    genres: Optional[list[Optional[str]]] = Field(None)
+    aliases: Optional[list[str]] = Field(None)
 
     @field_validator("socials")
     def validate_socials(
         cls, value: dict[str, Optional[HttpUrl]]
     ) -> dict[str, Optional[HttpUrl]]:
-        required_keys = {"inst_link", "youtube_link", "spotify_link"}
-        if set(value.keys()) != required_keys:
-            raise ValueError(
-                "socials must contain keys for Instagram, YouTube, and Spotify"
-            )
+        if value != {}:
+            required_keys = {"instagram", "youtube", "spotify"}
+            if set(value.keys()) != required_keys:
+                raise ValueError(
+                    "socials must contain keys for Instagram, YouTube, and Spotify"
+                )
         return value
 
     @field_validator("source_specific_data")
