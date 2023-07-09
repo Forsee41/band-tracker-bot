@@ -3,9 +3,9 @@ from datetime import datetime
 import pytest
 from pydantic import HttpUrl
 
-from band_tracker.core.artist import Artist
+from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
-from band_tracker.core.event import Event
+from band_tracker.core.event_update import EventUpdate
 from band_tracker.ticketmaster.client import get_artist, get_event
 from test_data.temp_const import ARTISTS, EVENTS
 
@@ -16,19 +16,19 @@ class TestClient:
         [
             (
                 ARTISTS.get("_embedded").get("attractions")[0],
-                Artist(
+                ArtistUpdate(
                     name="The Orb",
-                    socials={
-                        "spotify": HttpUrl(
+                    socials=ArtistUpdateSocials(
+                        spotify=HttpUrl(
                             "https://open.spotify.com/artist"
                             "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
                         ),
-                        "instagram": HttpUrl("http://www.instagram.com/theorblive"),
-                        "youtube": HttpUrl(
+                        instagram=HttpUrl("http://www.instagram.com/theorblive"),
+                        youtube=HttpUrl(
                             "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
                         ),
-                    },
-                    aliases=None,
+                    ),
+                    aliases=[],
                     tickets_link=HttpUrl(
                         "https://www.ticketmaster.com/the-orb-tickets/artist/806748"
                     ),
@@ -87,17 +87,19 @@ class TestClient:
             ),
             (
                 ARTISTS.get("_embedded").get("attractions")[1],
-                Artist(
+                ArtistUpdate(
                     name="Jeff Tain Watts",
                     tickets_link=HttpUrl(
                         "https://www.ticketmaster.com/"
                         "jeff-tain-watts-tickets/artist/844673"
                     ),
-                    socials={},
+                    socials=ArtistUpdateSocials(
+                        **{"spotify": None, "youtube": None, "instagram": None}
+                    ),
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171OI0"}
                     },
-                    aliases=None,
+                    aliases=[],
                     genres=["Jazz", "Jazz"],
                     images=[
                         HttpUrl(
@@ -157,12 +159,12 @@ class TestClient:
             ),
         ],
     )
-    def test_get_artist(self, raw_artist: dict, expected_artist: Artist) -> None:
+    def test_get_artist(self, raw_artist: dict, expected_artist: ArtistUpdate) -> None:
         assert get_artist(raw_artist) == expected_artist
 
     def test_get_event_1(self) -> None:
         raw_event = EVENTS.get("_embedded").get("events")[0]
-        event = Event(
+        event = EventUpdate(
             title="Shania Twain: Queen Of Me Tour",
             date=datetime(2023, 7, 15),
             venue="Ruoff Music Center",
@@ -175,6 +177,7 @@ class TestClient:
             },
             venue_city="Noblesville",
             venue_country="United States Of America",
+            artists=[],
         )
         assert get_event(raw_event) == event
 

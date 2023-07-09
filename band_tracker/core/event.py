@@ -1,47 +1,23 @@
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, TypeAlias
+from typing import TYPE_CHECKING
 
-from pydantic import (
-    BaseModel,
-    Field,
-    FieldValidationInfo,
-    HttpUrl,
-    StrictStr,
-    field_validator,
-)
+from band_tracker.core.interfaces import DAL
 
-from band_tracker.core.enums import EventSource
-
-SourceSpecificEventData: TypeAlias = dict[EventSource, dict[str, Any]]
+if TYPE_CHECKING:
+    from band_tracker.core.artist import Artist
 
 
-class Event(BaseModel):
-    id: str | None = None
-    title: StrictStr
+@dataclass
+class Event:
+    title: str
     date: datetime
-    venue: StrictStr
-    venue_city: StrictStr
-    venue_country: StrictStr
-    ticket_url: HttpUrl | None = Field(None)
-    source_specific_data: SourceSpecificEventData = Field(
-        {EventSource.ticketmaster_api: {}}
-    )
+    venue: str
+    venue_city: str
+    venue_country: str
+    ticket_url: str | None
+    artist_ids: list[str]
 
-    @field_validator("source_specific_data")
-    def id_presence(
-        cls,
-        _source_specific_data_value: SourceSpecificEventData,
-        values: FieldValidationInfo,
-    ) -> SourceSpecificEventData:
-        ticketmaster_data = _source_specific_data_value.get(
-            EventSource.ticketmaster_api
-        )
-        ticketmaster_id = ticketmaster_data["id"] if ticketmaster_data else None
-        id_api = values.data.get("id")
-        if not (id_api or ticketmaster_id):
-            raise ValueError("either one of the id's should be defined")
-        return _source_specific_data_value
-
-    @property
-    def has_passed(self) -> bool:
-        return self.date <= datetime.now()
+    def get_artists(self, dal: DAL) -> list["Artist"]:
+        assert dal
+        raise NotImplementedError
