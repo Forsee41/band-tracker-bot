@@ -18,38 +18,141 @@ class TestClient:
                 ARTISTS.get("_embedded").get("attractions")[0],
                 Artist(
                     name="The Orb",
-                    spotify_link=HttpUrl(
-                        "https://open.spotify.com/artist"
-                        "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
-                    ),
+                    socials={
+                        "spotify": HttpUrl(
+                            "https://open.spotify.com/artist"
+                            "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
+                        ),
+                        "instagram": HttpUrl("http://www.instagram.com/theorblive"),
+                        "youtube": HttpUrl(
+                            "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
+                        ),
+                    },
+                    aliases=None,
                     tickets_link=HttpUrl(
                         "https://www.ticketmaster.com/the-orb-tickets/artist/806748"
                     ),
-                    inst_link=HttpUrl("http://www.instagram.com/theorblive"),
-                    youtube_link=HttpUrl(
-                        "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
-                    ),
-                    upcoming_events_amount=8,
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171RCf"}
                     },
+                    genres=["Rock", "Pop"],
+                    images=[
+                        HttpUrl(
+                            "https://s1.ticketm.net"
+                            "/dam/a/5a1/d9a78cdb-a7ce-"
+                            "4e40-861d-4ad1c6b355a1_264701_ARTIST_PAGE_3_2.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net"
+                            "/dam/a/5a1/d9a78cdb-a7ce-4e4"
+                            "0-861d-4ad1c6b355a1_264701_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/"
+                            "a/5a1/d9a78cdb-a7ce-4e40-861"
+                            "d-4ad1c6b355a1_264701_RETINA_LANDSCAPE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/a/"
+                            "5a1/d9a78cdb-a7ce-4e40-861d-4ad1c6b355a1_264701_CUSTOM.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/a/5a1/d"
+                            "9a78cdb-a7ce-4e40-861d-"
+                            "4ad1c6b355a1_264701_RETINA_PORTRAIT_3_2.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/a/5a"
+                            "1/d9a78cdb-a7ce-4e40-"
+                            "861d-4ad1c6b355a1_264701_RETINA_PORTRAIT_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/a/5a"
+                            "1/d9a78cdb-a7ce-4e40-"
+                            "861d-4ad1c6b355a1_264701_TABLET_LANDSCAPE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/a"
+                            "/5a1/d9a78cdb-a7ce-4e40"
+                            "-861d-4ad1c6b355a1_264701_TABLET_LANDSCAPE_3_2.jpg"
+                        ),
+                        HttpUrl("https://s1.ticketm.net/dbimages/33384a.jpg"),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/"
+                            "a/5a1/d9a78cdb-a7ce-4e40-861d-4ad1c"
+                            "6b355a1_264701_RECOMENDATION_16_9.jpg"
+                        ),
+                    ],
                 ),
             ),
             (
                 ARTISTS.get("_embedded").get("attractions")[1],
                 Artist(
                     name="Jeff Tain Watts",
-                    spotify_link=None,
                     tickets_link=HttpUrl(
                         "https://www.ticketmaster.com/"
                         "jeff-tain-watts-tickets/artist/844673"
                     ),
-                    inst_link=None,
-                    youtube_link=None,
-                    upcoming_events_amount=6,
+                    socials={},
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171OI0"}
                     },
+                    aliases=None,
+                    genres=["Jazz", "Jazz"],
+                    images=[
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/"
+                            "c/bea/03d47f66-d37b-4aca-aa17-0135be64dbea_105801_TABLET_"
+                            "LANDSCAPE_LARGE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam"
+                            "/c/bea/03d47f66-d37b-4aca-aa17-0135be64dbea_1058"
+                            "01_RETINA_PORTRAIT_3_2.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/"
+                            "c/bea/03d47f66-d37b-4aca-"
+                            "aa17-0135be64dbea_105801_RECOMENDATIO"
+                            "N_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/c/b"
+                            "ea/03d47f66-d37b-4aca-aa17-0135be64dbea_105801_RETINA_L"
+                            "ANDSCAPE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam/c"
+                            "/bea/03d47f66-d37b-4aca-aa17"
+                            "-0135be64dbea_105801_CUSTOM.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/d"
+                            "am/c/bea/03d47f66-d37b-4aca-"
+                            "aa17-0135be64dbea_105801_EVENT_DETAI"
+                            "L_PAGE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net"
+                            "/dam/c/bea/03d47f66-d37b-4aca-aa17-0135be64dbea_105801_TA"
+                            "BLET_LANDSCAPE_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/d"
+                            "am/c/bea/03d47f66-d37b-4aca-aa17-0135be64dbea_105801_ARTI"
+                            "ST_PAGE_3_2.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/dam"
+                            "/c/bea/03d47f66-d37b-4aca-aa17-0135be64dbea_105801_RETI"
+                            "NA_PORTRAIT_16_9.jpg"
+                        ),
+                        HttpUrl(
+                            "https://s1.ticketm.net/d"
+                            "am/c/bea/03d47f66-d37b-4aca-aa17-0135be64dbea_105801_"
+                            "TABLET_LANDSCAPE_3_2.jpg"
+                        ),
+                    ],
                 ),
             ),
         ],
@@ -70,6 +173,8 @@ class TestClient:
             source_specific_data={
                 EventSource.ticketmaster_api: {"id": "vvG1fZ949qhf4C"}
             },
+            venue_city="Noblesville",
+            venue_country="United States Of America",
         )
         assert get_event(raw_event) == event
 

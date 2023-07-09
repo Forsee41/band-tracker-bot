@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime
 
+from pydantic import BaseModel
+
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DeserializationError
@@ -9,76 +11,115 @@ from band_tracker.core.event import Event
 log = logging.getLogger(__name__)
 
 
-def _get_artist_event_amount(raw_artist: dict) -> int:
-    try:
-        upcoming_events: dict = raw_artist["upcomingEvents"]
-    except KeyError:
-        raise DeserializationError(
-            "Raw artist doesn't have an upcomingEvents field",
-            api=EventSource.ticketmaster_api,
-        )
-    try:
-        total_events_amount = upcoming_events["_total"]
-    except KeyError:
-        raise DeserializationError(
-            "upcomingEvents field of raw artist doesn't have a _total field",
-            api=EventSource.ticketmaster_api,
-        )
-    try:
-        total_events_amount_int = int(total_events_amount)
-    except ValueError:
-        raise DeserializationError(
-            "total upcoming events value cannot be casted to int",
-            api=EventSource.ticketmaster_api,
-        )
-    return total_events_amount_int
+class JSONData(BaseModel):
+    _embedded: dict[str, list]
+    page: dict[str, dict]
 
 
 def get_artist(raw_artist: dict) -> Artist:
     log.debug("get_artist invoke")
 
-    def link_helper(resource: str) -> str | None:
-        """helper function providing a link for a given resource or None if not found
-        :param resource: resource name ("instagram", "spotify", etc.)
-        :return: link or None if not found
+    def link_helper() -> dict:
+        """helper function providing links for specified resources or
+            None if there is no external Links found
+        :return: dict with links or None if not found
         """
         external_links = raw_artist.get("externalLinks")
-        if external_links is not None and resource in external_links:
-            return external_links.get(resource)[0]["url"]
-        return None
+        if external_links is not None:
+            links = {}
+            for i in {"instagram", "youtube", "spotify"}:
+                if external_links.get(i) is not None:
+                    links.update({i: external_links.get(i)[0]["url"]})
+                else:
+                    links.update({i: None})
+            return links
+        return {}
 
-    events_amount = _get_artist_event_amount(raw_artist=raw_artist)
+    def genres_helper() -> list | None:
+        classifications = raw_artist.get("classifications")
+        if classifications:
+            music_classifications = [
+                classification
+                for classification in classifications
+                if classification.get("segment", {}).get("name") == "Music"
+            ]
+            if music_classifications:
+                genres = [
+                    [
+                        classification.get("genre", {}).get("name"),
+                        classification.get("subGenre", {}).get("name"),
+                    ]
+                    for classification in music_classifications
+                ]
+                if genres:
+                    return [genre for genre in genres[0] if genre is not None]
+        return None
 
     modified_artist = {
         "name": raw_artist.get("name"),
-        "spotify_link": link_helper("spotify"),
+        "socials": link_helper(),
         "tickets_link": raw_artist.get("url"),
-        "inst_link": link_helper("instagram"),
-        "youtube_link": link_helper("youtube"),
-        "upcoming_events_amount": events_amount,
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
+        "images": [image.get("url") for image in raw_artist.get("images", [])],
+        "genres": genres_helper(),
+        "aliases": raw_artist.get("aliases"),
     }
-    return Artist(**modified_artist)
+    return Artist.model_validate(modified_artist)
 
 
 def get_event(raw_event: dict) -> Event:
     log.debug("get_event invoke")
 
-    format_string = "%Y-%m-%d"
+    def datetime_helper() -> datetime | None:
+        format_string = "%Y-%m-%d"
+        date = raw_event.get("dates", {}).get("start", {}).get("localDate")
+        return datetime.strptime(date, format_string) if date else None
+
     modified_event = {
         "title": raw_event.get("name"),
-        "date": datetime.strptime(
-            raw_event.get("dates").get("start").get("localDate"),  # type: ignore TODO
-            format_string,
+        "date": datetime_helper(),
+        "venue": raw_event.get("_embedded", {})
+        .get("venues", {})[0]
+        .get(
+            "name",
         ),
-        "venue": raw_event.get("_embedded")
-        .get("venues")[0]  # type: ignore TODO
-        .get("name"),
         "ticket_url": raw_event.get("url"),
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_event.get("id")}
         },
+        "venue_city": raw_event.get("_embedded", {})
+        .get("venues", {})[0]
+        .get("city", {})
+        .get("name"),
+        "venue_country": raw_event.get("_embedded", {})
+        .get("venues", {})[0]
+        .get("country", {})
+        .get("name"),
     }
-    return Event(**modified_event)
+    return Event.model_validate(modified_event)
+
+
+def get_all_artists(raw_dict: dict[str, dict]) -> list[Artist]:
+    try:
+        json_data = JSONData.model_validate(raw_dict)
+        artists = json_data._embedded["attractions"]
+    except ValueError:
+        raise DeserializationError("invalid json", EventSource.ticketmaster_api)
+    output = []
+    for i in artists:
+        output.append(get_artist(i))
+    return output
+
+
+def get_all_events(raw_dict: dict[str, dict]) -> list[Event]:
+    try:
+        json_data = JSONData.model_validate(raw_dict)
+        events = json_data._embedded["events"]
+    except ValueError:
+        raise DeserializationError("invalid json", EventSource.ticketmaster_api)
+    output = []
+    for i in events:
+        output.append(get_event(i))
+    return output

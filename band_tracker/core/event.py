@@ -1,7 +1,14 @@
 from datetime import datetime
-from typing import Any, Optional, TypeAlias
+from typing import Any, TypeAlias
 
-from pydantic import BaseModel, FieldValidationInfo, HttpUrl, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    FieldValidationInfo,
+    HttpUrl,
+    StrictStr,
+    field_validator,
+)
 
 from band_tracker.core.enums import EventSource
 
@@ -9,12 +16,16 @@ SourceSpecificEventData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 
 class Event(BaseModel):
-    id: Optional[str] = None
-    title: str
+    id: str | None = None
+    title: StrictStr
     date: datetime
-    venue: str
-    ticket_url: HttpUrl | None
-    source_specific_data: SourceSpecificEventData = {EventSource.ticketmaster_api: {}}
+    venue: StrictStr
+    venue_city: StrictStr
+    venue_country: StrictStr
+    ticket_url: HttpUrl | None = Field(None)
+    source_specific_data: SourceSpecificEventData = Field(
+        {EventSource.ticketmaster_api: {}}
+    )
 
     @field_validator("source_specific_data")
     def id_presence(

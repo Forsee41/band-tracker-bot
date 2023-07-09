@@ -10,14 +10,23 @@ class TestDAL:
     async def test_add_artist(self, dal: DAL) -> None:
         artist = Artist(
             name="name",
-            spotify_link=HttpUrl("https://spotify.com"),
+            socials={
+                "spotify": HttpUrl(
+                    "https://open.spotify.com/artist"
+                    "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
+                ),
+                "instagram": HttpUrl("http://www.instagram.com/theorblive"),
+                "youtube": HttpUrl(
+                    "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
+                ),
+            },
             tickets_link=HttpUrl("https://tickets_url.com"),
-            inst_link=HttpUrl("https://inst.com"),
-            youtube_link=HttpUrl("https://youtube.com"),
-            upcoming_events_amount=0,
             source_specific_data={
                 EventSource.ticketmaster_api: {"id": "ticketmaster_id"}
             },
+            images=[],
+            genres=None,
+            aliases=None,
         )
         await dal.add_artist(artist)
 
