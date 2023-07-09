@@ -1,7 +1,7 @@
 import pytest
 from pydantic import HttpUrl
 
-from band_tracker.core.artist_update import ArtistUpdate
+from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.db.dal import DAL
 
@@ -9,16 +9,14 @@ from band_tracker.db.dal import DAL
 class TestDAL:
     default_artist = ArtistUpdate(
         name="name",
-        socials={
-            "spotify": HttpUrl(
+        socials=ArtistUpdateSocials(
+            spotify=HttpUrl(
                 "https://open.spotify.com/artist"
                 "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
             ),
-            "instagram": HttpUrl("http://www.instagram.com/theorblive"),
-            "youtube": HttpUrl(
-                "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
-            ),
-        },
+            instagram=HttpUrl("http://www.instagram.com/theorblive"),
+            youtube=HttpUrl("https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"),
+        ),
         tickets_link=HttpUrl("https://tickets_url.com"),
         source_specific_data={EventSource.ticketmaster_api: {"id": "ticketmaster_id"}},
         images=[],

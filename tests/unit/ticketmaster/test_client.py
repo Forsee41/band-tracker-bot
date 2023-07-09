@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from pydantic import HttpUrl
 
-from band_tracker.core.artist_update import ArtistUpdate
+from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.ticketmaster.client import get_artist, get_event
@@ -18,16 +18,16 @@ class TestClient:
                 ARTISTS.get("_embedded").get("attractions")[0],
                 ArtistUpdate(
                     name="The Orb",
-                    socials={
-                        "spotify": HttpUrl(
+                    socials=ArtistUpdateSocials(
+                        spotify=HttpUrl(
                             "https://open.spotify.com/artist"
                             "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
                         ),
-                        "instagram": HttpUrl("http://www.instagram.com/theorblive"),
-                        "youtube": HttpUrl(
+                        instagram=HttpUrl("http://www.instagram.com/theorblive"),
+                        youtube=HttpUrl(
                             "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
                         ),
-                    },
+                    ),
                     aliases=[],
                     tickets_link=HttpUrl(
                         "https://www.ticketmaster.com/the-orb-tickets/artist/806748"
@@ -93,7 +93,9 @@ class TestClient:
                         "https://www.ticketmaster.com/"
                         "jeff-tain-watts-tickets/artist/844673"
                     ),
-                    socials={"spotify": None, "youtube": None, "instagram": None},
+                    socials=ArtistUpdateSocials(
+                        **{"spotify": None, "youtube": None, "instagram": None}
+                    ),
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171OI0"}
                     },

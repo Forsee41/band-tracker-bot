@@ -1,14 +1,13 @@
 from typing import Any, TypeAlias
 
 from pydantic import BaseModel, Field, HttpUrl, StrictStr, field_validator
-from typing_extensions import TypedDict
 
 from band_tracker.core.enums import EventSource
 
 SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 
-class ArtistUpdateSocials(TypedDict):
+class ArtistUpdateSocials(BaseModel):
     instagram: HttpUrl | None
     youtube: HttpUrl | None
     spotify: HttpUrl | None

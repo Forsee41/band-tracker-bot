@@ -39,9 +39,9 @@ class DAL:
         self, artist_id: UUID, socials: ArtistUpdateSocials
     ) -> ArtistSocialsDB:
         socials_db = ArtistSocialsDB(
-            spotify=str(socials["spotify"]) if socials["spotify"] else None,
-            youtube=str(socials["youtube"]) if socials["youtube"] else None,
-            instagram=str(socials["instagram"]) if socials["instagram"] else None,
+            spotify=str(socials.spotify) if socials.spotify else None,
+            youtube=str(socials.youtube) if socials.youtube else None,
+            instagram=str(socials.instagram) if socials.instagram else None,
             artist_id=artist_id,
         )
         return socials_db
@@ -111,13 +111,9 @@ class DAL:
             artist_db.tickets_link = str(artist.tickets_link)
             socials = artist_db.socials
             socials.instagram = (
-                artist.socials["instagram"] if artist.socials["instagram"] else None
+                artist.socials.instagram if artist.socials.instagram else None
             )
-            socials.youtube = (
-                artist.socials["youtube"] if artist.socials["youtube"] else None
-            )
-            socials.spotify = (
-                artist.socials["spotify"] if artist.socials["spotify"] else None
-            )
+            socials.youtube = artist.socials.youtube if artist.socials.youtube else None
+            socials.spotify = artist.socials.spotify if artist.socials.spotify else None
             await session.flush()
             return artist_db.id

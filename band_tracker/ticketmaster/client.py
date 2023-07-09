@@ -32,7 +32,7 @@ def get_artist(raw_artist: dict) -> ArtistUpdate:
                     links.update({i: external_links.get(i)[0]["url"]})
                 else:
                     links.update({i: None})
-            return ArtistUpdateSocials(**links)  # type: ignore
+            return ArtistUpdateSocials(**links)
         return ArtistUpdateSocials(spotify=None, youtube=None, instagram=None)
 
     def genres_helper() -> list:

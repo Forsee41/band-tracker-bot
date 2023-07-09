@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from band_tracker.core.interfaces import DAL
@@ -8,7 +8,8 @@ if TYPE_CHECKING:
     from band_tracker.core.event import Event
 
 
-class ArtistSocials(TypedDict):
+@dataclass
+class ArtistSocials:
     instagram: str | None
     youtube: str | None
     spotify: str | None
