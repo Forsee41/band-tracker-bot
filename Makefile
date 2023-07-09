@@ -2,6 +2,7 @@ check:
 	flake8 band_tracker tests --count --select=E9,F63,F7,F82 --show-source --statistics
 	flake8 band_tracker tests --count --max-complexity=10 --max-line-length=88 --statistics
 	pyright band_tracker tests
+	mypy band_tracker tests
 	echo "All checks passed"
 
 test:
