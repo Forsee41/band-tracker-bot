@@ -52,7 +52,7 @@ def get_artist(raw_artist: dict) -> Artist:
                     for classification in music_classifications
                 ]
                 if genres:
-                    return genres[0]
+                    return [genre for genre in genres[0] if genre is not None]
         return None
 
     modified_artist = {

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -16,16 +16,16 @@ SourceSpecificEventData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 
 class Event(BaseModel):
-    id: Optional[str] = None
+    id: str | None = None
     title: StrictStr
-    date: datetime = Field(None)
+    date: datetime
     venue: StrictStr
-    ticket_url: HttpUrl = Field(None)
+    venue_city: StrictStr
+    venue_country: StrictStr
+    ticket_url: HttpUrl | None = Field(None)
     source_specific_data: SourceSpecificEventData = Field(
         {EventSource.ticketmaster_api: {}}
     )
-    venue_city: StrictStr = Field(None)
-    venue_country: StrictStr = Field(None)
 
     @field_validator("source_specific_data")
     def id_presence(
