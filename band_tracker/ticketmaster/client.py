@@ -3,10 +3,10 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from band_tracker.core.artist import Artist
+from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DeserializationError
-from band_tracker.core.event import Event
+from band_tracker.core.event_update import EventUpdate
 
 log = logging.getLogger(__name__)
 
@@ -16,10 +16,10 @@ class JSONData(BaseModel):
     page: dict[str, dict]
 
 
-def get_artist(raw_artist: dict) -> Artist:
+def get_artist(raw_artist: dict) -> ArtistUpdate:
     log.debug("get_artist invoke")
 
-    def link_helper() -> dict:
+    def artist_socials_helper() -> ArtistUpdateSocials:
         """helper function providing links for specified resources or
             None if there is no external Links found
         :return: dict with links or None if not found
@@ -32,10 +32,10 @@ def get_artist(raw_artist: dict) -> Artist:
                     links.update({i: external_links.get(i)[0]["url"]})
                 else:
                     links.update({i: None})
-            return links
-        return {}
+            return ArtistUpdateSocials(**links)
+        return ArtistUpdateSocials(spotify=None, youtube=None, instagram=None)
 
-    def genres_helper() -> list | None:
+    def genres_helper() -> list:
         classifications = raw_artist.get("classifications")
         if classifications:
             music_classifications = [
@@ -53,23 +53,23 @@ def get_artist(raw_artist: dict) -> Artist:
                 ]
                 if genres:
                     return [genre for genre in genres[0] if genre is not None]
-        return None
+        return []
 
     modified_artist = {
         "name": raw_artist.get("name"),
-        "socials": link_helper(),
+        "socials": artist_socials_helper(),
         "tickets_link": raw_artist.get("url"),
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
         "images": [image.get("url") for image in raw_artist.get("images", [])],
         "genres": genres_helper(),
-        "aliases": raw_artist.get("aliases"),
+        "aliases": raw_artist.get("aliases", []),
     }
-    return Artist.model_validate(modified_artist)
+    return ArtistUpdate.model_validate(modified_artist)
 
 
-def get_event(raw_event: dict) -> Event:
+def get_event(raw_event: dict) -> EventUpdate:
     log.debug("get_event invoke")
 
     def datetime_helper() -> datetime | None:
@@ -98,10 +98,10 @@ def get_event(raw_event: dict) -> Event:
         .get("country", {})
         .get("name"),
     }
-    return Event.model_validate(modified_event)
+    return EventUpdate.model_validate(modified_event)
 
 
-def get_all_artists(raw_dict: dict[str, dict]) -> list[Artist]:
+def get_all_artists(raw_dict: dict[str, dict]) -> list[ArtistUpdate]:
     try:
         json_data = JSONData.model_validate(raw_dict)
         artists = json_data._embedded["attractions"]
@@ -113,7 +113,7 @@ def get_all_artists(raw_dict: dict[str, dict]) -> list[Artist]:
     return output
 
 
-def get_all_events(raw_dict: dict[str, dict]) -> list[Event]:
+def get_all_events(raw_dict: dict[str, dict]) -> list[EventUpdate]:
     try:
         json_data = JSONData.model_validate(raw_dict)
         events = json_data._embedded["events"]
