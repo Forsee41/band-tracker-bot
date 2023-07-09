@@ -1,21 +1,14 @@
+from uuid import uuid4
+
 import pytest
 
-from band_tracker.core.artist import Artist
-from band_tracker.core.enums import EventSource
+from band_tracker.core.artist import Artist, ArtistSocials
 
 
 class TestArtist:
-    def test_upcoming_events_positive(self) -> None:
-        artist = Artist(
-            name="",
-            spotify_link=None,
-            tickets_link=None,
-            inst_link=None,
-            youtube_link=None,
-            source_specific_data={
-                EventSource.ticketmaster_api: {"id": {"ticketmaster_id"}}
-            },
-        )
+    def test_artist_constructor(self) -> None:
+        socials = ArtistSocials(instagram=None, spotify=None, youtube=None)
+        artist = Artist(id=uuid4(), name="", tickets_link=None, socials=socials)
         assert artist
 
 

@@ -6,12 +6,13 @@ from sqlalchemy import Enum as EnumDB
 from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy import text as alchemy_text
 from sqlalchemy.dialects.postgresql import UUID as UUID_PG
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from band_tracker.core.enums import Range
 
 
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     """Base ORM class, contains subclasses' metadata"""
 
 
@@ -24,10 +25,7 @@ class ArtistDB(Base):
         server_default=alchemy_text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    spotify: Mapped[str] = mapped_column(String, nullable=True)
     tickets_link: Mapped[str] = mapped_column(String, nullable=False)
-    inst_link: Mapped[str] = mapped_column(String, nullable=True)
-    youtube_link: Mapped[str] = mapped_column(String, nullable=True)
 
     subscribers: Mapped[list["UserDB"]] = relationship(
         back_populates="subscriptions",
@@ -35,6 +33,7 @@ class ArtistDB(Base):
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
+    socials: Mapped[list["ArtistSocialsDB"]] = relationship(back_populates="artist")
     images: Mapped[list["ArtistImageDB"]] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
         secondary="event_artist", back_populates="artists"
@@ -90,6 +89,21 @@ class UserDB(Base):
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="user")
     settings: Mapped["UserSettingsDB"] = relationship(back_populates="user")
+
+
+class ArtistSocialsDB(Base):
+    __tablename__ = "artist_socials"
+
+    artist_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("artist.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    instagram: Mapped[str] = mapped_column(String, nullable=True)
+    spotify: Mapped[str] = mapped_column(String, nullable=True)
+    youtube: Mapped[str] = mapped_column(String, nullable=True)
+
+    artist: Mapped[ArtistDB] = relationship(back_populates="socials")
 
 
 class GenreDB(Base):

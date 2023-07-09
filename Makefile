@@ -11,7 +11,7 @@ test:
 		echo "Waiting for containers to spawn"; \
 		sleep 1.5; \
 	fi
-	python -m pytest --asyncio-mode=auto
+	python -m pytest -vv --asyncio-mode=auto
 
 down:
 	docker compose -f docker-compose-dev.yaml down &> /dev/null

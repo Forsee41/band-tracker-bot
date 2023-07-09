@@ -28,6 +28,7 @@ async def clean_tables(sync_engine: Engine) -> None:
         "subscription",
         '"user"',
         "user_settings",
+        "artist_socials",
     ]
     tables_str = ", ".join(table_names)
     with sync_engine.connect() as connection:
