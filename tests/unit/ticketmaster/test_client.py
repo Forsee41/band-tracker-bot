@@ -177,7 +177,7 @@ class TestClient:
             },
             venue_city="Noblesville",
             venue_country="United States Of America",
-            artists=[],
+            artists=["K8vZ91719n0", "K8vZ917_bOf"],
         )
         assert get_event(raw_event) == event
 

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as EnumDB
-from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy import text as alchemy_text
 from sqlalchemy.dialects.postgresql import UUID as UUID_PG
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -52,9 +52,10 @@ class EventDB(Base):
         server_default=alchemy_text("gen_random_uuid()"),
     )
     venue: Mapped[str] = mapped_column(String, nullable=True)
+    venue_city: Mapped[str] = mapped_column(String, nullable=True)
+    venue_country: Mapped[str] = mapped_column(String, nullable=True)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=True)
-    score: Mapped[float] = mapped_column(Float, nullable=True)
     ticket_url: Mapped[str] = mapped_column(String, nullable=False)
 
     tm_data: Mapped["EventTMDataDB"] = relationship(

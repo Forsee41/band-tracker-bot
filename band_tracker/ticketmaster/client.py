@@ -77,6 +77,12 @@ def get_event(raw_event: dict) -> EventUpdate:
         date = raw_event.get("dates", {}).get("start", {}).get("localDate")
         return datetime.strptime(date, format_string) if date else None
 
+    def attraction_ids_helper() -> list:
+        attractions = raw_event.get("_embedded", {}).get("attractions")
+        if attractions:
+            return [attraction.get("id") for attraction in attractions]
+        return []
+
     modified_event = {
         "title": raw_event.get("name"),
         "date": datetime_helper(),
@@ -97,6 +103,7 @@ def get_event(raw_event: dict) -> EventUpdate:
         .get("venues", {})[0]
         .get("country", {})
         .get("name"),
+        "artists": attraction_ids_helper(),
     }
     return EventUpdate.model_validate(modified_event)
 
