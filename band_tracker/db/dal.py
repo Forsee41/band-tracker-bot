@@ -5,11 +5,14 @@ from sqlalchemy import select
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
+from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.models import (
     ArtistDB,
     ArtistImageDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
+    EventDB,
+    EventTMDataDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
 
@@ -117,3 +120,24 @@ class DAL:
             socials.spotify = artist.socials.spotify if artist.socials.spotify else None
             await session.flush()
             return artist_db.id
+
+    async def add_event(self, event: EventUpdate) -> UUID:
+        event_tm_data = event.get_source_specific_data(
+            source=EventSource.ticketmaster_api
+        )
+        event_db = EventDB(
+            title=event.title,
+            venue=event.venue,
+            venue_city=event.venue_city,
+            venue_country=event.venue_country,
+            start_date=event.date,
+            ticket_url=event.ticket_url,
+        )
+        async with self.sessionmaker.session() as session:
+            session.add(event_db)
+            await session.flush()
+            uuid = event_db.id
+            tm_data_db = EventTMDataDB(id=event_tm_data["id"], event_id=uuid)
+            session.add(tm_data_db)
+            await session.commit()
+        return uuid

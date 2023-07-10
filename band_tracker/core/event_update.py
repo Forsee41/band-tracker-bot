@@ -32,3 +32,13 @@ class EventUpdate(BaseModel):
         if not ticketmaster_id:
             raise ValueError("Update should have source-specific id")
         return _source_specific_data_value
+
+    def get_source_specific_data(self, source: EventSource) -> dict:
+        """
+        Returns a source-specific data of an Event,
+        or an empty dict if one is not present
+        """
+        if source in self.source_specific_data:
+            return self.source_specific_data[source]
+        else:
+            return {}
