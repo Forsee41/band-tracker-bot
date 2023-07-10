@@ -5,7 +5,7 @@ from pydantic import HttpUrl
 
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
-from band_tracker.core.event_update import EventUpdate
+from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.ticketmaster.client import get_artist, get_event
 from test_data.temp_const import ARTISTS, EVENTS
 
@@ -179,6 +179,9 @@ class TestClient:
             venue_country="United States Of America",
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
             images=[],
+            sales=EventUpdateSales(
+                on_sale=True, price_max=249.95, price_min=39.95, currency="USD"
+            ),
         )
         assert get_event(raw_event) == event
 
