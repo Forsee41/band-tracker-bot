@@ -89,12 +89,12 @@ def get_event(raw_event: dict) -> EventUpdate:
         priceRanges = raw_event.get("priceRanges", {})
 
         if priceRanges:
-            price_max = priceRanges[0].get("min")
-            price_min = priceRanges[0].get("max")
+            price_max = priceRanges[0].get("max")
+            price_min = priceRanges[0].get("min")
             currency = priceRanges[0].get("currency")
         else:
             price_max, price_min, currency = None, None, None
-        if tbd and tba:
+        if tbd is not None and tba is not None:
             on_sale = not (tbd or tba)
         else:
             on_sale = None

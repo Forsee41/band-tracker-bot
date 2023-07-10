@@ -33,7 +33,7 @@ class ArtistDB(Base):
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
-    socials: Mapped[list["ArtistSocialsDB"]] = relationship(back_populates="artist")
+    socials: Mapped["ArtistSocialsDB"] = relationship(back_populates="artist")
     images: Mapped[list["ArtistImageDB"]] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
         secondary="event_artist", back_populates="artists"
@@ -65,7 +65,7 @@ class EventDB(Base):
         secondary="event_artist", back_populates="events"
     )
     sales: Mapped["SalesDB"] = relationship(back_populates="event")
-    images: Mapped["EventImageDB"] = relationship(back_populates="event")
+    images: Mapped[list["EventImageDB"]] = relationship(back_populates="event")
 
     @property
     def is_finished(self) -> bool:
@@ -198,6 +198,7 @@ class SalesDB(Base):
     on_sale: Mapped[bool] = mapped_column(Boolean, nullable=False)
     price_max: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     price_min: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    currency: Mapped[str] = mapped_column(String, nullable=False)
 
     event: Mapped[EventDB] = relationship(back_populates="sales")
 
