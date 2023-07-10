@@ -71,7 +71,7 @@ class DAL:
             socials_db = self._buld_db_socials(artist_id=uuid, socials=artist.socials)
             tm_data_db = ArtistTMDataDB(id=artist_tm_data["id"], artist_id=uuid)
             images = [
-                ArtistImageDB(url=image_url, artist_id=uuid)
+                ArtistImageDB(url=str(image_url), artist_id=uuid)
                 for image_url in artist.images
             ]
             session.add(tm_data_db)
@@ -227,7 +227,8 @@ class DAL:
             uuid = event_db.id
             sales = self._buld_event_sales(uuid, event.sales)
             images = [
-                EventImageDB(url=image_url, event_id=uuid) for image_url in event.images
+                EventImageDB(url=str(image_url), event_id=uuid)
+                for image_url in event.images
             ]
             event_db.sales = sales
             event_db.images = images
@@ -249,7 +250,7 @@ class DAL:
             artists = await event_db.awaitable_attrs.artists
             images = await event_db.awaitable_attrs.images
             artist_ids = [artist.id for artist in artists]
-            image_urls = [image.url for image in images]
+            image_urls = [str(image.url) for image in images]
 
             result = Event(
                 title=event_db.title,
@@ -284,7 +285,8 @@ class DAL:
             sales = self._buld_event_sales(uuid, event.sales)
             tm_data_db = EventTMDataDB(id=event_tm_id, event_id=uuid)
             images = [
-                EventImageDB(url=image_url, event_id=uuid) for image_url in event.images
+                EventImageDB(url=str(image_url), event_id=uuid)
+                for image_url in event.images
             ]
             session.add_all(images)
             session.add(tm_data_db)
