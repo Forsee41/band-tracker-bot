@@ -178,6 +178,7 @@ class TestClient:
             venue_city="Noblesville",
             venue_country="United States Of America",
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
+            images=[],
         )
         assert get_event(raw_event) == event
 
