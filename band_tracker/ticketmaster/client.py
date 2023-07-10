@@ -125,6 +125,7 @@ def get_event(raw_event: dict) -> EventUpdate:
         .get("name"),
         "artists": attraction_ids_helper(),
         "sales": sales_helper(),
+        "images": [image.get("url") for image in raw_event.get("images", [])],
     }
     return EventUpdate.model_validate(modified_event)
 
