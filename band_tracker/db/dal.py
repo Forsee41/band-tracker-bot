@@ -169,6 +169,7 @@ class DAL:
                 linked_artist_tm_ids.append(artist_tm_id)
 
             if remove_links:
+                await event_db.awaitable_attrs.artists
                 for already_linked_artist in already_linked_artists:
                     if already_linked_artist.id not in artist_db_ids:
                         event_db.artists.remove(already_linked_artist)
@@ -181,6 +182,37 @@ class DAL:
                 if artist_tm_id not in linked_artist_tm_ids
             ]
         return linked_artist_tm_ids
+
+    async def _is_event_exists(self, event_tm_id: str) -> bool:
+        stmt = (
+            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+        return bool(event_db)
+
+    async def update_event(self, event: EventUpdate) -> UUID:
+        event_tm_data = event.get_source_specific_data(
+            source=EventSource.ticketmaster_api
+        )
+        event_tm_id = event_tm_data["id"]
+        if await self._is_event_exists(event_tm_id):
+            return await self.add_event(event)
+
+        stmt = (
+            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+            uuid = event_db.id
+            # TODO: update images here
+
+        await self._link_event_to_artists(
+            event_tm_id=event_tm_id, artist_tm_ids=event.artists
+        )
+        return uuid
 
     async def add_event(self, event: EventUpdate) -> UUID:
         event_tm_data = event.get_source_specific_data(
