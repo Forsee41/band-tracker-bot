@@ -7,6 +7,7 @@ from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DALError
+from band_tracker.core.event import Event
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.models import (
     ArtistDB,
@@ -154,12 +155,12 @@ class DAL:
             already_linked_ids = [artist.id for artist in already_linked_artists]
 
             for artist_tm_id in artist_tm_ids:
-                stmt = (
+                artist_query = (
                     select(ArtistDB)
                     .join(ArtistTMDataDB)
                     .where(ArtistTMDataDB.id == artist_tm_id)
                 )
-                scalar = await session.scalars(stmt)
+                scalar = await session.scalars(artist_query)
                 artist_db = scalar.first()
                 if artist_db is None:
                     continue
@@ -213,6 +214,30 @@ class DAL:
             event_tm_id=event_tm_id, artist_tm_ids=event.artists
         )
         return uuid
+
+    async def get_event_by_id(self, id: UUID) -> Event | None:
+        stmt = select(EventDB).where(EventDB.id == id)
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+            if event_db is None:
+                return None
+            artists = await event_db.awaitable_attrs.artists
+            images = await event_db.awaitable_attrs.images
+            artist_ids = [artist.id for artist in artists]
+            image_urls = [image.url for image in images]
+
+            result = Event(
+                title=event_db.title,
+                date=event_db.date,
+                venue=event_db.venue,
+                venue_city=event_db.venue_city,
+                venue_country=event_db.venue_country,
+                ticket_url=event_db.tickets_url,
+                artist_ids=artist_ids,
+                image_urls=image_urls,
+            )
+            return result
 
     async def add_event(self, event: EventUpdate) -> UUID:
         event_tm_data = event.get_source_specific_data(

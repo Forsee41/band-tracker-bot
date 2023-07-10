@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from band_tracker.core.interfaces import DAL
 
@@ -16,7 +17,8 @@ class Event:
     venue_city: str
     venue_country: str
     ticket_url: str | None
-    artist_ids: list[str]
+    artist_ids: list[UUID]
+    image_urls: list[str]
 
     def get_artists(self, dal: DAL) -> list["Artist"]:
         assert dal
