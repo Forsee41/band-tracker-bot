@@ -10,6 +10,14 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class EventSales:
+    on_sale: bool | None
+    price_max: int | None
+    price_min: int | None
+    currency: str | None
+
+
+@dataclass
 class Event:
     title: str
     date: datetime
@@ -19,6 +27,7 @@ class Event:
     ticket_url: str | None
     artist_ids: list[UUID]
     image_urls: list[str]
+    sales: EventSales
 
     def get_artists(self, dal: DAL) -> list["Artist"]:
         assert dal

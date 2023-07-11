@@ -179,16 +179,46 @@ class TestClient:
             venue_country="United States Of America",
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
             images=[
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_EVENT_DETAIL_PAGE_16_9.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_LANDSCAPE_16_9.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_16_9.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_3_2.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_LARGE_16_9.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_CUSTOM.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_16_9.jpg",
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_ARTIST_PAGE_3_2.jpg",
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47"
+                    "cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_EVENT_DETAIL_PAGE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904"
+                    "-4dec-b1d6-539e44a521d1_1825531_RETINA_LANDSCAPE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_3_2.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904"
+                    "-4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_CUSTOM.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_ARTIST_PAGE_3_2.jpg"
+                ),
             ],
             sales=EventUpdateSales(
                 on_sale=True, price_max=249.95, price_min=39.95, currency="USD"
