@@ -62,7 +62,18 @@ def get_artist(raw_artist: dict) -> ArtistUpdate:
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
-        "images": [image.get("url") for image in raw_artist.get("images", [])],
+        "images": [
+            image.get("url")
+            for image in raw_artist.get("images", [])
+            if "RECOMENDATION" in image.get("url")
+        ][0]
+        if [
+            image.get("url")
+            for image in raw_artist.get("images", [])
+            if "RECOMENDATION" in image.get("url")
+        ]
+        is not None
+        else None,
         "genres": genres_helper(),
         "aliases": raw_artist.get("aliases", []),
     }
@@ -74,6 +85,7 @@ def get_event(raw_event: dict) -> EventUpdate:
 
     def datetime_helper() -> datetime | None:
         format_string = "%Y-%m-%d"
+
         date = raw_event.get("dates", {}).get("start", {}).get("localDate")
         return datetime.strptime(date, format_string) if date else None
 
@@ -84,23 +96,41 @@ def get_event(raw_event: dict) -> EventUpdate:
         return []
 
     def sales_helper() -> EventUpdateSales:
+        format_string = "%Y-%m-%d"
+
         tbd = raw_event.get("sales", {}).get("public", {}).get("startTBD")
         tba = raw_event.get("sales", {}).get("public", {}).get("startTBA")
-        priceRanges = raw_event.get("priceRanges", {})
+        sale_start = raw_event.get("sales", {}).get("public", {}).get("startDateTime")
+        sale_end = raw_event.get("sales", {}).get("public", {}).get("endDateTime")
+        price_ranges = raw_event.get("priceRanges", {})
 
-        if priceRanges:
-            price_max = priceRanges[0].get("max")
-            price_min = priceRanges[0].get("min")
-            currency = priceRanges[0].get("currency")
+        if price_ranges:
+            price_max = price_ranges[0].get("max")
+            price_min = price_ranges[0].get("min")
+            currency = price_ranges[0].get("currency")
         else:
             price_max, price_min, currency = None, None, None
-        if tbd is not None and tba is not None:
-            on_sale = not (tbd or tba)
+
+        if (
+            tbd is not None
+            and tba is not None
+            and sale_start is not None
+            and sale_end is not None
+        ):
+            if tbd or tba:
+                sale_start, sale_end = None, None
+            else:
+                sale_start = datetime.strptime(sale_start[:10], format_string)
+                sale_end = datetime.strptime(sale_end[:10], format_string)
         else:
-            on_sale = None
+            sale_start, sale_end = None, None
 
         return EventUpdateSales(
-            on_sale=on_sale, price_max=price_max, price_min=price_min, currency=currency
+            sale_start=sale_start,
+            sale_end=sale_end,
+            price_max=price_max,
+            price_min=price_min,
+            currency=currency,
         )
 
     modified_event = {
@@ -125,7 +155,18 @@ def get_event(raw_event: dict) -> EventUpdate:
         .get("name"),
         "artists": attraction_ids_helper(),
         "sales": sales_helper(),
-        "images": [image.get("url") for image in raw_event.get("images", [])],
+        "images": [
+            image.get("url")
+            for image in raw_event.get("images", [])
+            if "RECOMENDATION" in image.get("url")
+        ][0]
+        if [
+            image.get("url")
+            for image in raw_event.get("images", [])
+            if "RECOMENDATION" in image.get("url")
+        ]
+        is not None
+        else None,
     }
     return EventUpdate.model_validate(modified_event)
 

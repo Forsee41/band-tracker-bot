@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class EventSales:
-    on_sale: bool | None
+    sale_start: datetime | None
+    sale_end: datetime | None
     price_max: int | None
     price_min: int | None
     currency: str | None
@@ -26,8 +27,17 @@ class Event:
     venue_country: str
     ticket_url: str | None
     artist_ids: list[UUID]
-    image_urls: list[str]
+    image: str | None
     sales: EventSales
+
+    @property
+    def on_sale(self) -> bool:
+        sale_start = self.sales.sale_start
+        sale_end = self.sales.sale_end
+        if sale_start is not None and sale_end is not None:
+            return (sale_start <= datetime.now()) and (sale_end >= datetime.now())
+        else:
+            return False
 
     def get_artists(self, dal: DAL) -> list["Artist"]:
         assert dal

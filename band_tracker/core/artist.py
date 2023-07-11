@@ -20,8 +20,8 @@ class Artist:
     id: UUID
     name: str
     socials: ArtistSocials
-    tickets_link: str | None = None
-    images: list[str] = field(default_factory=list)
+    tickets_link: str | None
+    image: str | None
     genres: list[str] = field(default_factory=list)
     event_ids: list[str] = field(default_factory=list)
 
