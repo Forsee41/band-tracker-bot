@@ -12,7 +12,7 @@ from band_tracker.ticketmaster.client import (
     get_artist,
     get_event,
 )
-from test_data.temp_const import ARTISTS, ARTISTS_SMALL, EVENTS
+from test_data.temp_const import ARTISTS, ARTISTS_SMALL, EVENTS, EVENTS_SMALL
 
 
 class TestClient:
@@ -242,7 +242,8 @@ class TestClient:
                 ),
                 aliases=[],
                 tickets_link=HttpUrl(
-                    "https://www.ticketmaster.com/solina-celloensemble-tickets/artist/2772347"
+                    "https://www.ticketmaster.com/solina"
+                    "-celloensemble-tickets/artist/2772347"
                 ),
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "K8vZ917_Fi7"}
@@ -250,34 +251,44 @@ class TestClient:
                 genres=["Classical", "Classical/Vocal"],
                 images=[
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_TABLET_LANDSCAPE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c"
+                        "-4f7e-a7aa-1932aab77518_105461_TABLET_LANDSCAPE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_RETINA_LANDSCAPE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479"
+                        "c-4f7e-a7aa-1932aab77518_105461_RETINA_LANDSCAPE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa"
+                        "-1932aab77518_105461_TABLET_LANDSCAPE_LARGE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_RETINA_PORTRAIT_16_9.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a"
+                        "7aa-1932aab77518_105461_RETINA_PORTRAIT_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_RETINA_PORTRAIT_3_2.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                        "-a7aa-1932aab77518_105461_RETINA_PORTRAIT_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_TABLET_LANDSCAPE_3_2.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                        "-a7aa-1932aab77518_105461_TABLET_LANDSCAPE_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_EVENT_DETAIL_PAGE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                        "-a7aa-1932aab77518_105461_EVENT_DETAIL_PAGE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_CUSTOM.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                        "-a7aa-1932aab77518_105461_CUSTOM.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_RECOMENDATION_16_9.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                        "-a7aa-1932aab77518_105461_RECOMENDATION_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e-a7aa-1932aab77518_105461_ARTIST_PAGE_3_2.jpg"
+                        "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                        "-a7aa-1932aab77518_105461_ARTIST_PAGE_3_2.jpg"
                     ),
                 ],
             ),
@@ -288,9 +299,10 @@ class TestClient:
                     instagram=None,
                     youtube=None,
                 ),
-                aliases=[],
+                aliases=["frankie beverly and maze", "maze frankie beverly"],
                 tickets_link=HttpUrl(
-                    "https://www.ticketmaster.com/maze-featuring-frankie-beverly-tickets/artist/735607"
+                    "https://www.ticketmaster.com/maze-f"
+                    "eaturing-frankie-beverly-tickets/artist/735607"
                 ),
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "K8vZ9171Idf"}
@@ -298,34 +310,44 @@ class TestClient:
                 genres=["R&B", "Soul"],
                 images=[
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_TABLET_LANDSCAPE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-"
+                        "b884-4406b8ab64cd_1600911_TABLET_LANDSCAPE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-"
+                        "b884-4406b8ab64cd_1600911_TABLET_LANDSCAPE_LARGE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_RETINA_LANDSCAPE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
+                        "884-4406b8ab64cd_1600911_RETINA_LANDSCAPE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_RETINA_PORTRAIT_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
+                        "884-4406b8ab64cd_1600911_RETINA_PORTRAIT_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_RECOMENDATION_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
+                        "884-4406b8ab64cd_1600911_RECOMENDATION_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_CUSTOM.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff"
+                        "0-b884-4406b8ab64cd_1600911_CUSTOM.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_EVENT_DETAIL_PAGE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4f"
+                        "f0-b884-4406b8ab64cd_1600911_EVENT_DETAIL_PAGE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_ARTIST_PAGE_3_2.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-"
+                        "b884-4406b8ab64cd_1600911_ARTIST_PAGE_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_RETINA_PORTRAIT_3_2.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0"
+                        "-b884-4406b8ab64cd_1600911_RETINA_PORTRAIT_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b884-4406b8ab64cd_1600911_TABLET_LANDSCAPE_3_2.jpg"
+                        "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0"
+                        "-b884-4406b8ab64cd_1600911_TABLET_LANDSCAPE_3_2.jpg"
                     ),
                 ],
             ),
@@ -351,7 +373,8 @@ class TestClient:
                 images=[
                     HttpUrl(
                         "https://s1.ticketm.net/dam/a/1d1/47"
-                        "cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg"
+                        "cc9b10-4904-4dec-b1d6-539e44a521"
+                        "d1_1825531_RETINA_PORTRAIT_3_2.jpg"
                     ),
                     HttpUrl(
                         "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
@@ -375,7 +398,8 @@ class TestClient:
                     ),
                     HttpUrl(
                         "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904"
-                        "-4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                        "-4dec-b1d6-539e44a521d1_182553"
+                        "1_TABLET_LANDSCAPE_LARGE_16_9.jpg"
                     ),
                     HttpUrl(
                         "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
@@ -399,7 +423,9 @@ class TestClient:
                 date=datetime(2023, 7, 8),
                 venue="American Family Insurance Amphitheater - Summerfest Grounds",
                 ticket_url=HttpUrl(
-                    "https://www.ticketmaster.com/imagine-dragons-milwaukee-wisconsin-07-08-2023/event/07005D689BED1C00"
+                    "https://www.ticketmaster.com/imagine-dragon"
+                    "s-milwaukee-wisconsin-07-08-20"
+                    "23/event/07005D689BED1C00"
                 ),
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "vvG1jZ9pxhDoYZ"}
@@ -409,34 +435,44 @@ class TestClient:
                 artists=["K8vZ917GSz7"],
                 images=[
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_ARTIST_PAGE_3_2.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-"
+                        "4afe-84f9-15560d797c90_1652911_ARTIST_PAGE_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RETINA_LANDSCAPE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_RETINA_LANDSCAPE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_TABLET_LANDSCAPE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_TABLET_LANDSCAPE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_TABLET_LANDSCAPE_LARGE_16_9.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_TABLET_LANDSCAPE_3_2.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4af"
+                        "e-84f9-15560d797c90_1652911_TABLET_LANDSCAPE_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_CUSTOM.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_CUSTOM.jpg"
                     ),
                     HttpUrl(
-                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_EVENT_DETAIL_PAGE_16_9.jpg"
+                        "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_EVENT_DETAIL_PAGE_16_9.jpg"
                     ),
                 ],
                 sales=EventUpdateSales(
@@ -444,7 +480,7 @@ class TestClient:
                 ),
             ),
         ]
-        assert get_all_events(ARTISTS_SMALL) == events_list
+        assert get_all_events(EVENTS_SMALL) == events_list
 
 
 if __name__ == "__main__":

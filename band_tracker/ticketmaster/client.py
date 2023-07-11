@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 
 class JSONData(BaseModel):
-    _embedded: dict[str, list]
-    page: dict[str, dict]
+    embedded: dict[str, list] = Field(alias="_embedded")
+    page: dict[str, int]
 
 
 def get_artist(raw_artist: dict) -> ArtistUpdate:
@@ -133,7 +133,7 @@ def get_event(raw_event: dict) -> EventUpdate:
 def get_all_artists(raw_dict: dict[str, dict]) -> list[ArtistUpdate]:
     try:
         json_data = JSONData.model_validate(raw_dict)
-        artists = json_data._embedded["attractions"]
+        artists = json_data.embedded["attractions"]
     except ValueError:
         raise DeserializationError("invalid json", EventSource.ticketmaster_api)
     output = []
@@ -145,7 +145,7 @@ def get_all_artists(raw_dict: dict[str, dict]) -> list[ArtistUpdate]:
 def get_all_events(raw_dict: dict[str, dict]) -> list[EventUpdate]:
     try:
         json_data = JSONData.model_validate(raw_dict)
-        events = json_data._embedded["events"]
+        events = json_data.embedded["events"]
     except ValueError:
         raise DeserializationError("invalid json", EventSource.ticketmaster_api)
     output = []
