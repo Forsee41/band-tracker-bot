@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DeserializationError
-from band_tracker.core.event_update import EventUpdate
+from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +83,26 @@ def get_event(raw_event: dict) -> EventUpdate:
             return [attraction.get("id") for attraction in attractions]
         return []
 
+    def sales_helper() -> EventUpdateSales:
+        tbd = raw_event.get("sales", {}).get("public", {}).get("startTBD")
+        tba = raw_event.get("sales", {}).get("public", {}).get("startTBA")
+        priceRanges = raw_event.get("priceRanges", {})
+
+        if priceRanges:
+            price_max = priceRanges[0].get("max")
+            price_min = priceRanges[0].get("min")
+            currency = priceRanges[0].get("currency")
+        else:
+            price_max, price_min, currency = None, None, None
+        if tbd is not None and tba is not None:
+            on_sale = not (tbd or tba)
+        else:
+            on_sale = None
+
+        return EventUpdateSales(
+            on_sale=on_sale, price_max=price_max, price_min=price_min, currency=currency
+        )
+
     modified_event = {
         "title": raw_event.get("name"),
         "date": datetime_helper(),
@@ -104,6 +124,8 @@ def get_event(raw_event: dict) -> EventUpdate:
         .get("country", {})
         .get("name"),
         "artists": attraction_ids_helper(),
+        "sales": sales_helper(),
+        "images": [image.get("url") for image in raw_event.get("images", [])],
     }
     return EventUpdate.model_validate(modified_event)
 

@@ -5,7 +5,7 @@ from pydantic import HttpUrl
 
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
-from band_tracker.core.event_update import EventUpdate
+from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.ticketmaster.client import get_artist, get_event
 from test_data.temp_const import ARTISTS, EVENTS
 
@@ -178,7 +178,51 @@ class TestClient:
             venue_city="Noblesville",
             venue_country="United States Of America",
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
-            images=[],
+            images=[
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47"
+                    "cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_EVENT_DETAIL_PAGE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904"
+                    "-4dec-b1d6-539e44a521d1_1825531_RETINA_LANDSCAPE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_3_2.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904"
+                    "-4dec-b1d6-539e44a521d1_1825531_TABLET_LANDSCAPE_LARGE_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_CUSTOM.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_16_9.jpg"
+                ),
+                HttpUrl(
+                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                    "4dec-b1d6-539e44a521d1_1825531_ARTIST_PAGE_3_2.jpg"
+                ),
+            ],
+            sales=EventUpdateSales(
+                on_sale=True, price_max=249.95, price_min=39.95, currency="USD"
+            ),
         )
         assert get_event(raw_event) == event
 

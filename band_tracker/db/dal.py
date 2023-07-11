@@ -8,7 +8,7 @@ from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DALError
 from band_tracker.core.event import Event
-from band_tracker.core.event_update import EventUpdate
+from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
     ArtistDB,
     ArtistImageDB,
@@ -17,6 +17,7 @@ from band_tracker.db.models import (
     EventDB,
     EventImageDB,
     EventTMDataDB,
+    SalesDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
 
@@ -70,7 +71,7 @@ class DAL:
             socials_db = self._buld_db_socials(artist_id=uuid, socials=artist.socials)
             tm_data_db = ArtistTMDataDB(id=artist_tm_data["id"], artist_id=uuid)
             images = [
-                ArtistImageDB(url=image_url, artist_id=uuid)
+                ArtistImageDB(url=str(image_url), artist_id=uuid)
                 for image_url in artist.images
             ]
             session.add(tm_data_db)
@@ -115,7 +116,6 @@ class DAL:
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artist_db = scalars.first()
-
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
             socials = artist_db.socials
@@ -193,6 +193,17 @@ class DAL:
             event_db = scalars.first()
         return bool(event_db)
 
+    def _buld_event_sales(self, event_id: UUID, sales: EventUpdateSales) -> SalesDB:
+        sales_db = SalesDB(
+            on_sale=sales.on_sale,
+            price_max=sales.price_max,
+            price_min=sales.price_min,
+            curency=sales.currency,
+            event_id=event_id,
+        )
+
+        return sales_db
+
     async def update_event(self, event: EventUpdate) -> UUID:
         event_tm_data = event.get_source_specific_data(
             source=EventSource.ticketmaster_api
@@ -207,8 +218,22 @@ class DAL:
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             event_db = scalars.first()
+            event_db.venue = event.venue
+            event_db.venue_city = event.venue_city
+            event_db.venue_country = event.venue_country
+            event_db.title = event.title
+            event_db.tickets_url = str(event.ticket_url)
+            event_db.date = event.date
             uuid = event_db.id
-            # TODO: update images here
+            sales = self._buld_event_sales(uuid, event.sales)
+            images = [
+                EventImageDB(url=str(image_url), event_id=uuid)
+                for image_url in event.images
+            ]
+            event_db.sales = sales
+            event_db.images = images
+
+            await session.flush()
 
         await self._link_event_to_artists(
             event_tm_id=event_tm_id, artist_tm_ids=event.artists
@@ -225,7 +250,7 @@ class DAL:
             artists = await event_db.awaitable_attrs.artists
             images = await event_db.awaitable_attrs.images
             artist_ids = [artist.id for artist in artists]
-            image_urls = [image.url for image in images]
+            image_urls = [str(image.url) for image in images]
 
             result = Event(
                 title=event_db.title,
@@ -236,6 +261,7 @@ class DAL:
                 ticket_url=event_db.tickets_url,
                 artist_ids=artist_ids,
                 image_urls=image_urls,
+                sales=event_db.sales,
             )
             return result
 
@@ -256,12 +282,15 @@ class DAL:
             session.add(event_db)
             await session.flush()
             uuid = event_db.id
+            sales = self._buld_event_sales(uuid, event.sales)
             tm_data_db = EventTMDataDB(id=event_tm_id, event_id=uuid)
             images = [
-                EventImageDB(url=image_url, event_id=uuid) for image_url in event.images
+                EventImageDB(url=str(image_url), event_id=uuid)
+                for image_url in event.images
             ]
             session.add_all(images)
             session.add(tm_data_db)
+            session.add(sales)
             await session.commit()
         try:
             await self._link_event_to_artists(
@@ -269,6 +298,6 @@ class DAL:
             )
         except DALError:
             log.warning(
-                f"Attempt to link unexsitning event of tm_id {event_tm_id} to artists"
+                f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
             )
         return uuid
