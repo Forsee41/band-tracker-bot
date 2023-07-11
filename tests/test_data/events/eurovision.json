@@ -1,0 +1,30 @@
+{
+	"title": "eurovision",
+	"date": "2024-05-23T18:25:43.511Z",
+	"artists": [
+		"anton_tm_id",
+		"clara_tm_id",
+		"gosha_tm_id",
+	],
+	"venue": "Rotterdam Ahoy",
+	"venue_city": "Rotterdam",
+	"venue_country": "Netherlands",
+	"images": [
+		"https://anton_img_1.com",
+		"https://clara_img_1.com",
+		"https://gosha_img_1.com",
+		"https://grand_park_img_2.com"
+	],
+	"ticket_url": "https://eurovision_ticket_url.com",
+	"source_specific_data": {
+		"ticketmaster_api": {
+			"id": "eurovision_tm_id"
+		}
+	},
+	"sales": {
+		"on_sale": true,
+		"price_max": 500.0,
+		"price_min": 350.0,
+		"currency": "eur"
+	}
+}

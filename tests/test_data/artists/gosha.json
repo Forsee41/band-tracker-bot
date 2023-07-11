@@ -1,0 +1,28 @@
+{
+	"name": "gosha",
+	"socials": {
+		"instagram": "https://gosha_inst.com",
+		"youtube": "https://gosha_youtube.com",
+		"spotify": "https://gosha_spotify.com"
+	},
+	"source_specific_data": {
+		"ticketmaster_api": {
+			"id": "gosha_tm_id"
+		}
+	},
+	"tickets_link": "https://gosha_tickets.com",
+	"images": [
+		"https://gosha_img_1.com",
+		"https://gosha_img_2.com",
+		"https://gosha_img_3.com",
+		"https://gosha_img_4.com"
+	],
+	"genres": [
+		"rock",
+		"heavy-metal"
+	],
+	"aliases": [
+		"goshnya",
+		"gashish"
+	]
+}

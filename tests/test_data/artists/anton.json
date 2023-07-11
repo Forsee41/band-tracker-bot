@@ -1,0 +1,29 @@
+{
+	"name": "anton",
+	"socials": {
+		"instagram": "https://anton_inst.com",
+		"youtube": "https://anton_youtube.com",
+		"spotify": "https://anton_spotify.com"
+	},
+	"source_specific_data": {
+		"ticketmaster_api": {
+			"id": "anton_tm_id"
+		}
+	},
+	"tickets_link": "https://anton_tickets.com",
+	"images": [
+		"https://anton_img_1.com",
+		"https://anton_img_2.com",
+		"https://anton_img_3.com",
+		"https://anton_img_4.com"
+	],
+	"genres": [
+		"rock",
+		"hip-hop"
+	],
+	"aliases": [
+		"toha",
+		"anton-cool",
+		"antonina"
+	]
+}
