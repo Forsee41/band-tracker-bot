@@ -2,9 +2,10 @@ import asyncio
 import json
 import os
 from collections.abc import Callable
-from typing import Generator, Never
+from typing import AsyncGenerator, Generator, Never
 
 import pytest
+import pytest_asyncio
 from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, text
 
@@ -15,8 +16,9 @@ from band_tracker.db.models import Base
 from band_tracker.db.session import AsyncSessionmaker
 
 
-@pytest.fixture(scope="function", autouse=True)
-async def clean_tables(sync_engine: Engine) -> None:
+@pytest_asyncio.fixture(autouse=True)
+async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
+    yield
     table_names = [
         "artist",
         "artist_genre",
@@ -33,8 +35,10 @@ async def clean_tables(sync_engine: Engine) -> None:
         "artist_socials",
     ]
     tables_str = ", ".join(table_names)
+    command = f"TRUNCATE TABLE {tables_str};"
     with sync_engine.connect() as connection:
-        connection.execute(text(f"TRUNCATE TABLE {tables_str};"))
+        connection.execute(text(command))
+        connection.commit()
 
 
 @pytest.fixture(scope="session")
