@@ -34,7 +34,7 @@ class ArtistDB(Base):
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
-    socials: Mapped[list["ArtistSocialsDB"]] = relationship(back_populates="artist")
+    socials: Mapped["ArtistSocialsDB"] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
         secondary="event_artist", back_populates="artists"
     )

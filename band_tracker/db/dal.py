@@ -83,8 +83,7 @@ class DAL:
             artist_db = scalars.first()
             if artist_db is None:
                 return None
-            socials_db_result = await artist_db.awaitable_attrs.socials
-            socials_db = socials_db_result[0]
+            socials_db = await artist_db.awaitable_attrs.socials
 
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
@@ -116,8 +115,7 @@ class DAL:
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
             artist_db.image = str(artist.image)
-            socials_result = await artist_db.awaitable_attrs.socials
-            socials = socials_result[0]
+            socials = await artist_db.awaitable_attrs.socials
             socials.instagram = (
                 str(artist.socials.instagram) if artist.socials.instagram else None
             )
