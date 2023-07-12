@@ -141,7 +141,7 @@ class ArtistTMDataDB(Base):
         ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    id: Mapped[str] = mapped_column(String, nullable=False)
+    id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     artist: Mapped[ArtistDB] = relationship(back_populates="tm_data")
 
@@ -187,7 +187,7 @@ class EventTMDataDB(Base):
         ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    id: Mapped[str] = mapped_column(String, nullable=False)
+    id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     event: Mapped[EventDB] = relationship(back_populates="tm_data")
 
