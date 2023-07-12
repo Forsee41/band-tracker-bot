@@ -19,9 +19,9 @@ class TestDAL:
         ),
         tickets_link=HttpUrl("https://tickets_url.com"),
         source_specific_data={EventSource.ticketmaster_api: {"id": "ticketmaster_id"}},
-        images=[],
         genres=[],
         aliases=[],
+        images=None,
     )
 
     async def test_add_artist(self, dal: DAL) -> None:

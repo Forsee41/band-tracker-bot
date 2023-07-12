@@ -16,7 +16,8 @@ SourceSpecificEventData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 
 class EventUpdateSales(BaseModel):
-    on_sale: bool | None
+    sale_start: datetime | None
+    sale_end: datetime | None
     price_max: NonNegativeFloat | None
     price_min: NonNegativeFloat | None
     currency: StrictStr | None
@@ -29,13 +30,19 @@ class EventUpdate(BaseModel):
     venue: StrictStr
     venue_city: StrictStr
     venue_country: StrictStr
-    images: list[HttpUrl] = Field([])
+    images: HttpUrl | None = Field(None)
     ticket_url: HttpUrl | None = Field(None)
     source_specific_data: SourceSpecificEventData = Field(
         {EventSource.ticketmaster_api: {}}
     )
     sales: EventUpdateSales = Field(
-        EventUpdateSales(on_sale=None, price_max=None, price_min=None, currency=None)
+        EventUpdateSales(
+            sale_start=None,
+            sale_end=None,
+            price_max=None,
+            price_min=None,
+            currency=None,
+        )
     )
 
     @field_validator("source_specific_data")
@@ -60,3 +67,11 @@ class EventUpdate(BaseModel):
             return self.source_specific_data[source]
         else:
             return {}
+
+    def on_sale(self) -> bool:
+        sale_start = self.sales.sale_start
+        sale_end = self.sales.sale_end
+        if sale_start is not None and sale_end is not None:
+            return (sale_start <= datetime.now()) and (sale_end >= datetime.now())
+        else:
+            return False
