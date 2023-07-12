@@ -88,7 +88,7 @@ def create_tables(sync_engine: Engine) -> None:
 
 @pytest.fixture(scope="session")
 def get_artist_update() -> Callable[[str], ArtistUpdate]:
-    def generate_update(name: str) -> ArtistUpdate:
+    def generate_update(name: str = "gosha") -> ArtistUpdate:
         artists_file_dir = "tests/test_data/artists"
         with open(f"{artists_file_dir}/{name}.json", "r") as f:
             artist_dict = json.load(f)
@@ -100,7 +100,7 @@ def get_artist_update() -> Callable[[str], ArtistUpdate]:
 
 @pytest.fixture(scope="session")
 def get_event_update() -> Callable[[str], EventUpdate]:
-    def generate_update(name: str) -> EventUpdate:
+    def generate_update(name: str = "eurovision") -> EventUpdate:
         events_file_dir = "tests/test_data/events"
         with open(f"{events_file_dir}/{name}.json", "r") as f:
             event_dict = json.load(f)
