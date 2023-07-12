@@ -11,12 +11,7 @@
 		}
 	},
 	"tickets_link": "https://anton_tickets.com",
-	"images": [
-		"https://anton_img_1.com",
-		"https://anton_img_2.com",
-		"https://anton_img_3.com",
-		"https://anton_img_4.com"
-	],
+	"image": "https://anton_img_1.com",
 	"genres": [
 		"rock",
 		"hip-hop"

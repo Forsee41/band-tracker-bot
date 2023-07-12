@@ -20,11 +20,9 @@ async def clean_tables(sync_engine: Engine) -> None:
     table_names = [
         "artist",
         "artist_genre",
-        "artist_image",
         "artist_tm_data",
         "event",
         "event_artist",
-        "event_image",
         "event_tm_data",
         "follow",
         "genre",

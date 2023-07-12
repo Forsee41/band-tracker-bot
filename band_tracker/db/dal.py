@@ -11,11 +11,9 @@ from band_tracker.core.event import Event
 from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
     ArtistDB,
-    ArtistImageDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
     EventDB,
-    EventImageDB,
     EventTMDataDB,
     SalesDB,
 )
@@ -42,6 +40,7 @@ class DAL:
             name=db_artist.name,
             tickets_link=db_artist.tickets_link,
             socials=socials,
+            image=db_artist.image,
         )
         return artist
 
@@ -63,6 +62,7 @@ class DAL:
         artist_db = ArtistDB(
             name=artist.name,
             tickets_link=str(artist.tickets_link),
+            image=str(artist.image),
         )
         async with self.sessionmaker.session() as session:
             session.add(artist_db)
@@ -70,12 +70,8 @@ class DAL:
             uuid = artist_db.id
             socials_db = self._buld_db_socials(artist_id=uuid, socials=artist.socials)
             tm_data_db = ArtistTMDataDB(id=artist_tm_data["id"], artist_id=uuid)
-            images = [
-                ArtistImageDB(url=str(image_url), artist_id=uuid)
-                for image_url in artist.images
-            ]
+
             session.add(tm_data_db)
-            session.add_all(images)
             session.add(socials_db)
             await session.commit()
         return uuid
@@ -118,6 +114,7 @@ class DAL:
             artist_db = scalars.first()
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
+            artist_db.image = str(artist.image)
             socials = artist_db.socials
             socials.instagram = (
                 artist.socials.instagram if artist.socials.instagram else None
@@ -195,7 +192,8 @@ class DAL:
 
     def _buld_event_sales(self, event_id: UUID, sales: EventUpdateSales) -> SalesDB:
         sales_db = SalesDB(
-            on_sale=sales.on_sale,
+            sale_start=sales.sale_start,
+            sale_end=sales.sale_end,
             price_max=sales.price_max,
             price_min=sales.price_min,
             curency=sales.currency,
@@ -218,20 +216,18 @@ class DAL:
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             event_db = scalars.first()
+            uuid = event_db.id
+
             event_db.venue = event.venue
             event_db.venue_city = event.venue_city
             event_db.venue_country = event.venue_country
             event_db.title = event.title
             event_db.tickets_url = str(event.ticket_url)
             event_db.date = event.date
-            uuid = event_db.id
+            event_db.image = str(event.image)
+
             sales = self._buld_event_sales(uuid, event.sales)
-            images = [
-                EventImageDB(url=str(image_url), event_id=uuid)
-                for image_url in event.images
-            ]
             event_db.sales = sales
-            event_db.images = images
 
             await session.flush()
 
@@ -248,9 +244,7 @@ class DAL:
             if event_db is None:
                 return None
             artists = await event_db.awaitable_attrs.artists
-            images = await event_db.awaitable_attrs.images
             artist_ids = [artist.id for artist in artists]
-            image_urls = [str(image.url) for image in images]
 
             result = Event(
                 title=event_db.title,
@@ -260,7 +254,7 @@ class DAL:
                 venue_country=event_db.venue_country,
                 ticket_url=event_db.tickets_url,
                 artist_ids=artist_ids,
-                image_urls=image_urls,
+                image=event_db.image,
                 sales=event_db.sales,
             )
             return result
@@ -276,7 +270,8 @@ class DAL:
             venue_city=event.venue_city,
             venue_country=event.venue_country,
             start_date=event.date,
-            ticket_url=event.ticket_url,
+            ticket_url=str(event.ticket_url),
+            image=str(event.image),
         )
         async with self.sessionmaker.session() as session:
             session.add(event_db)
@@ -284,11 +279,7 @@ class DAL:
             uuid = event_db.id
             sales = self._buld_event_sales(uuid, event.sales)
             tm_data_db = EventTMDataDB(id=event_tm_id, event_id=uuid)
-            images = [
-                EventImageDB(url=str(image_url), event_id=uuid)
-                for image_url in event.images
-            ]
-            session.add_all(images)
+
             session.add(tm_data_db)
             session.add(sales)
             await session.commit()

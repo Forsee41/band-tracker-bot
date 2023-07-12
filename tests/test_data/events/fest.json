@@ -8,12 +8,7 @@
 	"venue": "Grant Park",
 	"venue_city": "Chicago",
 	"venue_country": "USA",
-	"images": [
-		"https://anton_img_1.com",
-		"https://clara_img_1.com",
-		"https://grand_park_img_1.com",
-		"https://grand_park_img_2.com"
-	],
+	"image": "https://grand_park_img_1.com",
 	"ticket_url": "https://fest_ticket_url.com",
 	"source_specific_data": {
 		"ticketmaster_api": {

@@ -4,17 +4,12 @@
 	"artists": [
 		"anton_tm_id",
 		"clara_tm_id",
-		"gosha_tm_id",
+		"gosha_tm_id"
 	],
 	"venue": "Rotterdam Ahoy",
 	"venue_city": "Rotterdam",
 	"venue_country": "Netherlands",
-	"images": [
-		"https://anton_img_1.com",
-		"https://clara_img_1.com",
-		"https://gosha_img_1.com",
-		"https://grand_park_img_2.com"
-	],
+	"image": "https://grand_park_img_1.com",
 	"ticket_url": "https://eurovision_ticket_url.com",
 	"source_specific_data": {
 		"ticketmaster_api": {

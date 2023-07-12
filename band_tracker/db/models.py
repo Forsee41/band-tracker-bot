@@ -26,6 +26,7 @@ class ArtistDB(Base):
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     tickets_link: Mapped[str] = mapped_column(String, nullable=False)
+    image: Mapped[str] = mapped_column(String, nullable=True)
 
     subscribers: Mapped[list["UserDB"]] = relationship(
         back_populates="subscriptions",
@@ -34,7 +35,6 @@ class ArtistDB(Base):
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
     socials: Mapped[list["ArtistSocialsDB"]] = relationship(back_populates="artist")
-    images: Mapped[list["ArtistImageDB"]] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
         secondary="event_artist", back_populates="artists"
     )
@@ -57,6 +57,7 @@ class EventDB(Base):
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=True)
     ticket_url: Mapped[str] = mapped_column(String, nullable=False)
+    image: Mapped[str] = mapped_column(String, nullable=True)
 
     tm_data: Mapped["EventTMDataDB"] = relationship(
         back_populates="event", cascade="all, delete-orphan"
@@ -65,7 +66,6 @@ class EventDB(Base):
         secondary="event_artist", back_populates="events"
     )
     sales: Mapped[list["SalesDB"]] = relationship(back_populates="event")
-    images: Mapped[list["EventImageDB"]] = relationship(back_populates="event")
 
     @property
     def is_finished(self) -> bool:
@@ -116,32 +116,6 @@ class GenreDB(Base):
         server_default=alchemy_text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-
-
-class ArtistImageDB(Base):
-    __tablename__ = "artist_image"
-
-    artist_id: Mapped[UUID] = mapped_column(
-        UUID_PG(as_uuid=True),
-        ForeignKey("artist.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    url: Mapped[str] = mapped_column(String, primary_key=True)
-
-    artist: Mapped[ArtistDB] = relationship(back_populates="images")
-
-
-class EventImageDB(Base):
-    __tablename__ = "event_image"
-
-    event_id: Mapped[UUID] = mapped_column(
-        UUID_PG(as_uuid=True),
-        ForeignKey("event.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    url: Mapped[str] = mapped_column(String, primary_key=True)
-
-    event: Mapped[EventDB] = relationship(back_populates="images")
 
 
 class ArtistGenreDB(Base):
@@ -195,10 +169,12 @@ class SalesDB(Base):
         ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    on_sale: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    price_max: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    price_min: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    currency: Mapped[str] = mapped_column(String, nullable=False)
+
+    sale_start: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+    sale_end: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+    price_max: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
+    price_min: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
+    currency: Mapped[str] = mapped_column(String, nullable=True)
 
     event: Mapped[EventDB] = relationship(back_populates="sales")
 

@@ -11,12 +11,7 @@
 		}
 	},
 	"tickets_link": "https://clara_tickets.com",
-	"images": [
-		"https://clara_img_1.com",
-		"https://clara_img_2.com",
-		"https://clara_img_3.com",
-		"https://clara_img_4.com"
-	],
+	"image": "https://clara_img_1.com",
 	"genres": [
 		"rock",
 		"alt-rock"
