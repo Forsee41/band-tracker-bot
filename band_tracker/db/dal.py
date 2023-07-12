@@ -105,6 +105,7 @@ class DAL:
     async def update_artist_by_tm_id(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         if await self.get_artist_by_tm_id(tm_id) is None:
+            log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self.add_artist(artist)
             return artist_id
 
@@ -115,13 +116,19 @@ class DAL:
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
             artist_db.image = str(artist.image)
-            socials = artist_db.socials
+            socials_result = await artist_db.awaitable_attrs.socials
+            socials = socials_result[0]
             socials.instagram = (
-                artist.socials.instagram if artist.socials.instagram else None
+                str(artist.socials.instagram) if artist.socials.instagram else None
             )
-            socials.youtube = artist.socials.youtube if artist.socials.youtube else None
-            socials.spotify = artist.socials.spotify if artist.socials.spotify else None
-            await session.flush()
+            socials.youtube = (
+                str(artist.socials.youtube) if artist.socials.youtube else None
+            )
+            socials.spotify = (
+                str(artist.socials.spotify) if artist.socials.spotify else None
+            )
+            session.add(socials)
+            await session.commit()
             return artist_db.id
 
     async def _link_event_to_artists(
