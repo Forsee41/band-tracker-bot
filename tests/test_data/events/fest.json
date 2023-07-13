@@ -1,6 +1,6 @@
 {
 	"title": "fest",
-	"date": "2025-04-23T18:25:43.511Z",
+	"date": "2025-04-23T00:00",
 	"artists": [
 		"anton_tm_id",
 		"clara_tm_id"
@@ -16,7 +16,8 @@
 		}
 	},
 	"sales": {
-		"on_sale": true,
+		"sale_start": null,
+		"sale_end": null,
 		"price_max": null,
 		"price_min": 150.0,
 		"currency": "usd"

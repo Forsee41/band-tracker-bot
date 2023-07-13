@@ -104,6 +104,7 @@ def get_event_update() -> Callable[[str], EventUpdate]:
         events_file_dir = "tests/test_data/events"
         with open(f"{events_file_dir}/{name}.json", "r") as f:
             event_dict = json.load(f)
+
         update = EventUpdate(**event_dict)
         return update
 
