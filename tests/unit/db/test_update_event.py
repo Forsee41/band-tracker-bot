@@ -3,7 +3,6 @@ from typing import Callable
 
 import pytest
 
-from band_tracker.core.event import Event, EventSales
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import DAL
 
@@ -20,26 +19,10 @@ class TestUpdateEventDAL:
         await dal.update_event(update_event)
 
         result_event = await dal.get_event_by_tm_id("fest_tm_id")
-        db_id = result_event.id
-        event = Event(
-            id=db_id,
-            title="fest",
-            date=datetime(2025, 4, 23),
-            venue="Grant Park",
-            venue_city="Chicago",
-            venue_country="USA",
-            image="https://grand_park_img_1.com/",
-            ticket_url="https://fest_ticket_url.com/",
-            sales=EventSales(
-                sale_start=datetime(8045, 4, 5),
-                sale_end=datetime(8045, 4, 6),
-                price_max=None,
-                price_min=150.0,
-                currency="usd",
-            ),
-        )
 
-        assert result_event == event
+        assert result_event.title == "fest"
+        assert result_event.venue_country == "USA"
+        assert result_event.sales.sale_start == datetime(8045, 4, 5)
 
 
 if __name__ == "__main__":

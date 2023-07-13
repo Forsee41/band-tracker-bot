@@ -186,7 +186,9 @@ class DAL:
             ]
         return linked_artist_tm_ids
 
-    def _build_core_event(self, db_event: EventDB, db_sales: SalesDB) -> Event:
+    def _build_core_event(
+        self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
+    ) -> Event:
         sales = EventSales(
             price_min=db_sales.price_min,
             sale_start=db_sales.sale_start,
@@ -197,6 +199,7 @@ class DAL:
 
         event = Event(
             id=db_event.id,
+            artist_ids=artist_ids,
             sales=sales,
             title=db_event.title,
             date=db_event.start_date,
@@ -275,6 +278,7 @@ class DAL:
             artist_ids = [artist.id for artist in artists]
 
             result = Event(
+                id=id,
                 title=event_db.title,
                 date=event_db.start_date,
                 venue=event_db.venue,
@@ -296,7 +300,11 @@ class DAL:
                 return None
             sales_result = await event_db.awaitable_attrs.sales
             sales_db = sales_result[0]
-            event = self._build_core_event(event_db, sales_db)
+
+            artists = await event_db.awaitable_attrs.artists
+            artist_ids = [artist.id for artist in artists]
+
+            event = self._build_core_event(event_db, sales_db, artist_ids)
             return event
 
     async def add_event(self, event: EventUpdate) -> UUID:
