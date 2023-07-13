@@ -62,7 +62,7 @@ class DAL:
         artist_db = ArtistDB(
             name=artist.name,
             tickets_link=str(artist.tickets_link),
-            image=str(artist.images),
+            image=str(artist.image),
         )
         async with self.sessionmaker.session() as session:
             session.add(artist_db)
@@ -83,8 +83,7 @@ class DAL:
             artist_db = scalars.first()
             if artist_db is None:
                 return None
-            socials_db_result = await artist_db.awaitable_attrs.socials
-            socials_db = socials_db_result[0]
+            socials_db = await artist_db.awaitable_attrs.socials
 
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
@@ -105,6 +104,7 @@ class DAL:
     async def update_artist_by_tm_id(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         if await self.get_artist_by_tm_id(tm_id) is None:
+            log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self.add_artist(artist)
             return artist_id
 
@@ -114,14 +114,19 @@ class DAL:
             artist_db = scalars.first()
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
-            artist_db.image = str(artist.images)
-            socials = artist_db.socials
+            artist_db.image = str(artist.image)
+            socials = await artist_db.awaitable_attrs.socials
             socials.instagram = (
-                artist.socials.instagram if artist.socials.instagram else None
+                str(artist.socials.instagram) if artist.socials.instagram else None
             )
-            socials.youtube = artist.socials.youtube if artist.socials.youtube else None
-            socials.spotify = artist.socials.spotify if artist.socials.spotify else None
-            await session.flush()
+            socials.youtube = (
+                str(artist.socials.youtube) if artist.socials.youtube else None
+            )
+            socials.spotify = (
+                str(artist.socials.spotify) if artist.socials.spotify else None
+            )
+            session.add(socials)
+            await session.commit()
             return artist_db.id
 
     async def _link_event_to_artists(
@@ -224,7 +229,7 @@ class DAL:
             event_db.title = event.title
             event_db.tickets_url = str(event.ticket_url)
             event_db.date = event.date
-            event_db.image = str(event.images)
+            event_db.image = str(event.image)
 
             sales = self._buld_event_sales(uuid, event.sales)
             event_db.sales = sales
@@ -271,7 +276,7 @@ class DAL:
             venue_country=event.venue_country,
             start_date=event.date,
             ticket_url=str(event.ticket_url),
-            image=str(event.images),
+            image=str(event.image),
         )
         async with self.sessionmaker.session() as session:
             session.add(event_db)

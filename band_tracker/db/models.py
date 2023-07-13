@@ -34,7 +34,7 @@ class ArtistDB(Base):
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
-    socials: Mapped[list["ArtistSocialsDB"]] = relationship(back_populates="artist")
+    socials: Mapped["ArtistSocialsDB"] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
         secondary="event_artist", back_populates="artists"
     )
@@ -141,7 +141,7 @@ class ArtistTMDataDB(Base):
         ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    id: Mapped[str] = mapped_column(String, nullable=False)
+    id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     artist: Mapped[ArtistDB] = relationship(back_populates="tm_data")
 
@@ -187,7 +187,7 @@ class EventTMDataDB(Base):
         ForeignKey("event.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    id: Mapped[str] = mapped_column(String, nullable=False)
+    id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     event: Mapped[EventDB] = relationship(back_populates="tm_data")
 

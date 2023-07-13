@@ -1,0 +1,23 @@
+{
+	"title": "concert",
+	"date": "2024-04-23T18:25:43.511Z",
+	"artists": [
+		"anton_tm_id"
+	],
+	"venue": "The Dome Of Paris",
+	"venue_city": "Paris",
+	"venue_country": "France",
+	"image": "https://dome_of_paris_img_1.com",
+	"ticket_url": "https://concert_ticket_url.com",
+	"source_specific_data": {
+		"ticketmaster_api": {
+			"id": "concert_tm_id"
+		}
+	},
+	"sales": {
+		"on_sale": true,
+		"price_max": 150.0,
+		"price_min": 100.0,
+		"currency": "eur"
+	}
+}

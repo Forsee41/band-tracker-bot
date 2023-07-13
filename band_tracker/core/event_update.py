@@ -30,7 +30,7 @@ class EventUpdate(BaseModel):
     venue: StrictStr
     venue_city: StrictStr
     venue_country: StrictStr
-    images: HttpUrl | None = Field(None)
+    image: HttpUrl | None = Field(None)
     ticket_url: HttpUrl | None = Field(None)
     source_specific_data: SourceSpecificEventData = Field(
         {EventSource.ticketmaster_api: {}}

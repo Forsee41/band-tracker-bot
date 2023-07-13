@@ -1,18 +1,24 @@
 import asyncio
+import json
 import os
-from typing import Generator, Never
+from collections.abc import Callable
+from typing import AsyncGenerator, Generator, Never
 
 import pytest
+import pytest_asyncio
 from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, text
 
+from band_tracker.core.artist_update import ArtistUpdate
+from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import DAL
 from band_tracker.db.models import Base
 from band_tracker.db.session import AsyncSessionmaker
 
 
-@pytest.fixture(scope="function", autouse=True)
-async def clean_tables(sync_engine: Engine) -> None:
+@pytest_asyncio.fixture(autouse=True)
+async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
+    yield
     table_names = [
         "artist",
         "artist_genre",
@@ -29,8 +35,10 @@ async def clean_tables(sync_engine: Engine) -> None:
         "artist_socials",
     ]
     tables_str = ", ".join(table_names)
+    command = f"TRUNCATE TABLE {tables_str};"
     with sync_engine.connect() as connection:
-        connection.execute(text(f"TRUNCATE TABLE {tables_str};"))
+        connection.execute(text(command))
+        connection.commit()
 
 
 @pytest.fixture(scope="session")
@@ -76,6 +84,30 @@ def db_creds(load_dotenv_: None) -> dict:
 @pytest.fixture(scope="session", autouse=True)
 def create_tables(sync_engine: Engine) -> None:
     Base.metadata.create_all(sync_engine)
+
+
+@pytest.fixture(scope="session")
+def get_artist_update() -> Callable[[str], ArtistUpdate]:
+    def generate_update(name: str = "gosha") -> ArtistUpdate:
+        artists_file_dir = "tests/test_data/artists"
+        with open(f"{artists_file_dir}/{name}.json", "r") as f:
+            artist_dict = json.load(f)
+        update = ArtistUpdate(**artist_dict)
+        return update
+
+    return generate_update
+
+
+@pytest.fixture(scope="session")
+def get_event_update() -> Callable[[str], EventUpdate]:
+    def generate_update(name: str = "eurovision") -> EventUpdate:
+        events_file_dir = "tests/test_data/events"
+        with open(f"{events_file_dir}/{name}.json", "r") as f:
+            event_dict = json.load(f)
+        update = EventUpdate(**event_dict)
+        return update
+
+    return generate_update
 
 
 @pytest.fixture(scope="session")

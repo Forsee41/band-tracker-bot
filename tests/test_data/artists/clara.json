@@ -1,0 +1,23 @@
+{
+	"name": "clara",
+	"socials": {
+		"instagram": "https://clara_inst.com",
+		"youtube": "https://clara_youtube.com",
+		"spotify": "https://clara_spotify.com"
+	},
+	"source_specific_data": {
+		"ticketmaster_api": {
+			"id": "clara_tm_id"
+		}
+	},
+	"tickets_link": "https://clara_tickets.com",
+	"image": "https://clara_img_1.com",
+	"genres": [
+		"rock",
+		"alt-rock"
+	],
+	"aliases": [
+		"clarnet",
+		"calra"
+	]
+}

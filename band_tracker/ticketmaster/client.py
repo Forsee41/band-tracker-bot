@@ -62,7 +62,7 @@ def get_artist(raw_artist: dict) -> ArtistUpdate:
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
-        "images": [
+        "image": [
             image.get("url")
             for image in raw_artist.get("images", [])
             if "RECOMENDATION" in image.get("url")
@@ -155,7 +155,7 @@ def get_event(raw_event: dict) -> EventUpdate:
         .get("name"),
         "artists": attraction_ids_helper(),
         "sales": sales_helper(),
-        "images": [
+        "image": [
             image.get("url")
             for image in raw_event.get("images", [])
             if "RECOMENDATION" in image.get("url")
