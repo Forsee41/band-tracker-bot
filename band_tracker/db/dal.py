@@ -274,22 +274,13 @@ class DAL:
             event_db = scalars.first()
             if event_db is None:
                 return None
+            sales_result = await event_db.awaitable_attrs.sales
+            sales_db = sales_result[0]
             artists = await event_db.awaitable_attrs.artists
             artist_ids = [artist.id for artist in artists]
 
-            result = Event(
-                id=id,
-                title=event_db.title,
-                date=event_db.start_date,
-                venue=event_db.venue,
-                venue_city=event_db.venue_city,
-                venue_country=event_db.venue_country,
-                ticket_url=event_db.ticket_url,
-                artist_ids=artist_ids,
-                image=event_db.image,
-                sales=event_db.sales,
-            )
-            return result
+            event = self._build_core_event(event_db, sales_db, artist_ids)
+            return event
 
     async def get_event_by_tm_id(self, tm_id: str) -> Event | None:
         stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
@@ -333,10 +324,13 @@ class DAL:
             await session.commit()
         try:
             await self._link_event_to_artists(
-                event_tm_id=event_tm_id, artist_tm_ids=event.artists
+                event_tm_id=event_tm_id,
+                artist_tm_ids=event.artists,
+                return_skipped=True,
             )
         except DALError:
             log.warning(
                 f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
             )
+
         return uuid
