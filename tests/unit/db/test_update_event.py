@@ -27,11 +27,11 @@ class TestUpdateEventDAL:
         await dal.update_event(update_event)
 
         result_event = await dal.get_event_by_tm_id("fest_tm_id")
-        if result_event:
-            assert result_event.title == "fest"
-            assert result_event.venue_country == "USA"
-            assert result_event.sales.sale_start == datetime(8045, 4, 5)
-            assert result_event.artist_ids
+        assert result_event
+        assert result_event.title == "fest"
+        assert result_event.venue_country == "USA"
+        assert result_event.sales.sale_start == datetime(8045, 4, 5)
+        assert result_event.artist_ids
 
 
 if __name__ == "__main__":

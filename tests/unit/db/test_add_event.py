@@ -45,9 +45,10 @@ class TestAddEventDAL:
         await dal.add_event(update_event)
 
         event = await dal.get_event_by_tm_id("eurovision_tm_id")
-        if event:
-            result_event = await dal.get_event_by_id(event.id)
-            assert result_event == event
+
+        assert event
+        result_event = await dal.get_event_by_id(event.id)
+        assert result_event == event
 
     async def test_add_event(
         self,
@@ -59,14 +60,12 @@ class TestAddEventDAL:
         await dal.add_artist(artist)
 
         update_event = get_event_update("concert")
-        assert update_event.artists == ["anton_tm_id"]
-
         await dal.add_event(update_event)
         result_event = await dal.get_event_by_tm_id("concert_tm_id")
 
-        if result_event:
-            assert result_event.title == "concert"
-            assert result_event.artist_ids
+        assert result_event
+        assert result_event.title == "concert"
+        assert result_event.artist_ids
 
 
 if __name__ == "__main__":

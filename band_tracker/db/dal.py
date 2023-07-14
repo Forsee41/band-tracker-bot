@@ -265,7 +265,18 @@ class DAL:
             sales.price_min = event.sales.price_min
             session.add(sales)
             await session.commit()
-            return uuid
+
+        try:
+            await self._link_event_to_artists(
+                event_tm_id=event_tm_id,
+                artist_tm_ids=event.artists,
+            )
+        except DALError:
+            log.warning(
+                f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
+            )
+
+        return uuid
 
     async def get_event_by_id(self, id: UUID) -> Event | None:
         stmt = select(EventDB).where(EventDB.id == id)
@@ -326,7 +337,6 @@ class DAL:
             await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
                 artist_tm_ids=event.artists,
-                return_skipped=True,
             )
         except DALError:
             log.warning(
