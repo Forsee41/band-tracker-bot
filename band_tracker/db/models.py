@@ -33,6 +33,7 @@ class ArtistDB(Base):
         secondary="subscription",
     )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
+    aliases: Mapped[list["ArtistAliasDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
     socials: Mapped["ArtistSocialsDB"] = relationship(back_populates="artist")
     events: Mapped[list["EventDB"]] = relationship(
@@ -218,6 +219,18 @@ class SubscriptionDB(Base):
         ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
+
+
+class ArtistAliasDB(Base):
+    __tablename__ = "artist_alias"
+
+    artist_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("artist.id", ondelete="CASCADE"),
+    )
+    alias: Mapped[str] = mapped_column(String, primary_key=True, nullable=False)
+
+    artist: Mapped[ArtistDB] = relationship(back_populates="aliases")
 
 
 class FollowDB(Base):
