@@ -74,7 +74,7 @@ class DAL:
         )
         session.add_all(db_aliases)
 
-    async def add_artist(self, artist: ArtistUpdate) -> UUID:
+    async def _add_artist(self, artist: ArtistUpdate) -> UUID:
         artist_tm_data = artist.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
@@ -127,7 +127,7 @@ class DAL:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         if await self.get_artist_by_tm_id(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
-            artist_id = await self.add_artist(artist)
+            artist_id = await self._add_artist(artist)
             return artist_id
 
         stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)

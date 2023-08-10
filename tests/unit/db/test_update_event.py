@@ -17,7 +17,7 @@ class TestUpdateEventDAL:
     ) -> None:
         for i in ["anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("fest")
 

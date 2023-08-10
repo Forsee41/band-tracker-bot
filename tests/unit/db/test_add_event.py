@@ -16,7 +16,7 @@ class TestAddEventDAL:
     ) -> None:
         for i in ["gosha", "anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
         artists_tm_ids = ["anton_tm_id", "clara_tm_id", "gosha_tm_id"]
         update_event = get_event_update("eurovision")
         await dal.add_event(update_event)
@@ -39,7 +39,7 @@ class TestAddEventDAL:
     ) -> None:
         for i in ["gosha", "anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
         await dal.add_event(update_event)
@@ -57,7 +57,7 @@ class TestAddEventDAL:
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
         artist = get_artist_update("anton")
-        await dal.add_artist(artist)
+        await dal._add_artist(artist)
 
         update_event = get_event_update("concert")
         await dal.add_event(update_event)

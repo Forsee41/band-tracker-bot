@@ -14,7 +14,7 @@ class TestAddArtistDAL:
         self, dal: DAL, get_artist_update: Callable[[str], ArtistUpdate]
     ) -> None:
         artist = get_artist_update("gosha")
-        await dal.add_artist(artist)
+        await dal._add_artist(artist)
         result_artist = await dal.get_artist_by_tm_id("gosha_tm_id")
 
         assert result_artist
@@ -29,9 +29,9 @@ class TestAddArtistDAL:
         artist_2.source_specific_data[EventSource.ticketmaster_api][
             "id"
         ] = "gosha_tm_id"
-        await dal.add_artist(artist_1)
+        await dal._add_artist(artist_1)
         with pytest.raises(IntegrityError):
-            await dal.add_artist(artist_2)
+            await dal._add_artist(artist_2)
 
     async def test_aliases_added(
         self,
@@ -41,7 +41,7 @@ class TestAddArtistDAL:
     ) -> None:
         artist = get_artist_update("gosha")
         artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
-        await dal.add_artist(artist)
+        await dal._add_artist(artist)
         result_db_artist = await query_artist(artist_tm_id)
         assert result_db_artist
         result_aliases = [alias.alias for alias in result_db_artist.aliases]
