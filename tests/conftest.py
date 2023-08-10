@@ -2,17 +2,24 @@ import asyncio
 import json
 import os
 from collections.abc import Callable
-from typing import AsyncGenerator, Generator, Never
+from typing import Any, AsyncGenerator, Coroutine, Generator, Never
 
 import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, create_engine, select, text
+from sqlalchemy.orm import joinedload
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import DAL
-from band_tracker.db.models import Base
+from band_tracker.db.models import (
+    ArtistDB,
+    ArtistTMDataDB,
+    Base,
+    EventDB,
+    EventTMDataDB,
+)
 from band_tracker.db.session import AsyncSessionmaker
 
 
@@ -33,6 +40,7 @@ async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
         '"user"',
         "user_settings",
         "artist_socials",
+        "artist_alias",
     ]
     tables_str = ", ".join(table_names)
     command = f"TRUNCATE TABLE {tables_str};"
@@ -104,11 +112,59 @@ def get_event_update() -> Callable[[str], EventUpdate]:
         events_file_dir = "tests/test_data/events"
         with open(f"{events_file_dir}/{name}.json", "r") as f:
             event_dict = json.load(f)
-
         update = EventUpdate(**event_dict)
         return update
 
     return generate_update
+
+
+@pytest.fixture()
+def query_artist(
+    sessionmaker: AsyncSessionmaker,
+) -> Callable[[str], Coroutine[Any, Any, ArtistDB | None]]:
+    async def get_artist(tm_id: str) -> ArtistDB | None:
+        stmt = (
+            select(ArtistDB)
+            .join(ArtistTMDataDB)
+            .where(ArtistTMDataDB.id == tm_id)
+            .options(
+                joinedload(ArtistDB.aliases),
+                joinedload(ArtistDB.follows),
+                joinedload(ArtistDB.genres),
+                joinedload(ArtistDB.socials),
+                joinedload(ArtistDB.events),
+                joinedload(ArtistDB.tm_data),
+            )
+        )
+        async with sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            artist_db = scalars.first()
+            return artist_db
+
+    return get_artist
+
+
+@pytest.fixture()
+def query_event(
+    sessionmaker: AsyncSessionmaker,
+) -> Callable[[str], Coroutine[Any, Any, EventDB | None]]:
+    async def get_event(tm_id: str) -> EventDB | None:
+        stmt = (
+            select(EventDB)
+            .join(EventTMDataDB)
+            .where(EventTMDataDB.id == tm_id)
+            .options(
+                joinedload(EventDB.tm_data),
+                joinedload(EventDB.artists),
+                joinedload(EventDB.sales),
+            )
+        )
+        async with sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+            return event_db
+
+    return get_event
 
 
 @pytest.fixture(scope="session")

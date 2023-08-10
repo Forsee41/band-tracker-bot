@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
@@ -10,6 +11,7 @@ from band_tracker.core.errors import DALError
 from band_tracker.core.event import Event, EventSales
 from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
+    ArtistAliasDB,
     ArtistDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
@@ -44,7 +46,7 @@ class DAL:
         )
         return artist
 
-    def _buld_db_socials(
+    def _build_db_socials(
         self, artist_id: UUID, socials: ArtistUpdateSocials
     ) -> ArtistSocialsDB:
         socials_db = ArtistSocialsDB(
@@ -54,6 +56,23 @@ class DAL:
             artist_id=artist_id,
         )
         return socials_db
+
+    def _build_db_artist_aliases(
+        self, artist_id: UUID, aliases: list[str]
+    ) -> list[ArtistAliasDB]:
+        return [ArtistAliasDB(artist_id=artist_id, alias=alias) for alias in aliases]
+
+    async def _add_new_aliases(
+        self, session: AsyncSession, artist_id: UUID, aliases: list[str]
+    ) -> None:
+        stmt = select(ArtistAliasDB.alias).filter(ArtistAliasDB.alias.in_(aliases))
+        existing_aliases_tuples = await session.execute(stmt)
+        existing_aliases = [alias[0] for alias in existing_aliases_tuples.all()]
+        new_aliases = [alias for alias in aliases if alias not in existing_aliases]
+        db_aliases = self._build_db_artist_aliases(
+            artist_id=artist_id, aliases=new_aliases
+        )
+        session.add_all(db_aliases)
 
     async def add_artist(self, artist: ArtistUpdate) -> UUID:
         artist_tm_data = artist.get_source_specific_data(
@@ -68,8 +87,11 @@ class DAL:
             session.add(artist_db)
             await session.flush()
             uuid = artist_db.id
-            socials_db = self._buld_db_socials(artist_id=uuid, socials=artist.socials)
+            socials_db = self._build_db_socials(artist_id=uuid, socials=artist.socials)
             tm_data_db = ArtistTMDataDB(id=artist_tm_data["id"], artist_id=uuid)
+            await self._add_new_aliases(
+                session=session, artist_id=uuid, aliases=artist.aliases
+            )
 
             session.add(tm_data_db)
             session.add(socials_db)
@@ -101,7 +123,7 @@ class DAL:
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
 
-    async def update_artist_by_tm_id(self, artist: ArtistUpdate) -> UUID:
+    async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         if await self.get_artist_by_tm_id(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
@@ -124,6 +146,9 @@ class DAL:
             )
             socials.spotify = (
                 str(artist.socials.spotify) if artist.socials.spotify else None
+            )
+            await self._add_new_aliases(
+                session=session, artist_id=artist_db.id, aliases=artist.aliases
             )
             session.add(socials)
             await session.commit()
