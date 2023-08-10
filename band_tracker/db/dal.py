@@ -123,7 +123,7 @@ class DAL:
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
 
-    async def update_artist_by_tm_id(self, artist: ArtistUpdate) -> UUID:
+    async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         if await self.get_artist_by_tm_id(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
