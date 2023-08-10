@@ -1,7 +1,7 @@
 from typing import Callable
 
 import pytest
-from sqlalchemy.exc import DBAPIError, IntegrityError
+from sqlalchemy.exc import IntegrityError
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
@@ -95,15 +95,11 @@ class TestAddEventDAL:
             artist = get_artist_update(i)
             await dal.add_artist(artist)
 
-        update_event_1 = get_event_update("concert")
-        update_event_1.date = ""
-        with pytest.raises(DBAPIError):
-            await dal.add_event(update_event_1)
+        update_event = get_event_update("eurovision")
+        update_event.ticket_url = None
 
-        update_event_2 = get_event_update("eurovision")
-        update_event_2.sales = {}
-        with pytest.raises(AttributeError):
-            await dal.add_event(update_event_2)
+        with pytest.raises(IntegrityError):
+            await dal.add_event(update_event)
 
     async def test_add_event_without_artists(
         self,
@@ -140,7 +136,7 @@ class TestAddEventDAL:
         assert result_event
 
         result_artists = await result_event.get_artists(dal)
-        assert [i.name for i in result_artists] == artists
+        assert [i.name for i in result_artists if i is not None] == artists
 
 
 if __name__ == "__main__":

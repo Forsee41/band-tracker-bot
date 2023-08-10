@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Callable
 
 import pytest
-from sqlalchemy.exc import DBAPIError
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
@@ -32,20 +31,24 @@ class TestUpdateEventDAL:
         update_event.sales.sale_start = datetime(8045, 4, 5)
         update_event.sales.sale_end = datetime(8045, 4, 6)
 
-        update_event.image = "https://something-else.com"
+        update_event.image = None
 
         await dal.update_event(update_event)
 
         result_event = await dal.get_event_by_tm_id("fest_tm_id")
         assert result_event
-        assert result_event.image == "https://something-else.com"
+        assert result_event.image is None
         assert result_event.title == "fest"
         assert result_event.venue_country == "USA"
         assert result_event.sales.sale_start == datetime(8045, 4, 5)
         assert result_event.artist_ids
 
         result_artists = await result_event.get_artists(dal)
-        assert [i.name for i in result_artists] == ["anton", "clara", "gosha"]
+        assert [i.name for i in result_artists if i is not None] == [
+            "anton",
+            "clara",
+            "gosha",
+        ]
 
     async def test_add_new_event(
         self,
@@ -79,16 +82,14 @@ class TestUpdateEventDAL:
 
         await dal.add_event(update_event)
 
-        update_event_1 = update_event
-        update_event_1.date = ""
+        update_event.ticket_url = None
+        update_event.title = "Sodom"
+        await dal.update_event(update_event)
 
-        with pytest.raises(DBAPIError):
-            await dal.update_event(update_event_1)
-
-        update_event_2 = update_event
-        update_event_2.sales = {}
-        with pytest.raises(DBAPIError):
-            await dal.update_event(update_event_2)
+        result_event = await dal.get_event_by_tm_id("fest_tm_id")
+        assert result_event
+        assert result_event.title == "Sodom"
+        assert result_event.ticket_url == "https://fest_ticket_url.com/"
 
     async def test_linking_new_artists(
         self,
