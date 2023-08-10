@@ -13,7 +13,13 @@ from sqlalchemy.orm import joinedload
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import DAL
-from band_tracker.db.models import ArtistDB, ArtistTMDataDB, Base
+from band_tracker.db.models import (
+    ArtistDB,
+    ArtistTMDataDB,
+    Base,
+    EventDB,
+    EventTMDataDB,
+)
 from band_tracker.db.session import AsyncSessionmaker
 
 
@@ -116,7 +122,7 @@ def get_event_update() -> Callable[[str], EventUpdate]:
 def query_artist(
     sessionmaker: AsyncSessionmaker,
 ) -> Callable[[str], Coroutine[Any, Any, ArtistDB | None]]:
-    async def get_artist_by_tm_id(tm_id: str) -> ArtistDB | None:
+    async def get_artist(tm_id: str) -> ArtistDB | None:
         stmt = (
             select(ArtistDB)
             .join(ArtistTMDataDB)
@@ -135,7 +141,30 @@ def query_artist(
             artist_db = scalars.first()
             return artist_db
 
-    return get_artist_by_tm_id
+    return get_artist
+
+
+@pytest.fixture()
+def query_event(
+    sessionmaker: AsyncSessionmaker,
+) -> Callable[[str], Coroutine[Any, Any, EventDB | None]]:
+    async def get_event(tm_id: str) -> EventDB | None:
+        stmt = (
+            select(EventDB)
+            .join(EventTMDataDB)
+            .where(EventTMDataDB.id == tm_id)
+            .options(
+                joinedload(EventDB.tm_data),
+                joinedload(EventDB.artists),
+                joinedload(EventDB.sales),
+            )
+        )
+        async with sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+            return event_db
+
+    return get_event
 
 
 @pytest.fixture(scope="session")
