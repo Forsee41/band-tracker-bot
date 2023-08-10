@@ -170,8 +170,8 @@ class SalesDB(Base):
         primary_key=True,
     )
 
-    sale_start: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
-    sale_end: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+    sale_start: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    sale_end: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     price_max: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
     price_min: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
     currency: Mapped[str] = mapped_column(String, nullable=True)

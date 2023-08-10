@@ -13,13 +13,14 @@ if TYPE_CHECKING:
 class EventSales:
     sale_start: datetime | None
     sale_end: datetime | None
-    price_max: int | None
-    price_min: int | None
+    price_max: float | None
+    price_min: float | None
     currency: str | None
 
 
 @dataclass
 class Event:
+    id: UUID
     title: str
     date: datetime
     venue: str

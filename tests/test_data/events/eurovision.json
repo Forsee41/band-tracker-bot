@@ -1,6 +1,6 @@
 {
 	"title": "eurovision",
-	"date": "2024-05-23T18:25:43.511Z",
+	"date": "2024-05-23T00:00",
 	"artists": [
 		"anton_tm_id",
 		"clara_tm_id",
@@ -17,7 +17,8 @@
 		}
 	},
 	"sales": {
-		"on_sale": true,
+		"sale_start": null,
+		"sale_end": null,
 		"price_max": 500.0,
 		"price_min": 350.0,
 		"currency": "eur"

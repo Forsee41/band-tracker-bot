@@ -7,7 +7,7 @@ from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DALError
-from band_tracker.core.event import Event
+from band_tracker.core.event import Event, EventSales
 from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
     ArtistDB,
@@ -177,7 +177,7 @@ class DAL:
                     if already_linked_artist.id not in artist_db_ids:
                         event_db.artists.remove(already_linked_artist)
             session.add(event_db)
-            session.commit()
+            await session.commit()
         if return_skipped:
             return [
                 artist_tm_id
@@ -185,6 +185,31 @@ class DAL:
                 if artist_tm_id not in linked_artist_tm_ids
             ]
         return linked_artist_tm_ids
+
+    def _build_core_event(
+        self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
+    ) -> Event:
+        sales = EventSales(
+            price_min=db_sales.price_min,
+            sale_start=db_sales.sale_start,
+            sale_end=db_sales.sale_end,
+            price_max=db_sales.price_max,
+            currency=db_sales.currency,
+        )
+
+        event = Event(
+            id=db_event.id,
+            artist_ids=artist_ids,
+            sales=sales,
+            title=db_event.title,
+            date=db_event.start_date,
+            venue=db_event.venue,
+            venue_city=db_event.venue_city,
+            venue_country=db_event.venue_country,
+            ticket_url=db_event.ticket_url,
+            image=db_event.image,
+        )
+        return event
 
     async def _is_event_exists(self, event_tm_id: str) -> bool:
         stmt = (
@@ -201,7 +226,7 @@ class DAL:
             sale_end=sales.sale_end,
             price_max=sales.price_max,
             price_min=sales.price_min,
-            curency=sales.currency,
+            currency=sales.currency,
             event_id=event_id,
         )
 
@@ -212,7 +237,7 @@ class DAL:
             source=EventSource.ticketmaster_api
         )
         event_tm_id = event_tm_data["id"]
-        if await self._is_event_exists(event_tm_id):
+        if not await self._is_event_exists(event_tm_id):
             return await self.add_event(event)
 
         stmt = (
@@ -231,14 +256,26 @@ class DAL:
             event_db.date = event.date
             event_db.image = str(event.image)
 
-            sales = self._buld_event_sales(uuid, event.sales)
-            event_db.sales = sales
+            sales_result = await event_db.awaitable_attrs.sales
+            sales = sales_result[0]
+            sales.sale_end = event.sales.sale_end
+            sales.sale_start = event.sales.sale_start
+            sales.currency = event.sales.currency
+            sales.price_max = event.sales.price_max
+            sales.price_min = event.sales.price_min
+            session.add(sales)
+            await session.commit()
 
-            await session.flush()
+        try:
+            await self._link_event_to_artists(
+                event_tm_id=event_tm_id,
+                artist_tm_ids=event.artists,
+            )
+        except DALError:
+            log.warning(
+                f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
+            )
 
-        await self._link_event_to_artists(
-            event_tm_id=event_tm_id, artist_tm_ids=event.artists
-        )
         return uuid
 
     async def get_event_by_id(self, id: UUID) -> Event | None:
@@ -248,21 +285,29 @@ class DAL:
             event_db = scalars.first()
             if event_db is None:
                 return None
+            sales_result = await event_db.awaitable_attrs.sales
+            sales_db = sales_result[0]
             artists = await event_db.awaitable_attrs.artists
             artist_ids = [artist.id for artist in artists]
 
-            result = Event(
-                title=event_db.title,
-                date=event_db.date,
-                venue=event_db.venue,
-                venue_city=event_db.venue_city,
-                venue_country=event_db.venue_country,
-                ticket_url=event_db.tickets_url,
-                artist_ids=artist_ids,
-                image=event_db.image,
-                sales=event_db.sales,
-            )
-            return result
+            event = self._build_core_event(event_db, sales_db, artist_ids)
+            return event
+
+    async def get_event_by_tm_id(self, tm_id: str) -> Event | None:
+        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+            if event_db is None:
+                return None
+            sales_result = await event_db.awaitable_attrs.sales
+            sales_db = sales_result[0]
+
+            artists = await event_db.awaitable_attrs.artists
+            artist_ids = [artist.id for artist in artists]
+
+            event = self._build_core_event(event_db, sales_db, artist_ids)
+            return event
 
     async def add_event(self, event: EventUpdate) -> UUID:
         event_tm_data = event.get_source_specific_data(
@@ -290,10 +335,12 @@ class DAL:
             await session.commit()
         try:
             await self._link_event_to_artists(
-                event_tm_id=event_tm_id, artist_tm_ids=event.artists
+                event_tm_id=event_tm_id,
+                artist_tm_ids=event.artists,
             )
         except DALError:
             log.warning(
                 f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
             )
+
         return uuid
