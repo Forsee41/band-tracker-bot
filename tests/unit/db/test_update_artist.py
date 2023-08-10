@@ -3,14 +3,52 @@ from typing import Any, Callable, Coroutine
 
 import pytest
 from pydantic import HttpUrl
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.enums import EventSource
 from band_tracker.db.dal import DAL
-from band_tracker.db.models import ArtistDB
+from band_tracker.db.models import ArtistDB, ArtistTMDataDB
 
 
 class TestUpdateArtistDAL:
+    async def test_artist_not_added_if_exists(
+        self,
+        dal: DAL,
+        get_artist_update: Callable[[str], ArtistUpdate],
+    ) -> None:
+        artist = get_artist_update("gosha")
+        artist2 = get_artist_update("anton")
+        artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
+        artist2.source_specific_data[EventSource.ticketmaster_api]["id"] = artist_tm_id
+        await dal.update_artist(artist)
+        await dal.update_artist(artist2)
+        stmt = (
+            select(ArtistDB)
+            .join(ArtistTMDataDB)
+            .where(ArtistTMDataDB.id == artist_tm_id)
+        )
+        async with dal.sessionmaker.session() as session:
+            session: AsyncSession
+            result = await session.scalars(stmt)
+            assert len(result.all()) == 1
+
+    async def test_artist_added_if_new(
+        self,
+        query_artist: Callable[[str], Coroutine[Any, Any, ArtistDB | None]],
+        dal: DAL,
+        get_artist_update: Callable[[str], ArtistUpdate],
+    ) -> None:
+        artist = get_artist_update("gosha")
+        artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
+        result_query = await query_artist(artist_tm_id)
+        assert result_query is None
+        await dal.update_artist(artist)
+        result_db_artist = await query_artist(artist_tm_id)
+        assert result_db_artist
+        assert result_db_artist.name == "gosha"
+
     async def test_artist_fields_being_updated(
         self, dal: DAL, get_artist_update: Callable[[], ArtistUpdate]
     ) -> None:
