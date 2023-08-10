@@ -57,7 +57,7 @@ class TestUpdateArtistDAL:
         await dal._add_artist(artist)
         artist.name = "new_artist_name"
         await dal.update_artist(artist)
-        queried_artist = await dal.get_artist_by_tm_id(tm_id)
+        queried_artist = await dal.get_artist(tm_id)
         assert queried_artist
         assert queried_artist.name == "new_artist_name"
 
@@ -71,7 +71,7 @@ class TestUpdateArtistDAL:
         artist.socials.spotify = HttpUrl("https://new_artist_spotify.com/")
         artist.socials.youtube = HttpUrl("https://new_artist_youtube.com/")
         await dal.update_artist(artist)
-        queried_artist = await dal.get_artist_by_tm_id(tm_id)
+        queried_artist = await dal.get_artist(tm_id)
         assert queried_artist
         assert queried_artist.socials.instagram == "https://new_artist_instagram.com/"
         assert queried_artist.socials.spotify == "https://new_artist_spotify.com/"

@@ -98,11 +98,9 @@ class DAL:
             await session.commit()
         return uuid
 
-    async def get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
-        stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
+    async def get_artist(self, tm_id: str) -> Artist | None:
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            artist_db = scalars.first()
+            artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             if artist_db is None:
                 return None
             socials_db = await artist_db.awaitable_attrs.socials
@@ -110,7 +108,7 @@ class DAL:
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
 
-    async def get_artist_by_id(self, id: UUID) -> Artist | None:
+    async def get_artist_by_uuid(self, id: UUID) -> Artist | None:
         stmt = select(ArtistDB).where(ArtistDB.id == id)
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
@@ -125,15 +123,14 @@ class DAL:
 
     async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
-        if await self.get_artist_by_tm_id(tm_id) is None:
+        if await self.get_artist(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self._add_artist(artist)
             return artist_id
 
-        stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            artist_db = scalars.first()
+            artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
+            assert artist_db is not None
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
             artist_db.image = str(artist.image)
@@ -153,6 +150,24 @@ class DAL:
             session.add(socials)
             await session.commit()
             return artist_db.id
+
+    async def _artist_by_tm_id(
+        self, session: AsyncSession, tm_id: str
+    ) -> ArtistDB | None:
+        artist_query = (
+            select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
+        )
+        scalar = await session.scalars(artist_query)
+        artist_db = scalar.first()
+        return artist_db
+
+    async def _event_by_tm_id(
+        self, session: AsyncSession, tm_id: str
+    ) -> EventDB | None:
+        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
+        scalar = await session.scalars(stmt)
+        event_db = scalar.first()
+        return event_db
 
     async def _link_event_to_artists(
         self,
@@ -182,13 +197,9 @@ class DAL:
             already_linked_ids = [artist.id for artist in already_linked_artists]
 
             for artist_tm_id in artist_tm_ids:
-                artist_query = (
-                    select(ArtistDB)
-                    .join(ArtistTMDataDB)
-                    .where(ArtistTMDataDB.id == artist_tm_id)
+                artist_db = await self._artist_by_tm_id(
+                    session=session, tm_id=artist_tm_id
                 )
-                scalar = await session.scalars(artist_query)
-                artist_db = scalar.first()
                 if artist_db is None:
                     continue
                 if artist_db.id not in already_linked_ids:
@@ -263,7 +274,7 @@ class DAL:
         )
         event_tm_id = event_tm_data["id"]
         if not await self._is_event_exists(event_tm_id):
-            return await self.add_event(event)
+            return await self._add_event(event)
 
         stmt = (
             select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
@@ -334,7 +345,7 @@ class DAL:
             event = self._build_core_event(event_db, sales_db, artist_ids)
             return event
 
-    async def add_event(self, event: EventUpdate) -> UUID:
+    async def _add_event(self, event: EventUpdate) -> UUID:
         event_tm_data = event.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )

@@ -19,7 +19,7 @@ class TestAddEventDAL:
             await dal._add_artist(artist)
         artists_tm_ids = ["anton_tm_id", "clara_tm_id", "gosha_tm_id"]
         update_event = get_event_update("eurovision")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         linked_artist = await dal._link_event_to_artists(
             "eurovision_tm_id", artists_tm_ids
@@ -42,7 +42,7 @@ class TestAddEventDAL:
             await dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         event = await dal.get_event_by_tm_id("eurovision_tm_id")
 
@@ -60,7 +60,7 @@ class TestAddEventDAL:
         await dal._add_artist(artist)
 
         update_event = get_event_update("concert")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
         result_event = await dal.get_event_by_tm_id("concert_tm_id")
 
         assert result_event

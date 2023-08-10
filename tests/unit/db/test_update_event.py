@@ -21,7 +21,7 @@ class TestUpdateEventDAL:
 
         update_event = get_event_update("fest")
 
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
         update_event.sales.sale_start = datetime(8045, 4, 5)
         update_event.sales.sale_end = datetime(8045, 4, 6)
         await dal.update_event(update_event)

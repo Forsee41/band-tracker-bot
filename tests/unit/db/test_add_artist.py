@@ -15,7 +15,7 @@ class TestAddArtistDAL:
     ) -> None:
         artist = get_artist_update("gosha")
         await dal._add_artist(artist)
-        result_artist = await dal.get_artist_by_tm_id("gosha_tm_id")
+        result_artist = await dal.get_artist("gosha_tm_id")
 
         assert result_artist
         assert result_artist.name == "gosha"
