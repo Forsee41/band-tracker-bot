@@ -278,7 +278,7 @@ class DAL:
             event_db.venue_country = event.venue_country
             event_db.title = event.title
             event_db.tickets_url = str(event.ticket_url)
-            event_db.date = event.date
+            event_db.start_date = event.date
             event_db.image = str(event.image)
 
             sales_result = await event_db.awaitable_attrs.sales

@@ -134,7 +134,7 @@ class TestAddEventDAL:
             await dal.add_artist(artist)
 
         update_event = get_event_update("eurovision")
-        update_event.artists = update_event.artists + ["unknown_tm_id"]
+        update_event.artists += ["unknown_tm_id"]
         await dal.add_event(update_event)
         result_event = await dal.get_event_by_tm_id("eurovision_tm_id")
         assert result_event
