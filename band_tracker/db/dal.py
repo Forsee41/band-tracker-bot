@@ -183,14 +183,10 @@ class DAL:
         Raises DALError if event tm id is not present in db.
         Removes existing links if ids are not present in artist_tm_ids
         """
-        stmt = (
-            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
-        )
         linked_artist_tm_ids = []
         artist_db_ids = []
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
             if event_db is None:
                 raise DALError(f"event with tm id {event_tm_id} is not present in db")
             already_linked_artists = await event_db.awaitable_attrs.artists
@@ -248,12 +244,8 @@ class DAL:
         return event
 
     async def _is_event_exists(self, event_tm_id: str) -> bool:
-        stmt = (
-            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
-        )
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
         return bool(event_db)
 
     def _buld_event_sales(self, event_id: UUID, sales: EventUpdateSales) -> SalesDB:
@@ -276,20 +268,17 @@ class DAL:
         if not await self._is_event_exists(event_tm_id):
             return await self._add_event(event)
 
-        stmt = (
-            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
-        )
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
+            assert event_db is not None
             uuid = event_db.id
 
             event_db.venue = event.venue
             event_db.venue_city = event.venue_city
             event_db.venue_country = event.venue_country
             event_db.title = event.title
-            event_db.tickets_url = str(event.ticket_url)
-            event_db.date = event.date
+            event_db.ticket_url = str(event.ticket_url)
+            event_db.start_date = event.date
             event_db.image = str(event.image)
 
             sales_result = await event_db.awaitable_attrs.sales
@@ -330,10 +319,8 @@ class DAL:
             return event
 
     async def get_event_by_tm_id(self, tm_id: str) -> Event | None:
-        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=tm_id)
             if event_db is None:
                 return None
             sales_result = await event_db.awaitable_attrs.sales
