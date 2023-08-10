@@ -2,17 +2,18 @@ import asyncio
 import json
 import os
 from collections.abc import Callable
-from typing import AsyncGenerator, Generator, Never
+from typing import Any, AsyncGenerator, Coroutine, Generator, Never
 
 import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, create_engine, select, text
+from sqlalchemy.orm import joinedload
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import DAL
-from band_tracker.db.models import Base
+from band_tracker.db.models import ArtistDB, ArtistTMDataDB, Base
 from band_tracker.db.session import AsyncSessionmaker
 
 
@@ -33,6 +34,7 @@ async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
         '"user"',
         "user_settings",
         "artist_socials",
+        "artist_alias",
     ]
     tables_str = ", ".join(table_names)
     command = f"TRUNCATE TABLE {tables_str};"
@@ -108,6 +110,32 @@ def get_event_update() -> Callable[[str], EventUpdate]:
         return update
 
     return generate_update
+
+
+@pytest.fixture()
+def query_artist(
+    sessionmaker: AsyncSessionmaker,
+) -> Callable[[str], Coroutine[Any, Any, ArtistDB | None]]:
+    async def get_artist_by_tm_id(tm_id: str) -> ArtistDB | None:
+        stmt = (
+            select(ArtistDB)
+            .join(ArtistTMDataDB)
+            .where(ArtistTMDataDB.id == tm_id)
+            .options(
+                joinedload(ArtistDB.aliases),
+                joinedload(ArtistDB.follows),
+                joinedload(ArtistDB.genres),
+                joinedload(ArtistDB.socials),
+                joinedload(ArtistDB.events),
+                joinedload(ArtistDB.tm_data),
+            )
+        )
+        async with sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            artist_db = scalars.first()
+            return artist_db
+
+    return get_artist_by_tm_id
 
 
 @pytest.fixture(scope="session")
