@@ -4,7 +4,6 @@ from typing import Any, Callable, Coroutine
 import pytest
 from pydantic import HttpUrl
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.enums import EventSource
@@ -30,7 +29,6 @@ class TestUpdateArtistDAL:
             .where(ArtistTMDataDB.id == artist_tm_id)
         )
         async with dal.sessionmaker.session() as session:
-            session: AsyncSession
             result = await session.scalars(stmt)
             assert len(result.all()) == 1
 
