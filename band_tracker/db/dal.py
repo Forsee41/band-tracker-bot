@@ -118,7 +118,7 @@ class DAL:
             if artist_db is None:
                 return None
             socials_db_result = await artist_db.awaitable_attrs.socials
-            socials_db = socials_db_result[0]
+            socials_db = socials_db_result
 
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist

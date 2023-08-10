@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from band_tracker.core.interfaces import DAL
@@ -40,6 +40,9 @@ class Event:
         else:
             return False
 
-    def get_artists(self, dal: DAL) -> list["Artist"]:
-        assert dal
-        raise NotImplementedError
+    async def get_artists(self, dal: DAL) -> list[Optional["Artist"]]:
+        result_artists = []
+        for i in self.artist_ids:
+            result_artists.append(await dal.get_artist_by_id(i))
+
+        return result_artists
