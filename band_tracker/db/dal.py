@@ -15,6 +15,7 @@ from band_tracker.db.models import (
     ArtistDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
+    EventArtistDB,
     EventDB,
     EventTMDataDB,
     SalesDB,
@@ -173,24 +174,19 @@ class UpdateDAL:
         self,
         event_tm_id: str,
         artist_tm_ids: list[str],
-        return_skipped: bool = False,
-        remove_links: bool = True,
-    ) -> list[str]:
+    ) -> list[UUID]:
         """
         Links event to its artists by tm ids. Ignores non existing artists.
-        Returns a list of tm ids of linked artists if return_skipped is False
-        or a list of skipped ids if return_skipped is True.
+        Returns a list of newly linked EventArtist UUID's.
         Raises DALError if event tm id is not present in db.
-        Removes existing links if ids are not present in artist_tm_ids
         """
-        linked_artist_tm_ids = []
-        artist_db_ids = []
         async with self.sessionmaker.session() as session:
             event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
             if event_db is None:
                 raise DALError(f"event with tm id {event_tm_id} is not present in db")
             already_linked_artists = await event_db.awaitable_attrs.artists
             already_linked_ids = [artist.id for artist in already_linked_artists]
+            new_artists: list[UUID] = []
 
             for artist_tm_id in artist_tm_ids:
                 artist_db = await self._artist_by_tm_id(
@@ -200,23 +196,29 @@ class UpdateDAL:
                     continue
                 if artist_db.id not in already_linked_ids:
                     event_db.artists.append(artist_db)
-                artist_db_ids.append(artist_db.id)
-                linked_artist_tm_ids.append(artist_tm_id)
+                    new_artists.append(artist_db.id)
 
-            if remove_links:
-                await event_db.awaitable_attrs.artists
-                for already_linked_artist in already_linked_artists:
-                    if already_linked_artist.id not in artist_db_ids:
-                        event_db.artists.remove(already_linked_artist)
             session.add(event_db)
             await session.commit()
-        if return_skipped:
-            return [
-                artist_tm_id
-                for artist_tm_id in artist_tm_ids
-                if artist_tm_id not in linked_artist_tm_ids
-            ]
-        return linked_artist_tm_ids
+
+        event_artist_uuids = await self._get_event_artists_by_uuids(
+            artist_uuids=new_artists, event_uuid=event_db.id
+        )
+
+        return event_artist_uuids
+
+    async def _get_event_artists_by_uuids(
+        self, artist_uuids: list[UUID], event_uuid: UUID
+    ) -> list[UUID]:
+        stmt = (
+            select(EventArtistDB.id)
+            .join(ArtistDB)
+            .join(EventDB)
+            .where(EventDB.id == event_uuid, ArtistDB.id.in_(artist_uuids))
+        )
+        async with self.sessionmaker.session() as session:
+            ids = await session.scalars(stmt)
+        return ids.all()
 
     def _build_core_event(
         self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
@@ -260,7 +262,7 @@ class UpdateDAL:
 
         return sales_db
 
-    async def update_event(self, event: EventUpdate) -> UUID:
+    async def update_event(self, event: EventUpdate) -> tuple[UUID, list[UUID]]:
         event_tm_data = event.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
@@ -295,7 +297,7 @@ class UpdateDAL:
             await session.commit()
 
         try:
-            await self._link_event_to_artists(
+            artist_event_uuids = await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
                 artist_tm_ids=event.artists,
             )
@@ -303,8 +305,9 @@ class UpdateDAL:
             log.warning(
                 f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
             )
+            raise
 
-        return uuid
+        return uuid, artist_event_uuids
 
     async def get_event_by_id(self, id: UUID) -> Event | None:
         stmt = select(EventDB).where(EventDB.id == id)
@@ -335,7 +338,7 @@ class UpdateDAL:
             event = self._build_core_event(event_db, sales_db, artist_ids)
             return event
 
-    async def _add_event(self, event: EventUpdate) -> UUID:
+    async def _add_event(self, event: EventUpdate) -> tuple[UUID, list[UUID]]:
         event_tm_data = event.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
@@ -364,7 +367,7 @@ class UpdateDAL:
             session.add(sales)
             await session.commit()
         try:
-            await self._link_event_to_artists(
+            event_artist_uuids = await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
                 artist_tm_ids=event.artists,
             )
@@ -372,5 +375,6 @@ class UpdateDAL:
             log.warning(
                 f"Attempt to link unexciting event of tm_id {event_tm_id} to artists"
             )
+            raise
 
-        return uuid
+        return uuid, event_artist_uuids

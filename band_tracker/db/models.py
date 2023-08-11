@@ -42,6 +42,9 @@ class ArtistDB(Base):
     tm_data: Mapped["ArtistTMDataDB"] = relationship(
         back_populates="artist", cascade="all, delete-orphan"
     )
+    event_artist: Mapped[list["EventArtistDB"]] = relationship(
+        back_populates="artist", viewonly=True
+    )
 
 
 class EventDB(Base):
@@ -67,6 +70,9 @@ class EventDB(Base):
         secondary="event_artist", back_populates="events"
     )
     sales: Mapped[list["SalesDB"]] = relationship(back_populates="event")
+    event_artist: Mapped[list["EventArtistDB"]] = relationship(
+        back_populates="event", viewonly=True
+    )
 
     @property
     def is_finished(self) -> bool:
@@ -164,6 +170,11 @@ class EventArtistDB(Base):
         ForeignKey("event.id", ondelete="CASCADE"),
     )
     notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    event: Mapped[EventDB] = relationship(back_populates="event_artist", viewonly=True)
+    artist: Mapped[ArtistDB] = relationship(
+        back_populates="event_artist", viewonly=True
+    )
 
 
 class SalesDB(Base):
