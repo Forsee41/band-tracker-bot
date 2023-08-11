@@ -24,7 +24,7 @@ from band_tracker.db.session import AsyncSessionmaker
 log = logging.getLogger(__name__)
 
 
-class DAL:
+class UpdateDAL:
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
 
