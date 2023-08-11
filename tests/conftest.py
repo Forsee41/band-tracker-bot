@@ -134,6 +134,7 @@ def query_artist(
                 joinedload(ArtistDB.socials),
                 joinedload(ArtistDB.events),
                 joinedload(ArtistDB.tm_data),
+                joinedload(ArtistDB.event_artist),
             )
         )
         async with sessionmaker.session() as session:

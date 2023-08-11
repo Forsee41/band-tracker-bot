@@ -1,11 +1,13 @@
+from collections.abc import Coroutine
 from datetime import datetime
-from typing import Callable
+from typing import Any, Callable
 
 import pytest
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import UpdateDAL as DAL
+from band_tracker.db.models import ArtistDB
 
 
 class TestUpdateEventDAL:
@@ -96,6 +98,7 @@ class TestUpdateEventDAL:
         update_dal: DAL,
         get_event_update: Callable[[str], EventUpdate],
         get_artist_update: Callable[[str], ArtistUpdate],
+        query_artist: Callable[[str], Coroutine[Any, Any, ArtistDB | None]],
     ) -> None:
         for i in ["anton", "clara"]:
             artist = get_artist_update(i)
@@ -106,22 +109,26 @@ class TestUpdateEventDAL:
 
         update_event.artists += ["gosha_tm_id"]
 
-        linked_artist = await update_dal._link_event_to_artists(
+        linked_artist_event_id = await update_dal._link_event_to_artists(
             "fest_tm_id",
             ["anton_tm_id", "clara_tm_id", "gosha_tm_id"],
-            return_skipped=True,
         )
-        assert linked_artist == ["gosha_tm_id"]
+        new_artist = await query_artist("gosha_tm_id")
+        assert new_artist is None
+        assert len(linked_artist_event_id) == 0
 
         new_artist = get_artist_update("gosha")
         await update_dal._add_artist(new_artist)
 
-        await update_dal.update_event(update_event)
+        _, ids = await update_dal.update_event(update_event)
+
+        new_artist = await query_artist("gosha_tm_id")
+        assert new_artist
+        assert ids == [new_artist.event_artist[0].id]
 
         linked_artist = await update_dal._link_event_to_artists(
             "fest_tm_id",
             ["anton_tm_id", "clara_tm_id", "gosha_tm_id"],
-            return_skipped=True,
         )
         assert linked_artist == []
 

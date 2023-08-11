@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable, Coroutine
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -6,31 +6,34 @@ from sqlalchemy.exc import IntegrityError
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import UpdateDAL as DAL
+from band_tracker.db.models import ArtistDB
 
 
 class TestAddEventDAL:
-    async def test__link_event_to_artists(
+    async def test_linking_new_artists(
         self,
         update_dal: DAL,
         get_event_update: Callable[[str], EventUpdate],
         get_artist_update: Callable[[str], ArtistUpdate],
+        query_artist: Callable[[str], Coroutine[Any, Any, ArtistDB | None]],
     ) -> None:
-        for i in ["gosha", "anton", "clara"]:
+        for i in ["anton", "clara", "gosha"]:
             artist = get_artist_update(i)
             await update_dal._add_artist(artist)
-        artists_tm_ids = ["anton_tm_id", "clara_tm_id", "gosha_tm_id"]
-        update_event = get_event_update("eurovision")
-        await update_dal._add_event(update_event)
 
-        linked_artist = await update_dal._link_event_to_artists(
-            "eurovision_tm_id", artists_tm_ids
-        )
-        assert linked_artist == artists_tm_ids
+        update_event = get_event_update("fest")
+        _, ids = await update_dal._add_event(update_event)
+        assert len(ids) == 2
 
-        linked_artist2 = await update_dal._link_event_to_artists(
-            "eurovision_tm_id", artists_tm_ids, return_skipped=True
+        update_event.artists += ["gosha_tm_id"]
+
+        linked_artist_event_id = await update_dal._link_event_to_artists(
+            "fest_tm_id",
+            ["anton_tm_id", "clara_tm_id", "gosha_tm_id"],
         )
-        assert linked_artist2 == []
+        new_artist = await query_artist("gosha_tm_id")
+        assert new_artist
+        assert linked_artist_event_id == [new_artist.event_artist[0].id]
 
     async def test_get_event_by_id(
         self,
