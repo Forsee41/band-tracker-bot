@@ -29,30 +29,6 @@ class BaseDAL:
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
 
-    async def get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
-        async with self.sessionmaker.session() as session:
-            artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
-            if artist_db is None:
-                return None
-            socials_db = await artist_db.awaitable_attrs.socials
-
-        artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
-        return artist
-
-    async def get_event_by_tm_id(self, tm_id: str) -> Event | None:
-        async with self.sessionmaker.session() as session:
-            event_db = await self._event_by_tm_id(session=session, tm_id=tm_id)
-            if event_db is None:
-                return None
-            sales_result = await event_db.awaitable_attrs.sales
-            sales_db = sales_result[0]
-
-            artists = await event_db.awaitable_attrs.artists
-            artist_ids = [artist.id for artist in artists]
-
-            event = self._build_core_event(event_db, sales_db, artist_ids)
-            return event
-
     def _build_core_event(
         self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
     ) -> Event:
@@ -78,24 +54,6 @@ class BaseDAL:
         )
         return event
 
-    async def _artist_by_tm_id(
-        self, session: AsyncSession, tm_id: str
-    ) -> ArtistDB | None:
-        artist_query = (
-            select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
-        )
-        scalar = await session.scalars(artist_query)
-        artist_db = scalar.first()
-        return artist_db
-
-    async def _event_by_tm_id(
-        self, session: AsyncSession, tm_id: str
-    ) -> EventDB | None:
-        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
-        scalar = await session.scalars(stmt)
-        event_db = scalar.first()
-        return event_db
-
     def _build_core_artist(
         self, db_artist: ArtistDB, db_socials: ArtistSocialsDB
     ) -> Artist:
@@ -114,6 +72,8 @@ class BaseDAL:
         )
         return artist
 
+
+class BotDAL(BaseDAL):
     async def get_event(self, id: UUID) -> Event | None:
         stmt = select(EventDB).where(EventDB.id == id)
         async with self.sessionmaker.session() as session:
@@ -143,17 +103,13 @@ class BaseDAL:
         return artist
 
 
-class BotDAL(BaseDAL):
-    ...
-
-
 class UpdateDAL(BaseDAL):
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
 
     async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
-        if await self.get_artist_by_tm_id(tm_id) is None:
+        if await self._get_artist_by_tm_id(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self._add_artist(artist)
             return artist_id
@@ -227,6 +183,48 @@ class UpdateDAL(BaseDAL):
             raise
 
         return uuid, artist_event_uuids
+
+    async def _get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
+        async with self.sessionmaker.session() as session:
+            artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
+            if artist_db is None:
+                return None
+            socials_db = await artist_db.awaitable_attrs.socials
+
+        artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
+        return artist
+
+    async def _get_event_by_tm_id(self, tm_id: str) -> Event | None:
+        async with self.sessionmaker.session() as session:
+            event_db = await self._event_by_tm_id(session=session, tm_id=tm_id)
+            if event_db is None:
+                return None
+            sales_result = await event_db.awaitable_attrs.sales
+            sales_db = sales_result[0]
+
+            artists = await event_db.awaitable_attrs.artists
+            artist_ids = [artist.id for artist in artists]
+
+            event = self._build_core_event(event_db, sales_db, artist_ids)
+            return event
+
+    async def _artist_by_tm_id(
+        self, session: AsyncSession, tm_id: str
+    ) -> ArtistDB | None:
+        artist_query = (
+            select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
+        )
+        scalar = await session.scalars(artist_query)
+        artist_db = scalar.first()
+        return artist_db
+
+    async def _event_by_tm_id(
+        self, session: AsyncSession, tm_id: str
+    ) -> EventDB | None:
+        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
+        scalar = await session.scalars(stmt)
+        event_db = scalar.first()
+        return event_db
 
     def _build_db_socials(
         self, artist_id: UUID, socials: ArtistUpdateSocials

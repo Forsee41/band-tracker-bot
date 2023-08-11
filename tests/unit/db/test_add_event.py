@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
+from band_tracker.db.dal import BotDAL
 from band_tracker.db.dal import UpdateDAL as DAL
 from band_tracker.db.models import ArtistDB
 
@@ -38,6 +39,7 @@ class TestAddEventDAL:
     async def test_get_event_by_id(
         self,
         update_dal: DAL,
+        bot_dal: BotDAL,
         get_event_update: Callable[[str], EventUpdate],
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
@@ -48,10 +50,10 @@ class TestAddEventDAL:
         update_event = get_event_update("eurovision")
         await update_dal._add_event(update_event)
 
-        event = await update_dal.get_event_by_tm_id("eurovision_tm_id")
+        event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
 
         assert event
-        result_event = await update_dal.get_event(event.id)
+        result_event = await bot_dal.get_event(event.id)
         assert result_event == event
 
     async def test_add_event(
@@ -65,7 +67,7 @@ class TestAddEventDAL:
 
         update_event = get_event_update("concert")
         await update_dal._add_event(update_event)
-        result_event = await update_dal.get_event_by_tm_id("concert_tm_id")
+        result_event = await update_dal._get_event_by_tm_id("concert_tm_id")
 
         assert result_event
         assert result_event.title == "concert"
@@ -101,12 +103,13 @@ class TestAddEventDAL:
         update_event = get_event_update("eurovision")
         update_event.artists = []
         await update_dal._add_event(update_event)
-        result_event = await update_dal.get_event_by_tm_id("eurovision_tm_id")
+        result_event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 
     async def test_add_event_with_unknown_artists(
         self,
         update_dal: DAL,
+        bot_dal: BotDAL,
         get_event_update: Callable[[str], EventUpdate],
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
@@ -119,10 +122,10 @@ class TestAddEventDAL:
         update_event = get_event_update("eurovision")
         update_event.artists += ["unknown_tm_id"]
         await update_dal._add_event(update_event)
-        result_event = await update_dal.get_event_by_tm_id("eurovision_tm_id")
+        result_event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 
-        result_artists = await result_event.get_artists(update_dal)
+        result_artists = await result_event.get_artists(bot_dal)
         assert [i.name for i in result_artists if i is not None] == artists
 
 

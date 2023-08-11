@@ -6,6 +6,7 @@ import pytest
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
+from band_tracker.db.dal import BotDAL
 from band_tracker.db.dal import UpdateDAL as DAL
 from band_tracker.db.models import ArtistDB
 
@@ -14,6 +15,7 @@ class TestUpdateEventDAL:
     async def test_event_update(
         self,
         update_dal: DAL,
+        bot_dal: BotDAL,
         get_event_update: Callable[[str], EventUpdate],
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
@@ -37,7 +39,7 @@ class TestUpdateEventDAL:
 
         await update_dal.update_event(update_event)
 
-        result_event = await update_dal.get_event_by_tm_id("fest_tm_id")
+        result_event = await update_dal._get_event_by_tm_id("fest_tm_id")
         assert result_event
         assert result_event.image is None
         assert result_event.title == "fest"
@@ -45,7 +47,7 @@ class TestUpdateEventDAL:
         assert result_event.sales.sale_start == datetime(8045, 4, 5)
         assert result_event.artist_ids
 
-        result_artists = await result_event.get_artists(update_dal)
+        result_artists = await result_event.get_artists(bot_dal)
         assert [i.name for i in result_artists if i is not None] == [
             "anton",
             "clara",
@@ -67,7 +69,7 @@ class TestUpdateEventDAL:
         update_event = get_event_update("eurovision")
         await update_dal.update_event(update_event)
 
-        result_event = await update_dal.get_event_by_tm_id("eurovision_tm_id")
+        result_event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 
     async def test_update_to_none(
@@ -88,7 +90,7 @@ class TestUpdateEventDAL:
         update_event.image = None
         await update_dal.update_event(update_event)
 
-        result_event = await update_dal.get_event_by_tm_id("fest_tm_id")
+        result_event = await update_dal._get_event_by_tm_id("fest_tm_id")
         assert result_event
         assert result_event.ticket_url is None
         assert result_event.image is None
