@@ -51,7 +51,7 @@ class TestAddEventDAL:
         event = await update_dal.get_event_by_tm_id("eurovision_tm_id")
 
         assert event
-        result_event = await update_dal.get_event_by_id(event.id)
+        result_event = await update_dal.get_event(event.id)
         assert result_event == event
 
     async def test_add_event(
