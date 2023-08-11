@@ -116,7 +116,7 @@ class DAL:
             if artist_db is None:
                 return None
             socials_db_result = await artist_db.awaitable_attrs.socials
-            socials_db = socials_db_result[0]
+            socials_db = socials_db_result
 
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
@@ -268,6 +268,9 @@ class DAL:
         if not await self._is_event_exists(event_tm_id):
             return await self._add_event(event)
 
+        ticket_url = str(event.ticket_url) if event.ticket_url else None
+        image = str(event.image) if event.image else None
+
         async with self.sessionmaker.session() as session:
             event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
             assert event_db is not None
@@ -277,9 +280,9 @@ class DAL:
             event_db.venue_city = event.venue_city
             event_db.venue_country = event.venue_country
             event_db.title = event.title
-            event_db.ticket_url = str(event.ticket_url)
+            event_db.ticket_url = ticket_url
             event_db.start_date = event.date
-            event_db.image = str(event.image)
+            event_db.image = image
 
             sales_result = await event_db.awaitable_attrs.sales
             sales = sales_result[0]
@@ -337,14 +340,18 @@ class DAL:
             source=EventSource.ticketmaster_api
         )
         event_tm_id = event_tm_data["id"]
+
+        ticket_url = str(event.ticket_url) if event.ticket_url else None
+        image = str(event.image) if event.image else None
+
         event_db = EventDB(
             title=event.title,
             venue=event.venue,
             venue_city=event.venue_city,
             venue_country=event.venue_country,
             start_date=event.date,
-            ticket_url=str(event.ticket_url),
-            image=str(event.image),
+            ticket_url=ticket_url,
+            image=image,
         )
         async with self.sessionmaker.session() as session:
             session.add(event_db)

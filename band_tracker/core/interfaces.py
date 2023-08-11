@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Optional, Protocol
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -6,5 +6,5 @@ if TYPE_CHECKING:
 
 
 class DAL(Protocol):
-    def get_artist_by_id(self, id: UUID) -> "Artist":  # type: ignore
+    async def get_artist_by_uuid(self, id: UUID) -> Optional["Artist"]:
         """Returns an artist by id"""
