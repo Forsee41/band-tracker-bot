@@ -25,8 +25,8 @@ class ArtistDB(Base):
         server_default=alchemy_text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    tickets_link: Mapped[str] = mapped_column(String, nullable=False)
-    image: Mapped[str] = mapped_column(String, nullable=True)
+    tickets_link: Mapped[str | None] = mapped_column(String, nullable=True)
+    image: Mapped[str | None] = mapped_column(String, nullable=True)
 
     subscribers: Mapped[list["UserDB"]] = relationship(
         back_populates="subscriptions",
@@ -52,13 +52,13 @@ class EventDB(Base):
         primary_key=True,
         server_default=alchemy_text("gen_random_uuid()"),
     )
-    venue: Mapped[str] = mapped_column(String, nullable=True)
-    venue_city: Mapped[str] = mapped_column(String, nullable=True)
-    venue_country: Mapped[str] = mapped_column(String, nullable=True)
+    venue: Mapped[str] = mapped_column(String, nullable=False)
+    venue_city: Mapped[str] = mapped_column(String, nullable=False)
+    venue_country: Mapped[str] = mapped_column(String, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    title: Mapped[str] = mapped_column(String, nullable=True)
-    ticket_url: Mapped[str] = mapped_column(String, nullable=False)
-    image: Mapped[str] = mapped_column(String, nullable=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    ticket_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    image: Mapped[str | None] = mapped_column(String, nullable=True)
 
     tm_data: Mapped["EventTMDataDB"] = relationship(
         back_populates="event", cascade="all, delete-orphan"
@@ -101,9 +101,9 @@ class ArtistSocialsDB(Base):
         ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    instagram: Mapped[str] = mapped_column(String, nullable=True)
-    spotify: Mapped[str] = mapped_column(String, nullable=True)
-    youtube: Mapped[str] = mapped_column(String, nullable=True)
+    instagram: Mapped[str | None] = mapped_column(String, nullable=True)
+    spotify: Mapped[str | None] = mapped_column(String, nullable=True)
+    youtube: Mapped[str | None] = mapped_column(String, nullable=True)
 
     artist: Mapped[ArtistDB] = relationship(back_populates="socials")
 
@@ -171,11 +171,11 @@ class SalesDB(Base):
         primary_key=True,
     )
 
-    sale_start: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    sale_end: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    price_max: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
-    price_min: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
-    currency: Mapped[str] = mapped_column(String, nullable=True)
+    sale_start: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    sale_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    price_max: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
+    price_min: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
+    currency: Mapped[str | None] = mapped_column(String, nullable=True)
 
     event: Mapped[EventDB] = relationship(back_populates="sales")
 

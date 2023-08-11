@@ -6,5 +6,5 @@ if TYPE_CHECKING:
 
 
 class DAL(Protocol):
-    async def get_artist_by_id(self, id: UUID) -> Optional["Artist"]:
+    async def get_artist_by_uuid(self, id: UUID) -> Optional["Artist"]:
         """Returns an artist by id"""

@@ -74,7 +74,7 @@ class DAL:
         )
         session.add_all(db_aliases)
 
-    async def add_artist(self, artist: ArtistUpdate) -> UUID:
+    async def _add_artist(self, artist: ArtistUpdate) -> UUID:
         artist_tm_data = artist.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
@@ -98,11 +98,9 @@ class DAL:
             await session.commit()
         return uuid
 
-    async def get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
-        stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
+    async def get_artist(self, tm_id: str) -> Artist | None:
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            artist_db = scalars.first()
+            artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             if artist_db is None:
                 return None
             socials_db = await artist_db.awaitable_attrs.socials
@@ -110,7 +108,7 @@ class DAL:
         artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
         return artist
 
-    async def get_artist_by_id(self, id: UUID) -> Artist | None:
+    async def get_artist_by_uuid(self, id: UUID) -> Artist | None:
         stmt = select(ArtistDB).where(ArtistDB.id == id)
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
@@ -125,15 +123,14 @@ class DAL:
 
     async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
-        if await self.get_artist_by_tm_id(tm_id) is None:
+        if await self.get_artist(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
-            artist_id = await self.add_artist(artist)
+            artist_id = await self._add_artist(artist)
             return artist_id
 
-        stmt = select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            artist_db = scalars.first()
+            artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
+            assert artist_db is not None
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
             artist_db.image = str(artist.image)
@@ -154,6 +151,24 @@ class DAL:
             await session.commit()
             return artist_db.id
 
+    async def _artist_by_tm_id(
+        self, session: AsyncSession, tm_id: str
+    ) -> ArtistDB | None:
+        artist_query = (
+            select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
+        )
+        scalar = await session.scalars(artist_query)
+        artist_db = scalar.first()
+        return artist_db
+
+    async def _event_by_tm_id(
+        self, session: AsyncSession, tm_id: str
+    ) -> EventDB | None:
+        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
+        scalar = await session.scalars(stmt)
+        event_db = scalar.first()
+        return event_db
+
     async def _link_event_to_artists(
         self,
         event_tm_id: str,
@@ -168,27 +183,19 @@ class DAL:
         Raises DALError if event tm id is not present in db.
         Removes existing links if ids are not present in artist_tm_ids
         """
-        stmt = (
-            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
-        )
         linked_artist_tm_ids = []
         artist_db_ids = []
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
             if event_db is None:
                 raise DALError(f"event with tm id {event_tm_id} is not present in db")
             already_linked_artists = await event_db.awaitable_attrs.artists
             already_linked_ids = [artist.id for artist in already_linked_artists]
 
             for artist_tm_id in artist_tm_ids:
-                artist_query = (
-                    select(ArtistDB)
-                    .join(ArtistTMDataDB)
-                    .where(ArtistTMDataDB.id == artist_tm_id)
+                artist_db = await self._artist_by_tm_id(
+                    session=session, tm_id=artist_tm_id
                 )
-                scalar = await session.scalars(artist_query)
-                artist_db = scalar.first()
                 if artist_db is None:
                     continue
                 if artist_db.id not in already_linked_ids:
@@ -237,12 +244,8 @@ class DAL:
         return event
 
     async def _is_event_exists(self, event_tm_id: str) -> bool:
-        stmt = (
-            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
-        )
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
         return bool(event_db)
 
     def _buld_event_sales(self, event_id: UUID, sales: EventUpdateSales) -> SalesDB:
@@ -263,33 +266,21 @@ class DAL:
         )
         event_tm_id = event_tm_data["id"]
         if not await self._is_event_exists(event_tm_id):
-            return await self.add_event(event)
+            return await self._add_event(event)
 
-        stmt = (
-            select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == event_tm_id)
-        )
-
-        match event.ticket_url:
-            case None:
-                ticket_url = None
-            case _:
-                ticket_url = str(event.ticket_url)
-        match event.image:
-            case None:
-                image = None
-            case _:
-                image = str(event.image)
+        ticket_url = str(event.ticket_url) if event.ticket_url else None
+        image = str(event.image) if event.image else None
 
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
+            assert event_db is not None
             uuid = event_db.id
 
             event_db.venue = event.venue
             event_db.venue_city = event.venue_city
             event_db.venue_country = event.venue_country
             event_db.title = event.title
-            event_db.tickets_url = ticket_url
+            event_db.ticket_url = ticket_url
             event_db.start_date = event.date
             event_db.image = image
 
@@ -331,10 +322,8 @@ class DAL:
             return event
 
     async def get_event_by_tm_id(self, tm_id: str) -> Event | None:
-        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
+            event_db = await self._event_by_tm_id(session=session, tm_id=tm_id)
             if event_db is None:
                 return None
             sales_result = await event_db.awaitable_attrs.sales
@@ -346,22 +335,15 @@ class DAL:
             event = self._build_core_event(event_db, sales_db, artist_ids)
             return event
 
-    async def add_event(self, event: EventUpdate) -> UUID:
+    async def _add_event(self, event: EventUpdate) -> UUID:
         event_tm_data = event.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
         event_tm_id = event_tm_data["id"]
 
-        match event.ticket_url:
-            case None:
-                ticket_url = None
-            case _:
-                ticket_url = str(event.ticket_url)
-        match event.image:
-            case None:
-                image = None
-            case _:
-                image = str(event.image)
+        ticket_url = str(event.ticket_url) if event.ticket_url else None
+        image = str(event.image) if event.image else None
+
         event_db = EventDB(
             title=event.title,
             venue=event.venue,

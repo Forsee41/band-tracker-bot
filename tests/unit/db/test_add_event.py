@@ -17,10 +17,10 @@ class TestAddEventDAL:
     ) -> None:
         for i in ["gosha", "anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
         artists_tm_ids = ["anton_tm_id", "clara_tm_id", "gosha_tm_id"]
         update_event = get_event_update("eurovision")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         linked_artist = await dal._link_event_to_artists(
             "eurovision_tm_id", artists_tm_ids
@@ -40,10 +40,10 @@ class TestAddEventDAL:
     ) -> None:
         for i in ["gosha", "anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         event = await dal.get_event_by_tm_id("eurovision_tm_id")
 
@@ -58,10 +58,10 @@ class TestAddEventDAL:
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
         artist = get_artist_update("anton")
-        await dal.add_artist(artist)
+        await dal._add_artist(artist)
 
         update_event = get_event_update("concert")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
         result_event = await dal.get_event_by_tm_id("concert_tm_id")
 
         assert result_event
@@ -77,29 +77,13 @@ class TestAddEventDAL:
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
         artist = get_artist_update("anton")
-        await dal.add_artist(artist)
+        await dal._add_artist(artist)
 
         update_event = get_event_update("concert")
 
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
         with pytest.raises(IntegrityError):
-            await dal.add_event(update_event)
-
-    async def test_add_defect_events(
-        self,
-        dal: DAL,
-        get_event_update: Callable[[str], EventUpdate],
-        get_artist_update: Callable[[str], ArtistUpdate],
-    ) -> None:
-        for i in ["gosha", "anton", "clara"]:
-            artist = get_artist_update(i)
-            await dal.add_artist(artist)
-
-        update_event = get_event_update("eurovision")
-        update_event.ticket_url = None
-
-        with pytest.raises(IntegrityError):
-            await dal.add_event(update_event)
+            await dal._add_event(update_event)
 
     async def test_add_event_without_artists(
         self,
@@ -109,11 +93,11 @@ class TestAddEventDAL:
     ) -> None:
         for i in ["gosha", "anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
         update_event.artists = []
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
         result_event = await dal.get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 
@@ -127,11 +111,11 @@ class TestAddEventDAL:
         for i in artists:
             artist = get_artist_update(i)
 
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
         update_event.artists += ["unknown_tm_id"]
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
         result_event = await dal.get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 

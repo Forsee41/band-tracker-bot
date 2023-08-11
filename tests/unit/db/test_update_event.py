@@ -17,14 +17,14 @@ class TestUpdateEventDAL:
     ) -> None:
         for i in ["anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("fest")
 
         new_artist = get_artist_update("gosha")
-        await dal.add_artist(new_artist)
+        await dal._add_artist(new_artist)
 
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         update_event.artists += ["gosha_tm_id"]
 
@@ -60,7 +60,7 @@ class TestUpdateEventDAL:
         for i in artists:
             artist = get_artist_update(i)
 
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
         await dal.update_event(update_event)
@@ -68,7 +68,7 @@ class TestUpdateEventDAL:
         result_event = await dal.get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 
-    async def test_update_defect_events(
+    async def test_update_to_none(
         self,
         dal: DAL,
         get_event_update: Callable[[str], EventUpdate],
@@ -76,20 +76,20 @@ class TestUpdateEventDAL:
     ) -> None:
         for i in ["anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("fest")
 
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         update_event.ticket_url = None
-        update_event.title = "Sodom"
+        update_event.image = None
         await dal.update_event(update_event)
 
         result_event = await dal.get_event_by_tm_id("fest_tm_id")
         assert result_event
-        assert result_event.title == "Sodom"
-        assert result_event.ticket_url == "https://fest_ticket_url.com/"
+        assert result_event.ticket_url is None
+        assert result_event.image is None
 
     async def test_linking_new_artists(
         self,
@@ -99,10 +99,10 @@ class TestUpdateEventDAL:
     ) -> None:
         for i in ["anton", "clara"]:
             artist = get_artist_update(i)
-            await dal.add_artist(artist)
+            await dal._add_artist(artist)
 
         update_event = get_event_update("fest")
-        await dal.add_event(update_event)
+        await dal._add_event(update_event)
 
         update_event.artists += ["gosha_tm_id"]
 
@@ -114,7 +114,7 @@ class TestUpdateEventDAL:
         assert linked_artist == ["gosha_tm_id"]
 
         new_artist = get_artist_update("gosha")
-        await dal.add_artist(new_artist)
+        await dal._add_artist(new_artist)
 
         await dal.update_event(update_event)
 
