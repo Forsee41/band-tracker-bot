@@ -120,7 +120,6 @@ class TestUpdateEventDAL:
         assert len(linked_artist_event_id) == 0
 
         new_artist2 = get_artist_update("gosha")
-        assert new_artist is not None
         await update_dal._add_artist(new_artist2)
 
         _, ids = await update_dal.update_event(update_event)
