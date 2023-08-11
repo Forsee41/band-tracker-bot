@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 
 from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.event_update import EventUpdate
-from band_tracker.db.dal import DAL
+from band_tracker.db.dal import BotDAL, UpdateDAL
 from band_tracker.db.models import (
     ArtistDB,
     ArtistTMDataDB,
@@ -134,6 +134,7 @@ def query_artist(
                 joinedload(ArtistDB.socials),
                 joinedload(ArtistDB.events),
                 joinedload(ArtistDB.tm_data),
+                joinedload(ArtistDB.event_artist),
             )
         )
         async with sessionmaker.session() as session:
@@ -174,6 +175,12 @@ def sessionmaker(db_creds: dict) -> AsyncSessionmaker:
 
 
 @pytest.fixture(scope="class")
-def dal(sessionmaker: AsyncSessionmaker) -> DAL:
-    dal = DAL(sessionmaker)
+def update_dal(sessionmaker: AsyncSessionmaker) -> UpdateDAL:
+    dal = UpdateDAL(sessionmaker)
+    return dal
+
+
+@pytest.fixture(scope="class")
+def bot_dal(sessionmaker: AsyncSessionmaker) -> BotDAL:
+    dal = BotDAL(sessionmaker)
     return dal

@@ -42,6 +42,9 @@ class ArtistDB(Base):
     tm_data: Mapped["ArtistTMDataDB"] = relationship(
         back_populates="artist", cascade="all, delete-orphan"
     )
+    event_artist: Mapped[list["EventArtistDB"]] = relationship(
+        back_populates="artist", viewonly=True
+    )
 
 
 class EventDB(Base):
@@ -67,6 +70,9 @@ class EventDB(Base):
         secondary="event_artist", back_populates="events"
     )
     sales: Mapped[list["SalesDB"]] = relationship(back_populates="event")
+    event_artist: Mapped[list["EventArtistDB"]] = relationship(
+        back_populates="event", viewonly=True
+    )
 
     @property
     def is_finished(self) -> bool:
@@ -149,16 +155,25 @@ class ArtistTMDataDB(Base):
 
 class EventArtistDB(Base):
     __tablename__ = "event_artist"
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
 
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("artist.id", ondelete="CASCADE"),
-        primary_key=True,
     )
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("event.id", ondelete="CASCADE"),
-        primary_key=True,
+    )
+    notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    event: Mapped[EventDB] = relationship(back_populates="event_artist", viewonly=True)
+    artist: Mapped[ArtistDB] = relationship(
+        back_populates="event_artist", viewonly=True
     )
 
 
