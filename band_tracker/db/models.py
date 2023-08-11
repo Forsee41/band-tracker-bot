@@ -149,17 +149,21 @@ class ArtistTMDataDB(Base):
 
 class EventArtistDB(Base):
     __tablename__ = "event_artist"
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
 
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("artist.id", ondelete="CASCADE"),
-        primary_key=True,
     )
     event_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("event.id", ondelete="CASCADE"),
-        primary_key=True,
     )
+    notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class SalesDB(Base):
