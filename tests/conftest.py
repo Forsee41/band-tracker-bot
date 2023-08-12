@@ -10,8 +10,6 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import joinedload
 
-from band_tracker.core.artist_update import ArtistUpdate
-from band_tracker.core.event_update import EventUpdate
 from band_tracker.db.dal import BotDAL, UpdateDAL
 from band_tracker.db.models import (
     ArtistDB,
@@ -21,6 +19,8 @@ from band_tracker.db.models import (
     EventTMDataDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
+from band_tracker.updater.artist_update import ArtistUpdate
+from band_tracker.updater.event_update import EventUpdate
 
 
 @pytest_asyncio.fixture(autouse=True)

@@ -5,11 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from band_tracker.core.artist import Artist, ArtistSocials
-from band_tracker.core.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DALError
 from band_tracker.core.event import Event, EventSales
-from band_tracker.core.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
     ArtistAliasDB,
     ArtistDB,
@@ -21,6 +19,8 @@ from band_tracker.db.models import (
     SalesDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
+from band_tracker.updater.artist_update import ArtistUpdate, ArtistUpdateSocials
+from band_tracker.updater.event_update import EventUpdate, EventUpdateSales
 
 log = logging.getLogger(__name__)
 

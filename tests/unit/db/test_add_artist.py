@@ -3,10 +3,10 @@ from typing import Any, Callable, Coroutine
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.enums import EventSource
 from band_tracker.db.dal import UpdateDAL as DAL
 from band_tracker.db.models import ArtistDB
+from band_tracker.updater.artist_update import ArtistUpdate
 
 
 class TestAddArtistDAL:
