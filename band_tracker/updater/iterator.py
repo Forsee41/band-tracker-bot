@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class CustomRequest(httpx.AsyncClient):
-    def __init__(self, url: URL, query_params: dict[str, str]):
+    def __init__(self, url: URL, query_params: dict[str, str]) -> None:
         super().__init__()
         self.url = url
         self.query_params = query_params
@@ -25,10 +25,14 @@ class CustomRequest(httpx.AsyncClient):
     async def pages_number(self) -> int:
         data = await self.make_request()
         try:
-            log.debug("PENIS")
             page_info = data.get("page", {})
-            return page_info.get("totalPages")
+            result = page_info.get("totalPages")
         except AttributeError:
+            raise DeserializationError("invalid json", EventSource.ticketmaster_api)
+
+        if result:
+            return result
+        else:
             raise DeserializationError("invalid json", EventSource.ticketmaster_api)
 
 
