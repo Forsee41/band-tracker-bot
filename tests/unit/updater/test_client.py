@@ -4,14 +4,14 @@ import pytest
 from pydantic import HttpUrl
 
 from band_tracker.core.enums import EventSource
-from band_tracker.updater.artist_update import ArtistUpdate, ArtistUpdateSocials
+from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
+from band_tracker.db.event_update import EventUpdate, EventUpdateSales
 from band_tracker.updater.client import (
     get_all_artists,
     get_all_events,
     get_artist,
     get_event,
 )
-from band_tracker.updater.event_update import EventUpdate, EventUpdateSales
 from test_data.temp_const import ARTISTS, ARTISTS_SMALL, EVENTS, EVENTS_SMALL
 
 

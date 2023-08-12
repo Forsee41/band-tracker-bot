@@ -4,11 +4,11 @@ from typing import Any, Callable
 
 import pytest
 
+from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal import BotDAL
 from band_tracker.db.dal import UpdateDAL as DAL
+from band_tracker.db.event_update import EventUpdate
 from band_tracker.db.models import ArtistDB
-from band_tracker.updater.artist_update import ArtistUpdate
-from band_tracker.updater.event_update import EventUpdate
 
 
 class TestUpdateEventDAL:

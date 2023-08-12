@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field
 
 from band_tracker.core.enums import EventSource
 from band_tracker.core.errors import DeserializationError
-from band_tracker.updater.artist_update import ArtistUpdate, ArtistUpdateSocials
-from band_tracker.updater.event_update import EventUpdate, EventUpdateSales
+from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
+from band_tracker.db.event_update import EventUpdate, EventUpdateSales
 
 log = logging.getLogger(__name__)
 
