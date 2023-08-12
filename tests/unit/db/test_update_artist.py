@@ -5,8 +5,8 @@ import pytest
 from pydantic import HttpUrl
 from sqlalchemy import select
 
-from band_tracker.core.artist_update import ArtistUpdate
 from band_tracker.core.enums import EventSource
+from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal import UpdateDAL as DAL
 from band_tracker.db.models import ArtistDB, ArtistTMDataDB
 

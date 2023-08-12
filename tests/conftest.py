@@ -10,9 +10,9 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import joinedload
 
-from band_tracker.core.artist_update import ArtistUpdate
-from band_tracker.core.event_update import EventUpdate
+from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal import BotDAL, UpdateDAL
+from band_tracker.db.event_update import EventUpdate
 from band_tracker.db.models import (
     ArtistDB,
     ArtistTMDataDB,
