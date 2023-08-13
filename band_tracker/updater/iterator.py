@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import AsyncIterator
 
@@ -14,9 +15,8 @@ from band_tracker.updater.errors import (
 log = logging.getLogger(__name__)
 
 
-class CustomRequest(httpx.AsyncClient):
+class CustomRequest:
     def __init__(self, url: URL, query_params: dict[str, str]) -> None:
-        super().__init__()
         self.url = url
         self.query_params = query_params
 
@@ -33,56 +33,57 @@ class PageIterator(AsyncIterator):
         self.page_number = 0
         self.buffer: list[dict[str, dict]] = []
         self.stop_flag = False
-        self.rate_count = 0
+        self.rate_limit_error_count = 0
 
     async def __anext__(self) -> dict[str, dict] | Exception:
-        if not self.stop_flag:
-            if not self.buffer:
-                self.buffer.append(await self.client.make_request(self.page_number))
-                self.page_number += 1
-
-            data = self.buffer.pop(0)
-            try:
-                page_info = data.get("page", {})
-                pages_number = page_info.get("totalPages")
-
-                if pages_number is None:
-                    return InvalidResponseStructureError(
-                        "Pages information not found in response"
-                    )
-            except AttributeError:
-                try:
-                    error_response = data.get("fault", {})
-                    detail = error_response.get("detail", {})
-                    error_message = detail.get("errorcode")
-                    match error_message:
-                        case None:
-                            return InvalidResponseStructureError(
-                                "Unexpected Error, fault tstring not found in response"
-                            )
-                        case "oauth.v2.InvalidApiKey":
-                            return InvalidTokenError()
-                        case "policies.ratelimit.QuotaViolation":
-                            if self.rate_count > 0:
-                                return RateLimitQuotaViolation()
-                            else:
-                                self.rate_count += 1
-                                self.page_number -= 1
-                        case _:
-                            return UnexpectedFaultResponseError("Bruh")
-                except AttributeError:
-                    return InvalidResponseStructureError(
-                        f"Invalid JSON structure: {data}"
-                    )
-                return InvalidResponseStructureError(f"Invalid JSON structure: {data}")
-
-            if self.page_number == pages_number:
-                self.stop_flag = True
-
-            if self.page_number > pages_number:
-                raise StopAsyncIteration
-
-            self.rate_count = 0
-            return data
-        else:
+        if self.stop_flag:
             raise StopAsyncIteration
+
+        self.buffer.append(await self.client.make_request(self.page_number))
+        self.page_number += 1
+
+        data = self.buffer.pop(0)
+        try:
+            page_info = data.get("page", {})
+            pages_number = page_info.get("totalPages")
+
+            if pages_number is None:
+                raise InvalidResponseStructureError(
+                    f"Pages information not found in response: {page_info}"
+                )
+        except AttributeError:
+            try:
+                error_response = data.get("fault", {})
+                detail = error_response.get("detail", {})
+                error_message = detail.get("errorcode")
+                match error_message:
+                    case None:
+                        raise InvalidResponseStructureError(
+                            f"Unexpected Error, "
+                            f"fault string not found in response: {error_response}"
+                        )
+                    case "oauth.v2.InvalidApiKey":
+                        raise InvalidTokenError()
+                    case "policies.ratelimit.QuotaViolation":
+                        await asyncio.sleep(1)
+                        if self.rate_limit_error_count > 0:
+                            raise RateLimitQuotaViolation(self.page_number)
+                        else:
+                            self.rate_limit_error_count += 1
+                            self.page_number -= 1
+                            return await self.__anext__()
+                    case _:
+                        raise UnexpectedFaultResponseError(
+                            f"Unexpected response fault message: {error_message}"
+                        )
+            except AttributeError:
+                raise InvalidResponseStructureError(f"Invalid JSON structure: {data}")
+
+        if self.page_number == pages_number:
+            self.stop_flag = True
+
+        if self.page_number > pages_number:
+            raise StopAsyncIteration
+
+        self.rate_count = 0
+        return data
