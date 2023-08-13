@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import httpx
@@ -68,6 +69,7 @@ class PageIterator:
                     case "oauth.v2.InvalidApiKey":
                         raise InvalidTokenError()
                     case "policies.ratelimit.QuotaViolation":
+                        await asyncio.sleep(1)
                         if self.rate_limit_error_count > 0:
                             raise RateLimitQuotaViolation(self.page_number)
                         else:
