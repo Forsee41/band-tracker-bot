@@ -1,6 +1,4 @@
-import asyncio
 import logging
-from typing import AsyncIterator
 
 import httpx
 from httpx import URL
@@ -27,7 +25,7 @@ class CustomRequest:
         return response.json()
 
 
-class PageIterator(AsyncIterator):
+class PageIterator:
     def __init__(self, client: CustomRequest) -> None:
         self.client = client
         self.page_number = 0
@@ -35,9 +33,14 @@ class PageIterator(AsyncIterator):
         self.stop_flag = False
         self.rate_limit_error_count = 0
 
+    def __aiter__(self) -> "PageIterator":
+        return self
+
     async def __anext__(self) -> dict[str, dict]:
         if self.stop_flag:
             raise StopAsyncIteration
+
+        current_page = self.page_number
 
         self.buffer.append(await self.client.make_request(self.page_number))
         self.page_number += 1
@@ -65,12 +68,12 @@ class PageIterator(AsyncIterator):
                     case "oauth.v2.InvalidApiKey":
                         raise InvalidTokenError()
                     case "policies.ratelimit.QuotaViolation":
-                        await asyncio.sleep(1)
                         if self.rate_limit_error_count > 0:
                             raise RateLimitQuotaViolation(self.page_number)
                         else:
                             self.rate_limit_error_count += 1
-                            self.page_number -= 1
+                            if current_page - 1 < self.page_number:
+                                self.page_number = current_page - 1
                             return await self.__anext__()
                     case _:
                         raise UnexpectedFaultResponseError(
@@ -85,5 +88,5 @@ class PageIterator(AsyncIterator):
         if self.page_number > pages_number:
             raise StopAsyncIteration
 
-        self.rate_count = 0
+        self.rate_limit_error_count = 0
         return data
