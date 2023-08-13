@@ -35,7 +35,7 @@ class PageIterator(AsyncIterator):
         self.stop_flag = False
         self.rate_limit_error_count = 0
 
-    async def __anext__(self) -> dict[str, dict] | Exception:
+    async def __anext__(self) -> dict[str, dict]:
         if self.stop_flag:
             raise StopAsyncIteration
 
