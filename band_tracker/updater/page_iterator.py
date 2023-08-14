@@ -13,7 +13,7 @@ from band_tracker.updater.errors import (
 log = logging.getLogger(__name__)
 
 
-class CustomRequest:
+class EventsApiRequest:
     def __init__(self, url: URL, query_params: dict[str, str]) -> None:
         self.url = url
         self.query_params = query_params
@@ -26,11 +26,10 @@ class CustomRequest:
 
 
 class PageIterator:
-    def __init__(self, client: CustomRequest) -> None:
+    def __init__(self, client: EventsApiRequest) -> None:
         self.client = client
         self.page_number = 0
         self.stop_flag = False
-        self.rate_limit_error_count = 0
 
     def __aiter__(self) -> "PageIterator":
         return self
@@ -81,5 +80,4 @@ class PageIterator:
         if self.page_number > pages_number:
             raise StopAsyncIteration
 
-        self.rate_limit_error_count = 0
         return data
