@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Coroutine
 
 from band_tracker.db.dal import UpdateDAL
@@ -31,14 +32,20 @@ class ClientFactory:
         return EventsApiClient(url=self.url, query_params=params)
 
 
+class RequiredAction(Enum):
+    need_to_sleep = "Need to sleep to wait out ratelimit violation"
+    check_exceptions_amount = "Check whether an amount of exceptions exceeds max"
+    return_ = "Iterator finished, can safely return"
+
+
 class Updater:
     def __init__(
         self,
         client_factory: ClientFactory,
-        chunk_size: int,
-        max_fails: int,
         dal: UpdateDAL,
-        ratelimit_violation_sleep_time: int = 5,
+        max_fails: int = 5,
+        chunk_size: int = 4,
+        ratelimit_violation_sleep_time: int = 5,  # seconds
     ) -> None:
         self.client_factory = client_factory
         self.chunk_size = chunk_size
@@ -64,30 +71,43 @@ class Updater:
             start_time = datetime.now()
 
             pages = await asyncio.gather(*chunk, return_exceptions=True)
+            need_to_sleep = False
+            need_to_check_exc_list = False
             for page in pages:
                 if isinstance(page, Exception):
-                    await self._process_exceptions(
+                    required_action = await self._process_exceptions(
                         exception=page, target_list=exceptions
                     )
+                    match required_action:
+                        case RequiredAction.need_to_sleep:
+                            need_to_sleep = True
+                        case RequiredAction.return_:
+                            return
+                        case RequiredAction.check_exceptions_amount:
+                            need_to_check_exc_list = True
+
                 else:
                     updates = get_all_artists(page)
                     for update in updates:
                         await self.dal.update_artist(update)
-            if len(exceptions) >= self.max_fails:
+            if need_to_check_exc_list and len(exceptions) >= self.max_fails:
                 raise UpdateError(
                     "Reached the limit of allowed exceptions", exceptions=exceptions
                 )
-            exec_time: timedelta = datetime.now() - start_time
-            time_to_wait = timedelta(seconds=1) - exec_time
-            seconds_to_wait = time_to_wait.microseconds / 1_000_000
-            if seconds_to_wait > 0:
-                await asyncio.sleep(seconds_to_wait)
+            if need_to_sleep:
+                await asyncio.sleep(self.ratelimit_violation_sleep_time)
+            else:
+                exec_time: timedelta = datetime.now() - start_time
+                time_to_wait = timedelta(seconds=1) - exec_time
+                seconds_to_wait = time_to_wait.microseconds / 1_000_000
+                if seconds_to_wait > 0:
+                    await asyncio.sleep(seconds_to_wait)
 
     async def _process_exceptions(
         self, exception: Exception, target_list: list[Exception]
-    ) -> Exception | None:
+    ) -> RequiredAction:
         if isinstance(exception, StopAsyncIteration):
-            return
+            return RequiredAction.return_
         elif isinstance(exception, InvalidTokenError):
             raise exception
         elif isinstance(exception, QuotaViolation):
@@ -95,9 +115,10 @@ class Updater:
         elif isinstance(exception, InvalidResponseStructureError):
             target_list.append(exception)
         elif isinstance(exception, RateLimitViolation):
-            await asyncio.sleep(self.ratelimit_violation_sleep_time)
+            return RequiredAction.need_to_sleep
         elif isinstance(exception, Exception):
             target_list.append(exception)
+        return RequiredAction.check_exceptions_amount
 
     async def update_events(self) -> None:
         client = self.client_factory.get_events_client()
@@ -107,21 +128,34 @@ class Updater:
             start_time = datetime.now()
 
             pages = await asyncio.gather(*chunk, return_exceptions=True)
+            need_to_sleep = False
+            need_to_check_exc_list = False
             for page in pages:
                 if isinstance(page, Exception):
-                    await self._process_exceptions(
+                    required_action = await self._process_exceptions(
                         exception=page, target_list=exceptions
                     )
+                    match required_action:
+                        case RequiredAction.need_to_sleep:
+                            need_to_sleep = True
+                        case RequiredAction.return_:
+                            return
+                        case RequiredAction.check_exceptions_amount:
+                            need_to_check_exc_list = True
+
                 else:
                     updates = get_all_events(page)
                     for update in updates:
                         await self.dal.update_event(update)
-            if len(exceptions) >= self.max_fails:
+            if need_to_check_exc_list and len(exceptions) >= self.max_fails:
                 raise UpdateError(
                     "Reached the limit of allowed exceptions", exceptions=exceptions
                 )
-            exec_time: timedelta = datetime.now() - start_time
-            time_to_wait = timedelta(seconds=1) - exec_time
-            seconds_to_wait = time_to_wait.microseconds / 1_000_000
-            if seconds_to_wait > 0:
-                await asyncio.sleep(seconds_to_wait)
+            if need_to_sleep:
+                await asyncio.sleep(self.ratelimit_violation_sleep_time)
+            else:
+                exec_time: timedelta = datetime.now() - start_time
+                time_to_wait = timedelta(seconds=1) - exec_time
+                seconds_to_wait = time_to_wait.microseconds / 1_000_000
+                if seconds_to_wait > 0:
+                    await asyncio.sleep(seconds_to_wait)
