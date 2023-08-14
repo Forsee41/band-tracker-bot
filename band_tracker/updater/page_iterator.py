@@ -13,9 +13,9 @@ from band_tracker.updater.errors import (
 log = logging.getLogger(__name__)
 
 
-class EventsApiRequest:
-    def __init__(self, url: URL, query_params: dict[str, str]) -> None:
-        self.url = url
+class EventsApiClient:
+    def __init__(self, url: str, query_params: dict[str, str]) -> None:
+        self.url = URL(url)
         self.query_params = query_params
 
     async def make_request(self, page_number: int = 0) -> dict[str, dict]:
@@ -26,7 +26,7 @@ class EventsApiRequest:
 
 
 class PageIterator:
-    def __init__(self, client: EventsApiRequest) -> None:
+    def __init__(self, client: EventsApiClient) -> None:
         self.client = client
         self.page_number = 0
         self.stop_flag = False
