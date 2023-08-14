@@ -25,3 +25,11 @@ class RateLimitViolation(Exception):
 
     def __init__(self, page_number: int) -> None:
         self.page_number = page_number
+
+
+class UpdateError(Exception):
+    def __init__(
+        self, *args, exceptions: list[Exception], **kwargs  # noqa: ignore
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.exceptions = exceptions
