@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
-from typing import Coroutine, Protocol
+from typing import Coroutine
 
 from band_tracker.db.dal import UpdateDAL
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
@@ -19,14 +19,6 @@ class ClientFactory:
     def get_artists_client(self) -> EventsApiClient:
         params = {}
         return EventsApiClient(url=self.url, query_params=params)
-
-
-class DbClient(Protocol):
-    def do_something_events(self, page: list[dict]) -> None:
-        ...
-
-    def do_something_artists(self, page: list[dict]) -> None:
-        ...
 
 
 class UpdateException(Exception):
