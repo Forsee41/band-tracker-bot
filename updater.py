@@ -26,3 +26,7 @@ def main() -> None:
     dal = UpdateDAL(db_sessionmaker)
     updater = Updater(client_factory=api_client_factory, dal=dal)
     asyncio.run(updater.update_artists())
+
+
+if __name__ == "__main__":
+    main()
