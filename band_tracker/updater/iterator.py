@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 import httpx
@@ -7,7 +6,7 @@ from httpx import URL
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
     InvalidTokenError,
-    RateLimitQuotaViolation,
+    RateLimitViolation,
     UnexpectedFaultResponseError,
 )
 
@@ -30,7 +29,6 @@ class PageIterator:
     def __init__(self, client: CustomRequest) -> None:
         self.client = client
         self.page_number = 0
-        self.buffer: list[dict[str, dict]] = []
         self.stop_flag = False
         self.rate_limit_error_count = 0
 
@@ -42,11 +40,9 @@ class PageIterator:
             raise StopAsyncIteration
 
         current_page = self.page_number
-
-        self.buffer.append(await self.client.make_request(self.page_number))
         self.page_number += 1
+        data = await self.client.make_request(self.page_number)
 
-        data = self.buffer.pop(0)
         try:
             page_info = data.get("page", {})
             pages_number = page_info.get("totalPages")
@@ -68,15 +64,10 @@ class PageIterator:
                         )
                     case "oauth.v2.InvalidApiKey":
                         raise InvalidTokenError()
-                    case "policies.ratelimit.QuotaViolation":
-                        await asyncio.sleep(1)
-                        if self.rate_limit_error_count > 0:
-                            raise RateLimitQuotaViolation(self.page_number)
-                        else:
-                            self.rate_limit_error_count += 1
-                            if current_page - 1 < self.page_number:
-                                self.page_number = current_page - 1
-                            return await self.__anext__()
+                    case "policies.ratelimit.SpikeArrestViolation":
+                        if current_page - 1 < self.page_number:
+                            self.page_number = current_page - 1
+                        raise RateLimitViolation(self.page_number)
                     case _:
                         raise UnexpectedFaultResponseError(
                             f"Unexpected response fault message: {error_message}"
