@@ -24,11 +24,11 @@ class ClientFactory:
         self.token = token
 
     def get_events_client(self) -> EventsApiClient:
-        params = {}
+        params: dict = {}
         return EventsApiClient(url=self.url, query_params=params)
 
     def get_artists_client(self) -> EventsApiClient:
-        params = {}
+        params: dict = {}
         return EventsApiClient(url=self.url, query_params=params)
 
 
