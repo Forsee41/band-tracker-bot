@@ -1,7 +1,8 @@
 import logging
+import re
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import desc, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from band_tracker.core.artist import Artist, ArtistSocials
@@ -74,6 +75,35 @@ class BaseDAL:
 
 
 class BotDAL(BaseDAL):
+    async def search_artist(
+        self, search_str: str, similarity_min: float = 0.3
+    ) -> list[str]:
+        sanitized_search_str = re.sub(r"\W+", "", search_str)
+        max_similarity = func.max(
+            func.similarity(ArtistAliasDB.alias, literal(sanitized_search_str))
+        ).label("max_similarity")
+        subquery = (
+            select(ArtistDB.id, max_similarity)
+            .join(ArtistAliasDB, ArtistDB.id == ArtistAliasDB.artist_id)
+            .filter(
+                func.similarity(ArtistAliasDB.alias, literal(sanitized_search_str))
+                > similarity_min
+            )
+            .group_by(ArtistDB.id)
+            .order_by(max_similarity.desc())
+            .subquery()
+        )
+        stmt = (
+            select(ArtistDB)
+            .join(subquery, ArtistDB.id == subquery.c.id)
+            .order_by(desc(subquery.c.max_similarity))
+            .limit(10)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            artists = scalars.all()
+            return [artist.name for artist in artists]
+
     async def get_event(self, id: UUID) -> Event | None:
         stmt = select(EventDB).where(EventDB.id == id)
         async with self.sessionmaker.session() as session:
