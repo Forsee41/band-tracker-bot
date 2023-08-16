@@ -144,6 +144,9 @@ class UpdateDAL(BaseDAL):
             artist_id = await self._add_artist(artist)
             return artist_id
 
+        if artist.name not in artist.aliases:
+            artist.aliases.append(artist.name)
+
         async with self.sessionmaker.session() as session:
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             assert artist_db is not None
@@ -285,6 +288,8 @@ class UpdateDAL(BaseDAL):
         session.add_all(db_aliases)
 
     async def _add_artist(self, artist: ArtistUpdate) -> UUID:
+        if artist.name not in artist.aliases:
+            artist.aliases.append(artist.name)
         artist_tm_data = artist.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
