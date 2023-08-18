@@ -94,6 +94,19 @@ def create_tables(sync_engine: Engine) -> None:
     Base.metadata.create_all(sync_engine)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def make_text_search_db_preparations(sync_engine: Engine) -> None:
+    add_extension_stmt = text("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+    create_text_index_stmt = text(
+        "CREATE INDEX artist_alias_gin_trgm_idx ON "
+        "artist_alias USING gin (alias gin_trgm_ops)"
+    )
+    with sync_engine.connect() as connection:
+        connection.execute(add_extension_stmt)
+        connection.execute(create_text_index_stmt)
+        connection.commit()
+
+
 @pytest.fixture(scope="session")
 def get_artist_update() -> Callable[[str], ArtistUpdate]:
     def generate_update(name: str = "gosha") -> ArtistUpdate:

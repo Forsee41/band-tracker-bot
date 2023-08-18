@@ -98,6 +98,7 @@ class TestUpdateArtistupdate_dal:
         get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
         artist = get_artist_update("gosha")
+        artist.aliases.append(artist.name)
         artist_old_aliases = copy(artist.aliases)
         artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         await update_dal._add_artist(artist)

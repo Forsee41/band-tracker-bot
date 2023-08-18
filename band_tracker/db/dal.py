@@ -1,8 +1,10 @@
 import logging
+import re
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import desc, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.enums import EventSource
@@ -74,6 +76,39 @@ class BaseDAL:
 
 
 class BotDAL(BaseDAL):
+    async def search_artist(
+        self, search_str: str, similarity_min: float = 0.3
+    ) -> list[Artist]:
+        sanitized_search_str = re.sub(r"\W+", "", search_str)
+        max_similarity = func.max(
+            func.similarity(ArtistAliasDB.alias, literal(sanitized_search_str))
+        ).label("max_similarity")
+        subquery = (
+            select(ArtistDB.id, max_similarity)
+            .join(ArtistAliasDB, ArtistDB.id == ArtistAliasDB.artist_id)
+            .filter(
+                func.similarity(ArtistAliasDB.alias, literal(sanitized_search_str))
+                > similarity_min
+            )
+            .group_by(ArtistDB.id)
+            .order_by(max_similarity.desc())
+            .subquery()
+        )
+        stmt = (
+            select(ArtistDB)
+            .join(subquery, ArtistDB.id == subquery.c.id)
+            .order_by(desc(subquery.c.max_similarity))
+            .limit(10)
+            .options(joinedload(ArtistDB.socials))
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            artists = scalars.all()
+            return [
+                self._build_core_artist(db_artist=artist, db_socials=artist.socials)
+                for artist in artists
+            ]
+
     async def get_event(self, id: UUID) -> Event | None:
         stmt = select(EventDB).where(EventDB.id == id)
         async with self.sessionmaker.session() as session:
@@ -113,6 +148,9 @@ class UpdateDAL(BaseDAL):
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self._add_artist(artist)
             return artist_id
+
+        if artist.name not in artist.aliases:
+            artist.aliases.append(artist.name)
 
         async with self.sessionmaker.session() as session:
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
@@ -255,6 +293,8 @@ class UpdateDAL(BaseDAL):
         session.add_all(db_aliases)
 
     async def _add_artist(self, artist: ArtistUpdate) -> UUID:
+        if artist.name not in artist.aliases:
+            artist.aliases.append(artist.name)
         artist_tm_data = artist.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
