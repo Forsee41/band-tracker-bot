@@ -1,0 +1,8 @@
+{
+    "fault": {
+        "faultstring": "Invalid",
+        "detail": {
+            "errorcode": "unexpected error code"
+        }
+    }
+}

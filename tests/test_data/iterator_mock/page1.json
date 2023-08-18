@@ -1,0 +1,14 @@
+{
+  "_embedded": {
+    "attractions": []
+  },
+  "_links": {
+    "self": {
+      "href": ""
+    }
+  },
+  "page": {
+    "totalPages": 5,
+    "number": 0
+  }
+}
