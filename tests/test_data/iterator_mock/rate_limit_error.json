@@ -1,0 +1,8 @@
+{
+"fault": {
+"faultstring": "",
+"detail": {
+"errorcode": "policies.ratelimit.SpikeArrestViolation"
+}
+}
+}

@@ -1,7 +1,6 @@
 import logging
 
 import httpx
-from httpx import URL
 
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
@@ -14,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class CustomRequest:
-    def __init__(self, url: URL, query_params: dict[str, str]) -> None:
+    def __init__(self, url: str, query_params: dict[str, str]) -> None:
         self.url = url
         self.query_params = query_params
 
@@ -30,7 +29,6 @@ class PageIterator:
         self.client = client
         self.page_number = 0
         self.stop_flag = False
-        self.rate_limit_error_count = 0
 
     def __aiter__(self) -> "PageIterator":
         return self
@@ -44,7 +42,7 @@ class PageIterator:
         data = await self.client.make_request(self.page_number)
 
         try:
-            page_info = data.get("page", {})
+            page_info = data.get("page")
             pages_number = page_info.get("totalPages")
 
             if pages_number is None:
@@ -81,5 +79,4 @@ class PageIterator:
         if self.page_number > pages_number:
             raise StopAsyncIteration
 
-        self.rate_limit_error_count = 0
         return data
