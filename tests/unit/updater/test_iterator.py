@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Callable
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -30,9 +30,9 @@ class TestIterator:
     custom_request = CustomRequest("", {})
 
     async def test_iteration(
-        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
-    ):
-        async def mock_make_request(page_number: int):
+        self, mock_get: AsyncMock, mock_response: Callable[[str], dict]
+    ) -> None:
+        async def mock_make_request(page_number: int) -> dict:
             await asyncio.sleep(0.1)
 
             return mock_response(f"page{page_number}")
@@ -52,9 +52,9 @@ class TestIterator:
         assert asyncio.iscoroutinefunction(mock_make_request)
 
     async def test_structure_error(
-        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
-    ):
-        async def mock_make_request(page_number: int):
+        self, mock_get: AsyncMock, mock_response: Callable[[str], dict]
+    ) -> None:
+        async def mock_make_request(page_number: int) -> dict:
             await asyncio.sleep(0.1)
 
             if page_number == 3:
@@ -74,9 +74,9 @@ class TestIterator:
                 data.append(i)
 
     async def test_token_error(
-        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
-    ):
-        async def mock_make_request(page_number: int):
+        self, mock_get: AsyncMock, mock_response: Callable[[str], dict]
+    ) -> None:
+        async def mock_make_request(page_number: int) -> dict:
             await asyncio.sleep(0.1)
 
             if page_number == 1:
@@ -96,9 +96,9 @@ class TestIterator:
                 data.append(i)
 
     async def test_rate_limit_error(
-        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
-    ):
-        async def mock_make_request(page_number: int):
+        self, mock_get: AsyncMock, mock_response: Callable[[str], dict]
+    ) -> None:
+        async def mock_make_request(page_number: int) -> dict:
             await asyncio.sleep(0.1)
 
             if page_number == 4:

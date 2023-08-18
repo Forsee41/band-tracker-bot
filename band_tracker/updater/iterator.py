@@ -43,7 +43,7 @@ class PageIterator:
 
         try:
             page_info = data.get("page")
-            pages_number = page_info.get("totalPages")
+            pages_number = page_info.get("totalPages")  # type: ignore
 
             if pages_number is None:
                 raise InvalidResponseStructureError(
