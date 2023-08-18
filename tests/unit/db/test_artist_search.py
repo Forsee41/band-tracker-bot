@@ -31,7 +31,10 @@ class TestArtistTextSearch:
         artist_updates = [get_artist_update(artist) for artist in artist_names]
         for artist in artist_updates:
             await update_dal._add_artist(artist)
-        result = await bot_dal.search_artist(search_str, similarity_min=similarity)
+        result_artists = await bot_dal.search_artist(
+            search_str, similarity_min=similarity
+        )
+        result = [artist.name for artist in result_artists]
         assert set(result) == set(expected_result)
 
     async def test_search_similar_aliases(
@@ -46,7 +49,8 @@ class TestArtistTextSearch:
         anton.aliases.append("anturbator")
         for artist in gosha, anton, clara:
             await update_dal._add_artist(artist)
-        result = await bot_dal.search_artist("turbator", similarity_min=0.3)
+        result_artists = await bot_dal.search_artist("turbator", similarity_min=0.3)
+        result = [artist.name for artist in result_artists]
         assert set(result) == set(["gosha", "anton"])
 
 
