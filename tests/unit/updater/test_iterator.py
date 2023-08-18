@@ -15,7 +15,7 @@ from band_tracker.updater.iterator import CustomRequest, PageIterator
 
 @pytest.fixture()
 def mock_response() -> Callable[[str], dict]:
-    def lol(name: str = "invalid_structure_error"):
+    def lol(name: str = "invalid_structure_error") -> dict:
         file_path = "tests/test_data/iterator_mock"
         with open(f"{file_path}/{name}.json", "r") as f:
             response_dict = json.load(f)
@@ -29,7 +29,9 @@ def mock_response() -> Callable[[str], dict]:
 class TestIterator:
     custom_request = CustomRequest("", {})
 
-    async def test_iteration(self, mock_get, mock_response: Callable[[str], dict]):
+    async def test_iteration(
+        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
+    ):
         async def mock_make_request(page_number: int):
             await asyncio.sleep(0.1)
 
@@ -50,7 +52,7 @@ class TestIterator:
         assert asyncio.iscoroutinefunction(mock_make_request)
 
     async def test_structure_error(
-        self, mock_get, mock_response: Callable[[str], dict]
+        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
     ):
         async def mock_make_request(page_number: int):
             await asyncio.sleep(0.1)
@@ -71,7 +73,9 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
-    async def test_token_error(self, mock_get, mock_response: Callable[[str], dict]):
+    async def test_token_error(
+        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
+    ):
         async def mock_make_request(page_number: int):
             await asyncio.sleep(0.1)
 
@@ -92,7 +96,7 @@ class TestIterator:
                 data.append(i)
 
     async def test_rate_limit_error(
-        self, mock_get, mock_response: Callable[[str], dict]
+        self, mock_get: Callable[[int], dict], mock_response: Callable[[str], dict]
     ):
         async def mock_make_request(page_number: int):
             await asyncio.sleep(0.1)
