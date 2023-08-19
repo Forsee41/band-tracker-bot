@@ -1,7 +1,6 @@
 import logging
 
 import httpx
-from httpx import URL
 
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
@@ -15,7 +14,7 @@ log = logging.getLogger(__name__)
 
 class EventsApiClient:
     def __init__(self, url: str, query_params: dict[str, str]) -> None:
-        self.url = URL(url)
+        self.url = url
         self.query_params = query_params
 
     async def make_request(self, page_number: int = 0) -> dict[str, dict]:
@@ -43,8 +42,8 @@ class PageIterator:
         data = await self.client.make_request(self.page_number)
 
         try:
-            page_info = data.get("page", {})
-            pages_number = page_info.get("totalPages")
+            page_info = data.get("page")
+            pages_number = page_info.get("totalPages")  # type: ignore
 
             if pages_number is None:
                 raise InvalidResponseStructureError(
