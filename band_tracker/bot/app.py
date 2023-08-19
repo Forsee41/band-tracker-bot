@@ -2,10 +2,13 @@ from typing import Callable
 
 from telegram.ext import Application, ApplicationBuilder
 
+from band_tracker.db.dal import BotDAL
+
 
 def build_app(
     token: str,
     handler_registrator: Callable[[Application], None],
+    dal: BotDAL,
 ) -> Application:
     """
     Builds an application base and registers common handlers via provided handler
@@ -16,7 +19,7 @@ def build_app(
     #  possible type related errors are further checked
     app = app.build()  # type: ignore
     handler_registrator(app)  # type: ignore
-    _add_dal_di(dal="DAL mock!", app=app)
+    _add_dal_di(dal=dal, app=app)
     return app  # type: ignore
 
 
@@ -27,5 +30,5 @@ def run(app: Application) -> None:
     app.run_polling()
 
 
-def _add_dal_di(dal: str, app: Application) -> None:
+def _add_dal_di(dal: BotDAL, app: Application) -> None:
     app.bot_data["dal"] = dal
