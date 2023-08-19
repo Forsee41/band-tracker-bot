@@ -1,6 +1,6 @@
 from telegram.ext import Application, CommandHandler
 
-from band_tracker.handlers import test
+from band_tracker.bot.handlers import test
 
 
 def _get_handlers() -> list[CommandHandler]:
