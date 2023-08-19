@@ -98,7 +98,7 @@ def create_tables(sync_engine: Engine) -> None:
 def make_text_search_db_preparations(sync_engine: Engine) -> None:
     add_extension_stmt = text("CREATE EXTENSION IF NOT EXISTS pg_trgm")
     create_text_index_stmt = text(
-        "CREATE INDEX artist_alias_gin_trgm_idx ON "
+        "CREATE INDEX IF NOT EXISTS artist_alias_gin_trgm_idx ON "
         "artist_alias USING gin (alias gin_trgm_ops)"
     )
     with sync_engine.connect() as connection:

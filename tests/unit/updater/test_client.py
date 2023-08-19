@@ -6,7 +6,7 @@ from pydantic import HttpUrl
 from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.db.event_update import EventUpdate, EventUpdateSales
-from band_tracker.updater.client import (
+from band_tracker.updater.deserializator import (
     get_all_artists,
     get_all_events,
     get_artist,

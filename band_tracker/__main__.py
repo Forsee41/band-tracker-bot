@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 from telegram.error import InvalidToken
 
-from band_tracker.config.env_loader import load_env_vars
+from band_tracker.config.env_loader import tg_bot_env_vars
 from band_tracker.config.log import load_log_config
 from band_tracker.core.app import build_app, run
 from band_tracker.handlers.registrator import register_handlers
@@ -15,7 +15,7 @@ def main() -> None:
 
     load_dotenv()
     try:
-        env_vars = load_env_vars()
+        env_vars = tg_bot_env_vars()
     except EnvironmentError as e:
         log.critical(e)
         return
