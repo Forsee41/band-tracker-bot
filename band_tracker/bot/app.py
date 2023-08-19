@@ -14,13 +14,12 @@ def build_app(
     Builds an application base and registers common handlers via provided handler
     registrator.
     """
-    app = ApplicationBuilder()
-    app = app.token(token)
-    #  possible type related errors are further checked
-    app = app.build()  # type: ignore
-    handler_registrator(app)  # type: ignore
-    _add_dal_di(dal=dal, app=app)
-    return app  # type: ignore
+    builder = ApplicationBuilder()
+    builder = builder.token(token)
+    app = builder.build()
+    handler_registrator(app)
+    _inject_app_dependencies(dal=dal, app=app)
+    return app
 
 
 def run(app: Application) -> None:
@@ -30,5 +29,5 @@ def run(app: Application) -> None:
     app.run_polling()
 
 
-def _add_dal_di(dal: BotDAL, app: Application) -> None:
+def _inject_app_dependencies(dal: BotDAL, app: Application) -> None:
     app.bot_data["dal"] = dal
