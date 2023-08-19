@@ -14,7 +14,6 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
     else:
         log.warning("Test handler can't find an effective chat of an update")
-    log.info(context.bot_data["dal"])
 
 
 handlers = [CommandHandler("test", test)]
