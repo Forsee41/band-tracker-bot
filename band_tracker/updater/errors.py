@@ -34,3 +34,11 @@ class DeserializationError(Exception):
     def __init__(self, error_str: str, api: EventSource) -> None:
         self.api = api
         super().__init__(error_str)
+
+
+class UpdateError(Exception):
+    def __init__(
+        self, *args, exceptions: list[Exception], **kwargs  # noqa: ignore
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.exceptions = exceptions
