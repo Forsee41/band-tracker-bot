@@ -27,9 +27,9 @@ class EventUpdate(BaseModel):
     title: StrictStr
     date: datetime
     artists: list[str] = Field([])
-    venue: StrictStr
-    venue_city: StrictStr
-    venue_country: StrictStr
+    venue: StrictStr | None = Field(None)
+    venue_city: StrictStr | None = Field(None)
+    venue_country: StrictStr | None = Field(None)
     image: HttpUrl | None = Field(None)
     ticket_url: HttpUrl | None = Field(None)
     source_specific_data: SourceSpecificEventData = Field(
