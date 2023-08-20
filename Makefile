@@ -20,3 +20,13 @@ down:
 up:
 	docker compose -f docker-compose-dev.yaml up -d &> /dev/null
 
+dump:
+	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=test_db))
+	if [ -z "$(CONTAINER_ID)" ]; then \
+		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
+		echo "Waiting for containers to spawn"; \
+		sleep 1.5; \
+	fi
+	docker exec -t $(CONTAINER_ID) pg_dump -U test_postgres -d test_postgres > db.sql
+	mv db.sql $(CURDIR)/dump.sql
+	echo "Database dump created"
