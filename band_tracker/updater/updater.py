@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Callable, Coroutine
 
-from band_tracker.db.dal import ArtistUpdate, EventUpdate, UpdateDAL
+from band_tracker.db.dal import UpdateDAL
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
@@ -77,9 +77,8 @@ class Updater:
             )
 
     async def _update(
-        self, get: Callable[[dict[str, dict]], list[ArtistUpdate | EventUpdate]]
+        self, get: Callable[[dict[str, dict]], list], client: ApiClient, update_dal
     ) -> None:
-        client = self.client_factory.get_artists_client()
         page_iterator = PageIterator(client)
         exceptions: list[Exception] = []
         while (chunk := self._get_pages_chunk(page_iterator)) is not None:
@@ -101,7 +100,7 @@ class Updater:
 
                     updates = get(page)
                     for update in updates:
-                        await self.dal.update_artist(update)
+                        await update_dal(update)
 
             exec_time: timedelta = datetime.now() - start_time
             time_to_wait = timedelta(seconds=1) - exec_time
@@ -111,8 +110,16 @@ class Updater:
 
     async def update_events(self) -> None:
         log.info("Update Events")
-        await self._update(get_all_events)
+
+        update_dal = self.dal.update_event
+        client = self.client_factory.get_events_client()
+
+        await self._update(get_all_events, client, update_dal)
 
     async def update_artists(self) -> None:
         log.info("Update Artists")
-        await self._update(get_all_artists)
+
+        update_dal = self.dal.update_artist
+        client = self.client_factory.get_artists_client()
+
+        await self._update(get_all_artists, client, update_dal)

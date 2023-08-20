@@ -32,7 +32,7 @@ def main() -> None:
     log.debug(
         "---------------------------------------------Updater start---------------------------------------------"
     )
-    asyncio.run(updater.update_artists())
+    asyncio.run(updater.update_events())
 
 
 if __name__ == "__main__":
