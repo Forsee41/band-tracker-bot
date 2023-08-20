@@ -143,7 +143,7 @@ def get_event(raw_event: dict) -> EventUpdate:
     modified_event = {
         "title": raw_event.get("name"),
         "date": datetime_helper(),
-        "venue": raw_event.get("_embedded", {}).get("venues", {}).get("name")
+        "venue": raw_event.get("_embedded", {}).get("venues", {})[0].get("name")
         if venues_helper()
         else None,
         "ticket_url": raw_event.get("url"),
@@ -151,13 +151,13 @@ def get_event(raw_event: dict) -> EventUpdate:
             EventSource.ticketmaster_api: {"id": raw_event.get("id")}
         },
         "venue_city": raw_event.get("_embedded", {})
-        .get("venues", {})
+        .get("venues", {})[0]
         .get("city", {})
         .get("name")
         if venues_helper()
         else None,
         "venue_country": raw_event.get("_embedded", {})
-        .get("venues", {})
+        .get("venues", {})[0]
         .get("country", {})
         .get("name")
         if venues_helper()
