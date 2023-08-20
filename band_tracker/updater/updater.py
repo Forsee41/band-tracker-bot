@@ -39,7 +39,7 @@ class Updater:
         dal: UpdateDAL,
         max_fails: int = 5,
         chunk_size: int = 4,
-        ratelimit_violation_sleep_time: int = 5,  # seconds
+        ratelimit_violation_sleep_time: int = 1,  # seconds
     ) -> None:
         self.client_factory = client_factory
         self.chunk_size = chunk_size
@@ -67,6 +67,7 @@ class Updater:
         elif isinstance(exception, InvalidResponseStructureError):
             target_list.append(exception)
         elif isinstance(exception, RateLimitViolation):
+            target_list.append(exception)
             await asyncio.sleep(self.ratelimit_violation_sleep_time)
         elif isinstance(exception, Exception):
             target_list.append(exception)
