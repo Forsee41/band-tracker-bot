@@ -135,10 +135,7 @@ def get_event(raw_event: dict) -> EventUpdate:
 
     def venues_helper() -> bool:
         venues = raw_event.get("_embedded", {}).get("venues", {})
-        if venues:
-            return True
-        else:
-            return False
+        return bool(venues)
 
     modified_event = {
         "title": raw_event.get("name"),
