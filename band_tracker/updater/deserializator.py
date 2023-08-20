@@ -133,26 +133,27 @@ def get_event(raw_event: dict) -> EventUpdate:
             currency=currency,
         )
 
+    def venues_helper() -> dict | None:
+        venues = raw_event.get("_embedded", {}).get("venues", {})
+        if venues:
+            return venues[0]
+        else:
+            return None
+
     modified_event = {
         "title": raw_event.get("name"),
         "date": datetime_helper(),
-        "venue": raw_event.get("_embedded", {})
-        .get("venues", {})[0]
-        .get(
-            "name",
-        ),
+        "venue": venues_helper().get("name") if venues_helper() else None,
         "ticket_url": raw_event.get("url"),
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_event.get("id")}
         },
-        "venue_city": raw_event.get("_embedded", {})
-        .get("venues", {})[0]
-        .get("city", {})
-        .get("name"),
-        "venue_country": raw_event.get("_embedded", {})
-        .get("venues", {})[0]
-        .get("country", {})
-        .get("name"),
+        "venue_city": venues_helper().get("city", {}).get("name")
+        if venues_helper()
+        else None,
+        "venue_country": venues_helper().get("country", {}).get("name")
+        if venues_helper()
+        else None,
         "artists": attraction_ids_helper(),
         "sales": sales_helper(),
         "image": [
