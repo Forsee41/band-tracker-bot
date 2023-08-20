@@ -7,9 +7,9 @@ class TgBotEnvVars(NamedTuple):
 
 
 class EventsApiEnvVars(NamedTuple):
-    EVENTS_API_LOGIN: str
-    EVENTS_API_SECRET: str
-    EVENTS_API_URL: str
+    CONCERTS_API_TOKEN: str
+    CONCERTS_API_SECRET: str
+    CONCERTS_API_URL: str
 
 
 class DBEnvVars(NamedTuple):
@@ -39,7 +39,7 @@ def tg_bot_env_vars() -> TgBotEnvVars:
 
 
 def events_api_env_vars() -> EventsApiEnvVars:
-    env_var_names = ["EVENTS_API_LOGIN", "EVENTS_API_SECRET", "EVENTS_API_URL"]
+    env_var_names = ["CONCERTS_API_TOKEN", "CONCERTS_API_SECRET", "CONCERTS_API_URL"]
     env_var_dict = _load_vars(env_var_names)
 
     return EventsApiEnvVars(**env_var_dict)

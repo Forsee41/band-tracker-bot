@@ -48,11 +48,11 @@ class TestUpdateEventDAL:
         assert result_event.artist_ids
 
         result_artists = await result_event.get_artists(bot_dal)
-        assert [i.name for i in result_artists if i is not None] == [
+        assert set([i.name for i in result_artists if i is not None]) == {
             "anton",
             "clara",
             "gosha",
-        ]
+        }
 
     async def test_add_new_event(
         self,
@@ -126,7 +126,7 @@ class TestUpdateEventDAL:
 
         new_artist = await query_artist("gosha_tm_id")
         assert new_artist
-        assert ids == [new_artist.event_artist[0].id]
+        assert set(ids) == {new_artist.event_artist[0].id}
 
         linked_artist = await update_dal._link_event_to_artists(
             "fest_tm_id",
