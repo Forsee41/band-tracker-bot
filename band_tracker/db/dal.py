@@ -8,9 +8,9 @@ from sqlalchemy.orm import joinedload
 
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.enums import EventSource
-from band_tracker.core.errors import DALError
 from band_tracker.core.event import Event, EventSales
 from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
+from band_tracker.db.errors import DALError
 from band_tracker.db.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
     ArtistAliasDB,
