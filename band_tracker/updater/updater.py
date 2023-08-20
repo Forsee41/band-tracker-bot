@@ -28,7 +28,7 @@ class ClientFactory:
         url = self.base_url.join("events")
         return ApiClient(url=url, query_params=self.params)
 
-    def get_artists_client(self, url: str) -> ApiClient:
+    def get_artists_client(self) -> ApiClient:
         url = self.base_url.join("attractions")
         return ApiClient(url=url, query_params=self.params)
 
