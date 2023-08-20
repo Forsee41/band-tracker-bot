@@ -77,7 +77,10 @@ class Updater:
             )
 
     async def _update(
-        self, get: Callable[[dict[str, dict]], list], client: ApiClient, update_dal
+        self,
+        get: Callable[[dict[str, dict]], list],
+        client: ApiClient,
+        update_dal: Callable,
     ) -> None:
         page_iterator = PageIterator(client)
         exceptions: list[Exception] = []
