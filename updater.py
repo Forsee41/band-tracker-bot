@@ -14,7 +14,7 @@ def main() -> None:
     events_env = events_api_env_vars()
     db_env = db_env_vars()
     api_client_factory = ClientFactory(
-        url=events_env.EVENTS_API_URL, token=events_env.EVENTS_API_LOGIN
+        base_url=events_env.CONCERTS_API_URL, token=events_env.CONCERTS_API_TOKEN
     )
     db_sessionmaker = AsyncSessionmaker(
         login=db_env.DB_LOGIN,

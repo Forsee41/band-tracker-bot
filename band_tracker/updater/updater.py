@@ -13,23 +13,24 @@ from band_tracker.updater.errors import (
     RateLimitViolation,
     UpdateError,
 )
-from band_tracker.updater.page_iterator import EventsApiClient, PageIterator
+from band_tracker.updater.page_iterator import ApiClient, PageIterator
 
 log = logging.getLogger(__name__)
 
 
 class ClientFactory:
-    def __init__(self, url: str, token: str) -> None:
-        self.url = url
+    def __init__(self, base_url: str, token: str) -> None:
+        self.base_url = base_url
         self.token = token
+        self.params: dict = {"apikey": self.token, "segmentId": "KZFzniwnSyZfZ7v7nJ"}
 
-    def get_events_client(self) -> EventsApiClient:
-        params: dict = {}
-        return EventsApiClient(url=self.url, query_params=params)
+    def get_events_client(self) -> ApiClient:
+        url = self.base_url.join("events")
+        return ApiClient(url=url, query_params=self.params)
 
-    def get_artists_client(self) -> EventsApiClient:
-        params: dict = {}
-        return EventsApiClient(url=self.url, query_params=params)
+    def get_artists_client(self, url: str) -> ApiClient:
+        url = self.base_url.join("attractions")
+        return ApiClient(url=url, query_params=self.params)
 
 
 class RequiredAction(Enum):
@@ -90,6 +91,7 @@ class Updater:
                     updates = get_all_artists(page)
                     for update in updates:
                         await self.dal.update_artist(update)
+
             if need_to_check_exc_list and len(exceptions) >= self.max_fails:
                 raise UpdateError(
                     "Reached the limit of allowed exceptions", exceptions=exceptions
@@ -147,6 +149,7 @@ class Updater:
                     updates = get_all_events(page)
                     for update in updates:
                         await self.dal.update_event(update)
+
             if need_to_check_exc_list and len(exceptions) >= self.max_fails:
                 raise UpdateError(
                     "Reached the limit of allowed exceptions", exceptions=exceptions
