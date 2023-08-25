@@ -7,10 +7,11 @@ README.md
 .gitignore
 volumes/
 
-# From .gitignore
-
 # Project specific
+dump.sql
 
+
+# From .gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
