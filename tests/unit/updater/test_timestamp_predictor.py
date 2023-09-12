@@ -30,9 +30,7 @@ class TestLinearPredictor:
             b=10,
             start=datetime(year=2000, month=1, day=1),
         )
-        result = predictor.get_next_timestamp(
-            starting_timestamp=start, target_entities=target_units
-        )
+        result = predictor.get_next_timestamp(start=start, target_entities=target_units)
         assert result == expected_end
 
     @pytest.mark.skip
@@ -59,9 +57,7 @@ class TestLinearPredictor:
             b=10,
             start=datetime(year=2000, month=1, day=1),
         )
-        result = predictor.get_next_timestamp(
-            starting_timestamp=start, target_entities=target_units
-        )
+        result = predictor.get_next_timestamp(start=start, target_entities=target_units)
         assert result == expected_end
 
     def test_numeric(self) -> None:

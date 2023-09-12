@@ -13,6 +13,7 @@ from band_tracker.updater.errors import (
     UpdateError,
 )
 from band_tracker.updater.page_iterator import ApiClient, PageIterator
+from band_tracker.updater.timestamp_predictor import TimestampPredictor
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class Updater:
         self,
         client_factory: ClientFactory,
         dal: UpdateDAL,
+        predictor: TimestampPredictor,
         max_fails: int = 5,
         chunk_size: int = 4,
         ratelimit_violation_sleep_time: int = 1,  # seconds
@@ -44,6 +46,7 @@ class Updater:
         self.client_factory = client_factory
         self.chunk_size = chunk_size
         self.max_fails = max_fails
+        self.predictor = predictor
         self.dal = dal
         self.ratelimit_violation_sleep_time = ratelimit_violation_sleep_time
 
@@ -83,7 +86,7 @@ class Updater:
         client: ApiClient,
         update_dal: Callable,
     ) -> None:
-        page_iterator = PageIterator(client)
+        page_iterator = PageIterator(client=client, predictor=self.predictor)
         exceptions: list[Exception] = []
         while (chunk := self._get_pages_chunk(page_iterator)) is not None:
             log.debug("coroutines spawn")

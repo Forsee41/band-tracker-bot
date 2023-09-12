@@ -1,4 +1,7 @@
 import logging
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 
 import httpx
 
@@ -8,6 +11,7 @@ from band_tracker.updater.errors import (
     RateLimitViolation,
     UnexpectedFaultResponseError,
 )
+from band_tracker.updater.timestamp_predictor import TimestampPredictor
 
 log = logging.getLogger(__name__)
 
@@ -24,16 +28,80 @@ class ApiClient:
         return response.json()
 
 
+class ChunkProgression(Enum):
+    no_idle = "no_idle"
+    done = "done"
+    has_idle = "has_idle"
+
+
+class PageProgression(Enum):
+    in_progress = "in_progress"
+    done = "done"
+    idle = "idle"
+
+
+@dataclass
+class EventsChunk:
+    total_pages: int
+    start_datetime: datetime
+    end_datetime: datetime
+    pages: dict[int, PageProgression] = field(default_factory=dict)
+    progression: ChunkProgression = ChunkProgression.has_idle
+
+    def __post_init__(self) -> None:
+        self.pages = {
+            page_num: PageProgression.idle for page_num in range(self.total_pages)
+        }
+
+
 class PageIterator:
-    def __init__(self, client: ApiClient) -> None:
+    def __init__(self, client: ApiClient, predictor: TimestampPredictor) -> None:
         self.client = client
-        self.page_number = 0
+        self.predictor = predictor
         self.stop_flag = False
+        self.chunks: list[EventsChunk] = []
+        self.current_chunk = None
+
+    async def _get_next_chunk(self) -> EventsChunk:
+        target_entities = 800
+        while True:
+            end_timestamp = self.predictor.get_next_timestamp(
+                start=self._current_end_time(), target_entities=target_entities
+            )
+            # TODO: add real entities and pages number check
+            real_entities = 500
+            pages = 3
+            if real_entities < 1000:
+                break
+            else:
+                target_entities = int(target_entities * 0.75)
+        return EventsChunk(
+            start_datetime=self._current_start_time(),
+            end_datetime=end_timestamp,
+            total_pages=pages,
+        )
+
+    async def initialize(self) -> None:
+        self.current_chunk = await self._get_next_chunk()
+
+    def _current_start_time(self) -> datetime:
+        if self.current_chunk:
+            return self.current_chunk.start_datetime
+        else:
+            return self.predictor.start
+
+    def _current_end_time(self) -> datetime:
+        if self.current_chunk is None:
+            return self.predictor.start
+        else:
+            return self.current_chunk.end_datetime
 
     def __aiter__(self) -> "PageIterator":
         return self
 
     async def __anext__(self) -> dict[str, dict]:
+        if not self.current_chunk:
+            await self.initialize()
         if self.stop_flag:
             raise StopAsyncIteration
 

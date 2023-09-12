@@ -6,10 +6,12 @@ import sympy
 
 class TimestampPredictor(ABC):
     @abstractmethod
-    def get_next_timestamp(
-        self, current_timestamp: datetime, target_entities: int
-    ) -> datetime:
+    def get_next_timestamp(self, start: datetime, target_entities: int) -> datetime:
         """Returns best fitting timestamp"""
+
+    @property
+    def start(self) -> datetime:
+        ...
 
 
 class LinearPredictor(TimestampPredictor):
@@ -27,14 +29,19 @@ class LinearPredictor(TimestampPredictor):
         x1 = start
         x2 = sympy.symbols("x2")
         eq = sympy.Eq(((a * (x1 + x2) + (2 * b)) / 2) * (x2 - x1), (c))
-        solution = sympy.solve(eq, x2)
-        solution = [(int(item)) for item in solution]
+        solution_raw = sympy.solve(eq, x2)
+        solution = []
+        for item in solution_raw:
+            if item.is_real:
+                solution.append(int(item))
         return min(solution)
 
-    def get_next_timestamp(
-        self, starting_timestamp: datetime, target_entities: int
-    ) -> datetime:
-        time_passed_to_start: timedelta = starting_timestamp - self._start
+    @property
+    def start(self) -> datetime:
+        return self._start
+
+    def get_next_timestamp(self, start: datetime, target_entities: int) -> datetime:
+        time_passed_to_start: timedelta = start - self._start
         days_passed_to_start: int = time_passed_to_start.days
         target_days_passed = self._calculate(
             start=days_passed_to_start, target_area=target_entities
