@@ -17,3 +17,10 @@ class TrackingDistance(Enum):
     country: None
     region: None
     worldwide: None
+
+
+class AdminNotificationLevel(Enum):
+    INFO: None
+    WARNING: None
+    ERROR: None
+    CRITICAL: None
