@@ -12,6 +12,8 @@ async def query_artists(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     args = context.args
     assert args
     query = "".join(args)
+    if len(query) > 255:
+        query = query[:255]
     dal: BotDAL = context.bot_data["dal"]
     result_artists = await dal.search_artist(query)
     result_artist_names = [artist.name for artist in result_artists]
