@@ -20,7 +20,7 @@ class TrackingDistance(Enum):
 
 
 class AdminNotificationLevel(Enum):
-    INFO: None
-    WARNING: None
-    ERROR: None
-    CRITICAL: None
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
