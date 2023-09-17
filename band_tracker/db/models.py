@@ -55,9 +55,9 @@ class EventDB(Base):
         primary_key=True,
         server_default=alchemy_text("gen_random_uuid()"),
     )
-    venue: Mapped[str] = mapped_column(String, nullable=False)
-    venue_city: Mapped[str] = mapped_column(String, nullable=False)
-    venue_country: Mapped[str] = mapped_column(String, nullable=False)
+    venue: Mapped[str | None] = mapped_column(String, nullable=True)
+    venue_city: Mapped[str | None] = mapped_column(String, nullable=True)
+    venue_country: Mapped[str | None] = mapped_column(String, nullable=True)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=False)
     ticket_url: Mapped[str | None] = mapped_column(String, nullable=True)

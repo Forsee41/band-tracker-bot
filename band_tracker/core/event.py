@@ -23,9 +23,9 @@ class Event:
     id: UUID
     title: str
     date: datetime
-    venue: str
-    venue_city: str
-    venue_country: str
+    venue: str | None
+    venue_city: str | None
+    venue_country: str | None
     ticket_url: str | None
     artist_ids: list[UUID]
     image: str | None

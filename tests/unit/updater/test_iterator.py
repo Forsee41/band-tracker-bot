@@ -10,7 +10,7 @@ from band_tracker.updater.errors import (
     InvalidTokenError,
     RateLimitViolation,
 )
-from band_tracker.updater.page_iterator import EventsApiClient, PageIterator
+from band_tracker.updater.page_iterator import ApiClient, PageIterator
 
 
 @pytest.fixture()
@@ -25,9 +25,9 @@ def mock_response() -> Callable[[str], dict]:
     return lol
 
 
-@patch("band_tracker.updater.page_iterator.EventsApiClient.make_request")
+@patch("band_tracker.updater.page_iterator.ApiClient.make_request")
 class TestIterator:
-    custom_request = EventsApiClient("", {})
+    custom_request = ApiClient("", {})
 
     async def test_iteration(
         self, mock_get: AsyncMock, mock_response: Callable[[str], dict]
