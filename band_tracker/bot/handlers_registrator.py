@@ -1,10 +1,11 @@
 from telegram.ext import Application, CommandHandler
 
-from band_tracker.bot.handlers import test
+from band_tracker.bot.handlers import query, test
 
 
 def _get_handlers() -> list[CommandHandler]:
     handler_lists = [
+        query.handlers,
         test.handlers,
     ]
 
