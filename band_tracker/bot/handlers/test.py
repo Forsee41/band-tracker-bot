@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 async def query_artists(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     args = context.args
     assert args
-    query = args[0]
+    query = "".join(args)
     dal: BotDAL = context.bot_data["dal"]
     result_artists = await dal.search_artist(query)
     result_artist_names = [artist.name for artist in result_artists]
