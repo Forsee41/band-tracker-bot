@@ -17,7 +17,10 @@ async def query_artists(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     dal: BotDAL = context.bot_data["dal"]
     result_artists = await dal.search_artist(query)
     result_artist_names = [artist.name for artist in result_artists]
-    result_str = ", ".join(result_artist_names)
+    if result_artist_names:
+        result_str = ", ".join(result_artist_names)
+    else:
+        result_str = "No artists found!"
     if update.effective_chat:
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=result_str
