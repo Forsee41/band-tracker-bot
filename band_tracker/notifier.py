@@ -18,16 +18,15 @@ class Notifier:
     @classmethod
     async def create(
         cls: type,
-        bot: Bot,
+        bot: "Bot",
         mq_url: str,
         mq_routing_key: str,
         exchange_name: str,
         dal: BotDAL,
     ) -> "Notifier":
-        self = cls()
+        self: "Notifier" = cls()
         self.dal = dal
         self.bot = bot
-        self.mq_url = mq_url
         self.mq_routing_key = mq_routing_key
         self.mq_exchange_name = exchange_name
         self.mq_connection = await connect(mq_url)
@@ -49,7 +48,7 @@ class Notifier:
     async def notify_admins(self, text: str) -> None:
         admin_chats = await self.dal.get_admin_chats()
         for admin_chat_id in admin_chats:
-            await self.bot.sendMessage(chat_id=admin_chat_id, text=text)
+            await self.bot.sendMessage(chat_id=admin_chat_id, text=text)  # type: ignore
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:
         async with message.process():
