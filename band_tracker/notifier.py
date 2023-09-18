@@ -55,4 +55,6 @@ class Notifier:
         async with message.process():
             msg_raw = message.body.decode()
             msg = json.loads(msg_raw)
-            await self.notify_admins(text=msg["message"])
+            match message.type:
+                case "notification":
+                    await self.notify_admins(text=msg["message"])
