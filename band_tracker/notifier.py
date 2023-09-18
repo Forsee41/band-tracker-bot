@@ -20,7 +20,7 @@ class Notifier:
         mq_url: str,
         mq_routing_key: str,
         exchange_name: str,
-    ) -> None:
+    ) -> "Notifier":
         self = cls()
         self.bot = bot
         self.admin_chats = admin_chats
@@ -28,6 +28,7 @@ class Notifier:
         self.mq_routing_key = mq_routing_key
         self.mq_exchange_name = exchange_name
         self.mq_connection = await connect(mq_url)
+        return self
 
     async def consume(self) -> None:
         connection = self.mq_connection
