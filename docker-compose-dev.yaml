@@ -28,4 +28,5 @@ services:
       - RABBITMQ_DEFAULT_USER=band-tracker
       - RABBITMQ_DEFAULT_PASS=band-tracker
     ports:
+      - 5672:5672
       - 15672:15672
