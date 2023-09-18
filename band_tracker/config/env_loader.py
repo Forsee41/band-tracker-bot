@@ -20,6 +20,11 @@ class DBEnvVars(NamedTuple):
     DB_NAME: str
 
 
+class MQEnvVars(NamedTuple):
+    MQ_URI: str
+    EXCHANGE: str
+
+
 def _load_vars(names: list[str]) -> dict[str, str]:
     result = {}
     for var_name in names:
@@ -29,6 +34,16 @@ def _load_vars(names: list[str]) -> dict[str, str]:
             raise EnvironmentError(f"{var_name} env var is not found")
         result[var_name] = env_value
     return result
+
+
+def mq_env_vars() -> MQEnvVars:
+    env_var_names = [
+        "MQ_URI",
+        "EXCHANGE",
+    ]
+    env_var_dict = _load_vars(env_var_names)
+
+    return MQEnvVars(**env_var_dict)
 
 
 def tg_bot_env_vars() -> TgBotEnvVars:
