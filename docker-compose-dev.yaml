@@ -1,7 +1,7 @@
-version: "3.0"
+version: '3.0'
 services:
   db:
-    container_name: "db"
+    container_name: 'db'
     image: postgres:14.1-alpine
     restart: always
     environment:
@@ -9,9 +9,9 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
   test_db:
-    container_name: "test_db"
+    container_name: 'test_db'
     image: postgres:14.1-alpine
     restart: always
     environment:
@@ -19,5 +19,13 @@ services:
       - POSTGRES_PASSWORD=test_postgres
       - POSTGRES_DB=test_postgres
     ports:
-      - "5433:5432"
-
+      - '5433:5432'
+  rabbitmq:
+    image: rabbitmq:3.12-alpine
+    hostname: rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=band-tracker
+      - RABBITMQ_DEFAULT_PASS=band-tracker
+    ports:
+      - 15672:15672
