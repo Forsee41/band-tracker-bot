@@ -16,12 +16,15 @@ class MQPublisher:
     _connection: AbstractConnection
 
     @classmethod
-    async def create(cls: type, routing_key: str, url: str, exchange: str) -> None:
+    async def create(
+        cls: type, routing_key: str, url: str, exchange: str
+    ) -> "MQPublisher":
         self = cls()
         self._key = routing_key
         self._url = url
         self._exchange_name = exchange
-        self.connection = await self.connect()
+        self._connection = await self.connect()
+        return self
 
     async def connect(self) -> AbstractConnection:
         connection = await connect(self._url)

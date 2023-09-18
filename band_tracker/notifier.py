@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from aio_pika import ExchangeType, connect
 from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
@@ -52,4 +53,6 @@ class Notifier:
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:
         async with message.process():
-            print(f"Received message: {message.body.decode()}")
+            msg_raw = message.body.decode()
+            msg = json.loads(msg_raw)
+            await self.notify_admins(text=msg["message"])
