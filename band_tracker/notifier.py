@@ -4,6 +4,8 @@ from aio_pika import ExchangeType, connect
 from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
 from telegram import Bot
 
+from band_tracker.db.dal import BotDAL
+
 
 class Notifier:
     bot: Bot
@@ -11,6 +13,7 @@ class Notifier:
     mq_routing_key: str
     mq_connection: AbstractConnection
     mq_exchange_name: str
+    dal: BotDAL
 
     @classmethod
     async def create(
@@ -20,8 +23,10 @@ class Notifier:
         mq_url: str,
         mq_routing_key: str,
         exchange_name: str,
+        dal: BotDAL,
     ) -> "Notifier":
         self = cls()
+        self.dal = dal
         self.bot = bot
         self.admin_chats = admin_chats
         self.mq_url = mq_url

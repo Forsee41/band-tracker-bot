@@ -22,7 +22,7 @@ class DBEnvVars(NamedTuple):
 
 class MQEnvVars(NamedTuple):
     MQ_URI: str
-    EXCHANGE: str
+    MQ_EXCHANGE: str
 
 
 def _load_vars(names: list[str]) -> dict[str, str]:
@@ -39,7 +39,7 @@ def _load_vars(names: list[str]) -> dict[str, str]:
 def mq_env_vars() -> MQEnvVars:
     env_var_names = [
         "MQ_URI",
-        "EXCHANGE",
+        "MQ_EXCHANGE",
     ]
     env_var_dict = _load_vars(env_var_names)
 
