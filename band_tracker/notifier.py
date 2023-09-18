@@ -9,7 +9,6 @@ from band_tracker.db.dal import BotDAL
 
 class Notifier:
     bot: Bot
-    admin_chats: list[int]
     mq_routing_key: str
     mq_connection: AbstractConnection
     mq_exchange_name: str
@@ -19,7 +18,6 @@ class Notifier:
     async def create(
         cls: type,
         bot: Bot,
-        admin_chats: list[int],
         mq_url: str,
         mq_routing_key: str,
         exchange_name: str,
@@ -28,7 +26,6 @@ class Notifier:
         self = cls()
         self.dal = dal
         self.bot = bot
-        self.admin_chats = admin_chats
         self.mq_url = mq_url
         self.mq_routing_key = mq_routing_key
         self.mq_exchange_name = exchange_name
@@ -49,7 +46,8 @@ class Notifier:
             await asyncio.Future()
 
     async def notify_admins(self, text: str) -> None:
-        for admin_chat_id in self.admin_chats:
+        admin_chats = await self.dal.get_admin_chats()
+        for admin_chat_id in admin_chats:
             await self.bot.sendMessage(chat_id=admin_chat_id, text=text)
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:

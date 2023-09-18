@@ -25,7 +25,6 @@ async def main() -> None:
     notifier = await Notifier.create(
         bot=bot,
         dal=dal,
-        admin_chats=[],
         mq_url=mq_env.MQ_URI,
         mq_routing_key="notification",
         exchange_name=mq_env.MQ_EXCHANGE,
