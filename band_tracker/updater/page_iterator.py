@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -21,9 +22,26 @@ class ApiClient:
         self.url = url
         self.query_params = query_params
 
-    async def make_request(self, page_number: int = 0) -> dict[str, dict]:
+    async def make_request(
+        self, start_date: datetime, end_date: datetime, page_number: int = 0
+    ) -> dict[str, dict]:
+        log.debug("+++++++++++++++++++++++++++SEND REQUEST+++++++++++++++++++++++++++")
+
+        reformat_start_date = datetime.strptime(str(start_date), "%Y-%m-%d %H:%M:%S.%f")
+        reformat_start_date = reformat_start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        reformat_end_date = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S.%f")
+        reformat_end_date = reformat_end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        startEndDateTime = f"{reformat_start_date},{reformat_end_date}"
+        log.debug(startEndDateTime)
         response = httpx.get(
-            self.url, params={**self.query_params, "page": page_number}
+            self.url,
+            params={
+                **self.query_params,
+                "startEndDateTime": startEndDateTime,
+                "page": page_number,
+            },
         )
         return response.json()
 
@@ -42,7 +60,7 @@ class PageProgression(Enum):
 
 @dataclass
 class EventsChunk:
-    total_pages: int
+    pages_number: int
     start_datetime: datetime
     end_datetime: datetime
     pages: dict[int, PageProgression] = field(default_factory=dict)
@@ -50,8 +68,50 @@ class EventsChunk:
 
     def __post_init__(self) -> None:
         self.pages = {
-            page_num: PageProgression.idle for page_num in range(self.total_pages)
+            page_num: PageProgression.idle for page_num in range(self.pages_number)
         }
+
+
+def exception_helper(data: dict[str, dict]) -> dict[str, int]:
+    try:
+        page_info = data.get("page")
+        pages_number = page_info.get("totalPages")  # type: ignore
+        elements_number = page_info.get("totalElements")  # type: ignore
+
+        if pages_number is None:
+            raise InvalidResponseStructureError(
+                f"Pages information not found in response: {page_info}"
+            )
+
+        if elements_number is None:
+            raise InvalidResponseStructureError(
+                f"Total elements information not found in response: {page_info}"
+            )
+
+        return {"pages_number": pages_number, "elements_number": elements_number}
+
+    except AttributeError:
+        try:
+            error_response = data.get("fault", {})
+            detail = error_response.get("detail", {})
+            error_message = detail.get("errorcode")
+            match error_message:
+                case None:
+                    raise InvalidResponseStructureError(
+                        f"Unexpected Error, "
+                        f"fault string not found in response: {error_response}"
+                    )
+                case "oauth.v2.InvalidApiKey":
+                    raise InvalidTokenError()
+                case "policies.ratelimit.SpikeArrestViolation":
+                    # TODO
+                    raise RateLimitViolation
+                case _:
+                    raise UnexpectedFaultResponseError(
+                        f"Unexpected response fault message: {error_message}"
+                    )
+        except AttributeError:
+            raise InvalidResponseStructureError(f"Invalid JSON structure: {data}")
 
 
 class PageIterator:
@@ -60,91 +120,106 @@ class PageIterator:
         self.predictor = predictor
         self.stop_flag = False
         self.chunks: list[EventsChunk] = []
-        self.current_chunk = None
+        self.max_end_time = datetime.now()
 
-    async def _get_next_chunk(self) -> EventsChunk:
-        target_entities = 800
-        while True:
-            end_timestamp = self.predictor.get_next_timestamp(
-                start=self._current_end_time(), target_entities=target_entities
+    async def _get_chunk(self) -> EventsChunk | None:
+        """
+        Get the next available undone chunk from the list of known chunks; Creates a chunk if all done.
+        """
+        for chunk in self.chunks:
+            if (
+                chunk.progression != ChunkProgression.done
+                or chunk.progression != ChunkProgression.no_idle
+            ):
+                if PageProgression.idle in chunk.pages.values():
+                    return chunk
+                elif PageProgression.in_progress in chunk.pages.values():
+                    chunk.progression = ChunkProgression.no_idle
+                else:
+                    chunk.progression = ChunkProgression.done
+
+        new_chunk = await self._create_chunk()
+
+        if new_chunk.end_datetime > self.max_end_time:
+            self.max_end_time = new_chunk.end_datetime
+
+        self.chunks.append(new_chunk)
+        return new_chunk
+
+    async def _create_chunk(self) -> EventsChunk | None:
+        """
+        Creates and returns a chunk; returns None instead if only a chunk with 0 elements can be created.
+        """
+        eventsChunk = None
+        max_entities = target_entities = result_entities = 1000
+        while max_entities >= result_entities:
+            start_time = self.max_end_time
+            end_time = self.predictor.get_next_timestamp(
+                start=start_time, target_entities=target_entities
             )
-            # TODO: add real entities and pages number check
-            real_entities = 500
-            pages = 3
-            if real_entities < 1000:
-                break
-            else:
-                target_entities = int(target_entities * 0.75)
-        return EventsChunk(
-            start_datetime=self._current_start_time(),
-            end_datetime=end_timestamp,
-            total_pages=pages,
+            response = await self.client.make_request(start_time, end_time)
+            pagination_info = exception_helper(response)
+            result_entities = pagination_info.get("elements_number")
+            pages_number = pagination_info.get("pages_number")
+
+            target_entities = int(target_entities * 0.75)
+
+            eventsChunk = EventsChunk(
+                start_datetime=start_time,
+                end_datetime=end_time,
+                pages_number=pages_number,
+            )
+
+        if result_entities > 0:
+            return eventsChunk
+        else:
+            return None
+
+    def chunks_done(self) -> bool:
+        return all(
+            [
+                True if chunk.progression == ChunkProgression.done else False
+                for chunk in self.chunks
+            ]
         )
-
-    async def initialize(self) -> None:
-        self.current_chunk = await self._get_next_chunk()
-
-    def _current_start_time(self) -> datetime:
-        if self.current_chunk:
-            return self.current_chunk.start_datetime
-        else:
-            return self.predictor.start
-
-    def _current_end_time(self) -> datetime:
-        if self.current_chunk is None:
-            return self.predictor.start
-        else:
-            return self.current_chunk.end_datetime
 
     def __aiter__(self) -> "PageIterator":
         return self
 
     async def __anext__(self) -> dict[str, dict]:
-        if not self.current_chunk:
-            await self.initialize()
         if self.stop_flag:
             raise StopAsyncIteration
 
-        current_page = self.page_number
-        self.page_number += 1
-        data = await self.client.make_request(self.page_number)
-
-        try:
-            page_info = data.get("page")
-            pages_number = page_info.get("totalPages")  # type: ignore
-
-            if pages_number is None:
-                raise InvalidResponseStructureError(
-                    f"Pages information not found in response: {page_info}"
+        current_chunk = await self._get_chunk()
+        if current_chunk:
+            pages = current_chunk.pages
+            current_page = next(
+                (page for page in pages if pages.get(page) == PageProgression.idle),
+                None,
+            )
+            if current_page:
+                pages.update({current_page: PageProgression.in_progress})
+                data = await self.client.make_request(
+                    current_chunk.start_datetime,
+                    current_chunk.end_datetime,
+                    page_number=current_page,
                 )
-        except AttributeError:
-            try:
-                error_response = data.get("fault", {})
-                detail = error_response.get("detail", {})
-                error_message = detail.get("errorcode")
-                match error_message:
-                    case None:
-                        raise InvalidResponseStructureError(
-                            f"Unexpected Error, "
-                            f"fault string not found in response: {error_response}"
-                        )
-                    case "oauth.v2.InvalidApiKey":
-                        raise InvalidTokenError()
-                    case "policies.ratelimit.SpikeArrestViolation":
-                        if current_page - 1 < self.page_number:
-                            self.page_number = current_page - 1
-                        raise RateLimitViolation(self.page_number)
-                    case _:
-                        raise UnexpectedFaultResponseError(
-                            f"Unexpected response fault message: {error_message}"
-                        )
-            except AttributeError:
-                raise InvalidResponseStructureError(f"Invalid JSON structure: {data}")
-
-        if self.page_number == pages_number:
-            self.stop_flag = True
-
-        if self.page_number > pages_number:
-            raise StopAsyncIteration
-
-        return data
+                exception_helper(data)
+                return data
+            else:
+                # TODO: implement
+                raise UnexpectedFaultResponseError
+        else:
+            if self.chunks_done():
+                log.debug("No more elements can be fetched")
+                raise StopAsyncIteration
+            else:
+                await asyncio.sleep(5)
+                if not self.chunks_done():
+                    log.debug(
+                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                    )
+                    raise TimeoutError
+                else:
+                    log.debug("No more elements can be fetched")
+                    raise StopAsyncIteration
