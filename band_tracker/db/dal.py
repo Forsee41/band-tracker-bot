@@ -7,12 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from band_tracker.core.artist import Artist, ArtistSocials
-from band_tracker.core.enums import EventSource
+from band_tracker.core.enums import AdminNotificationLevel, EventSource
 from band_tracker.core.event import Event, EventSales
 from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.db.errors import DALError
 from band_tracker.db.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
+    AdminDB,
     ArtistAliasDB,
     ArtistDB,
     ArtistSocialsDB,
@@ -108,6 +109,27 @@ class BotDAL(BaseDAL):
                 self._build_core_artist(db_artist=artist, db_socials=artist.socials)
                 for artist in artists
             ]
+
+    async def add_admin(
+        self,
+        name: str,
+        chat_id: str,
+        notification_level: AdminNotificationLevel = AdminNotificationLevel.INFO,
+    ) -> None:
+        async with self.sessionmaker.session() as session:
+            admin = AdminDB(
+                name=name, notification_level=notification_level, chat_id=chat_id
+            )
+            session.add(admin)
+            await session.commit()
+
+    async def get_admin_chats(self) -> list[str]:
+        stmt = select(AdminDB)
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            admins_db = scalars.all()
+            chats = [admin.chat_id for admin in admins_db]
+            return chats
 
     async def get_event(self, id: UUID) -> Event | None:
         stmt = select(EventDB).where(EventDB.id == id)

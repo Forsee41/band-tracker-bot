@@ -8,6 +8,7 @@ README.md
 volumes/
 
 # From .gitignore
+dump.sql
 
 # Project specific
 
