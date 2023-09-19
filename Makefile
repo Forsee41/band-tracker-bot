@@ -29,3 +29,6 @@ dump:
 		mv db.sql $(CURDIR)/dump.sql
 		echo "Database dump created"
 	fi
+
+psql:
+	psql -p 5432 -U postgres -h localhost -d postgres

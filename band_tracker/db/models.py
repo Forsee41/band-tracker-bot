@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID as UUID_PG
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from band_tracker.core.enums import Range
+from band_tracker.core.enums import AdminNotificationLevel, Range
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -267,3 +267,16 @@ class FollowDB(Base):
 
     user: Mapped[UserDB] = relationship(back_populates="follows")
     artist: Mapped[ArtistDB] = relationship(back_populates="follows")
+
+
+class AdminDB(Base):
+    __tablename__ = "admin"
+
+    chat_id: Mapped[str] = mapped_column(String, primary_key=True, nullable=False)
+    notification_level: Mapped[AdminNotificationLevel] = mapped_column(
+        EnumDB(AdminNotificationLevel),
+        primary_key=False,
+        nullable=False,
+        default=AdminNotificationLevel.ERROR,
+    )
+    name: Mapped[str] = mapped_column(String, primary_key=False, nullable=False)

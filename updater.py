@@ -30,7 +30,8 @@ def main() -> None:
     dal = UpdateDAL(db_sessionmaker)
     updater = Updater(client_factory=api_client_factory, dal=dal)
     log.debug(
-        "---------------------------------------------Updater start---------------------------------------------"
+        "---------------------------------------------Updater "
+        "start---------------------------------------------"
     )
     asyncio.run(updater.update_artists())
 
