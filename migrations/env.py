@@ -1,10 +1,13 @@
 import asyncio
+import re
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from dotenv import load_dotenv
+from sqlalchemy import Connection, pool
+from sqlalchemy.ext.asyncio import create_async_engine
 
+from band_tracker.config.env_loader import db_env_vars
 from band_tracker.db.models import Base
 
 # this is the Alembic Config object, which provides
@@ -51,22 +54,38 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def do_run_migrations(connection):
+def do_run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
         context.run_migrations()
 
 
-async def run_async_migrations():
+def get_uri() -> str:
+    vars = db_env_vars()
+    url_tokens = {
+        "DB_USER": vars.DB_LOGIN,
+        "DB_PASS": vars.DB_PASSWORD,
+        "DB_HOST": f"{vars.DB_IP}:{vars.DB_PORT}",
+        "DB_NAME": vars.DB_NAME,
+    }
+
+    uri = config.get_main_option("sqlalchemy.url")
+
+    uri = re.sub(r"\${(.+?)}", lambda m: url_tokens[m.group(1)], uri)  # type: ignore
+    return uri
+
+
+async def run_async_migrations() -> None:
     """In this scenario we need to create an Engine
     and associate a connection with the context.
 
     """
+    load_dotenv()
 
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section),  # type: ignore
-        prefix="sqlalchemy.",
+    uri = get_uri()
+    connectable = create_async_engine(
+        url=uri,
         poolclass=pool.NullPool,
     )
 
@@ -76,7 +95,7 @@ async def run_async_migrations():
     await connectable.dispose()
 
 
-def run_migrations_online():
+def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
 
     asyncio.run(run_async_migrations())
