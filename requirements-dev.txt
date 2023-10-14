@@ -19,3 +19,4 @@ pydantic==2.0.2
 pyright==1.1.316
 flake8-annotations==3.0.1
 sympy==1.12
+iso3166==2.1.1

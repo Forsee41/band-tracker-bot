@@ -8,6 +8,7 @@ from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
     InvalidTokenError,
+    PredictorError,
     QuotaViolation,
     RateLimitViolation,
     UpdateError,
@@ -22,7 +23,11 @@ class ClientFactory:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url
         self.token = token
-        self.params: dict = {"apikey": self.token, "segmentId": "KZFzniwnSyZfZ7v7nJ"}
+        self.params: dict = {
+            "apikey": self.token,
+            "segmentId": "KZFzniwnSyZfZ7v7nJ",
+            "size": 200,
+        }
 
     def get_events_client(self) -> ApiClient:
         url = "".join((self.base_url, "events"))
@@ -67,6 +72,8 @@ class Updater:
             raise exception
         elif isinstance(exception, QuotaViolation):
             raise exception
+        elif isinstance(exception, PredictorError):
+            raise exception
         elif isinstance(exception, InvalidResponseStructureError):
             target_list.append(exception)
         elif isinstance(exception, RateLimitViolation):
@@ -94,9 +101,13 @@ class Updater:
             start_time = datetime.now()
 
             pages = await asyncio.gather(*chunk, return_exceptions=True)
+
+            log.debug(pages)
+            if not any(pages):
+                return
             for page in pages:
-                if isinstance(page, StopAsyncIteration):
-                    return
+                if page is None:
+                    pass
                 elif isinstance(page, Exception):
                     await self._process_exceptions(
                         exception=page, target_list=exceptions
@@ -107,6 +118,7 @@ class Updater:
 
                     updates = get(page)
                     for update in updates:
+                        # log.debug("UPDATE " + str(update))
                         await update_dal(update)
 
             exec_time: timedelta = datetime.now() - start_time

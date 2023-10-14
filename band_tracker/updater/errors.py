@@ -42,3 +42,9 @@ class UpdateError(Exception):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.exceptions = exceptions
+
+
+class PredictorError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)

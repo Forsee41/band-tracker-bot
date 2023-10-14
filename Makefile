@@ -25,7 +25,7 @@ dump:
 	if [ -z "$(CONTAINER_ID)" ]; then \
 		echo "No container found."; \
 	else \
-		docker exec -t $(CONTAINER_ID) pg_dump -U test_postgres -d test_postgres > db.sql
-		mv db.sql $(CURDIR)/dump.sql
-		echo "Database dump created"
+		docker exec -t $(CONTAINER_ID) pg_dump -U test_postgres -d test_postgres > db.sql; \
+		mv db.sql $(CURDIR)/dump.sql; \
+		echo "Database dump created"; \
 	fi
