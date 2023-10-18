@@ -1,6 +1,6 @@
 from typing import Any, TypeAlias
 
-from pydantic import BaseModel, Field, HttpUrl, StrictStr, field_validator
+from pydantic import BaseModel, Field, StrictStr, field_validator
 
 from band_tracker.core.enums import EventSource
 
@@ -8,9 +8,9 @@ SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 
 
 class ArtistUpdateSocials(BaseModel):
-    instagram: HttpUrl | None
-    youtube: HttpUrl | None
-    spotify: HttpUrl | None
+    instagram: str | None
+    youtube: str | None
+    spotify: str | None
 
 
 class ArtistUpdate(BaseModel):
@@ -18,11 +18,11 @@ class ArtistUpdate(BaseModel):
     socials: ArtistUpdateSocials = ArtistUpdateSocials(
         instagram=None, youtube=None, spotify=None
     )
-    tickets_link: HttpUrl | None = Field(None)
+    tickets_link: str | None = Field(None)
     source_specific_data: SourceSpecificArtistData = Field(
         {EventSource.ticketmaster_api: {}}
     )
-    image: HttpUrl | None = Field(None)
+    image: str | None = Field(None)
     genres: list[str] = Field([])
     aliases: list[str] = Field([])
 

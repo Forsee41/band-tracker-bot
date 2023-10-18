@@ -19,7 +19,7 @@ class TestAddArtistDAL:
 
         assert result_artist
         assert result_artist.name == "gosha"
-        assert result_artist.tickets_link == "https://gosha_tickets.com/"
+        assert result_artist.tickets_link == "https://gosha_tickets.com"
 
     async def test_same_tm_id_fails(
         self, update_dal: DAL, get_artist_update: Callable[[str], ArtistUpdate]

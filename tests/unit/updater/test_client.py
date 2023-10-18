@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-from pydantic import HttpUrl
 
 from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
@@ -24,38 +23,28 @@ class TestClient:
                 ArtistUpdate(
                     name="The Orb",
                     socials=ArtistUpdateSocials(
-                        spotify=HttpUrl(
-                            "https://open.spotify.com/artist"
-                            "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true"
-                        ),
-                        instagram=HttpUrl("http://www.instagram.com/theorblive"),
-                        youtube=HttpUrl(
-                            "https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg"
-                        ),
+                        spotify="https://open.spotify.com/artist"
+                        "/5HAtRoEPUvGSA7ziTGB1cF?autoplay=true",
+                        instagram="http://www.instagram.com/theorblive",
+                        youtube="https://www.youtube.com/channel/UCpoyFBLTLfbT2Z1D1AnlvLg",
                     ),
                     aliases=[],
-                    tickets_link=HttpUrl(
-                        "https://www.ticketmaster.com/the-orb-tickets/artist/806748"
-                    ),
+                    tickets_link="https://www.ticketmaster.com/the-orb-tickets/artist/806748",
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171RCf"}
                     },
                     genres=["Rock", "Pop"],
-                    image=HttpUrl(
-                        "https://s1.ticketm.net/dam/"
-                        "a/5a1/d9a78cdb-a7ce-4e40-861d-4ad1c"
-                        "6b355a1_264701_RECOMENDATION_16_9.jpg"
-                    ),
+                    image="https://s1.ticketm.net/dam/"
+                    "a/5a1/d9a78cdb-a7ce-4e40-861d-4ad1c"
+                    "6b355a1_264701_RECOMENDATION_16_9.jpg",
                 ),
             ),
             (
                 ARTISTS.get("_embedded").get("attractions")[1],
                 ArtistUpdate(
                     name="Jeff Tain Watts",
-                    tickets_link=HttpUrl(
-                        "https://www.ticketmaster.com/"
-                        "jeff-tain-watts-tickets/artist/844673"
-                    ),
+                    tickets_link="https://www.ticketmaster.com/"
+                    "jeff-tain-watts-tickets/artist/844673",
                     socials=ArtistUpdateSocials(
                         **{"spotify": None, "youtube": None, "instagram": None}
                     ),
@@ -64,12 +53,10 @@ class TestClient:
                     },
                     aliases=[],
                     genres=["Jazz", "Jazz"],
-                    image=HttpUrl(
-                        "https://s1.ticketm.net/dam/"
-                        "c/bea/03d47f66-d37b-4aca-"
-                        "aa17-0135be64dbea_105801_RECOMENDATIO"
-                        "N_16_9.jpg"
-                    ),
+                    image="https://s1.ticketm.net/dam/"
+                    "c/bea/03d47f66-d37b-4aca-"
+                    "aa17-0135be64dbea_105801_RECOMENDATIO"
+                    "N_16_9.jpg",
                 ),
             ),
         ],
@@ -83,20 +70,16 @@ class TestClient:
             title="Shania Twain: Queen Of Me Tour",
             date=datetime(2023, 7, 15),
             venue="Ruoff Music Center",
-            ticket_url=HttpUrl(
-                "https://concerts.livenation.com/shania-twain-queen-of-me-tour-"
-                "noblesville-indiana-07-15-2023/event/05005D55DD6D454E"
-            ),
+            ticket_url="https://concerts.livenation.com/shania-twain-queen-of-me-tour-"
+            "noblesville-indiana-07-15-2023/event/05005D55DD6D454E",
             source_specific_data={
                 EventSource.ticketmaster_api: {"id": "vvG1fZ949qhf4C"}
             },
             venue_city="Noblesville",
             venue_country="United States Of America",
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
-            image=HttpUrl(
-                "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
-                "4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg"
-            ),
+            image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+            "4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg",
             sales=EventUpdateSales(
                 sale_start=datetime(2022, 11, 4),
                 sale_end=datetime(2023, 7, 16),
@@ -117,18 +100,14 @@ class TestClient:
                     youtube=None,
                 ),
                 aliases=[],
-                tickets_link=HttpUrl(
-                    "https://www.ticketmaster.com/solina"
-                    "-celloensemble-tickets/artist/2772347"
-                ),
+                tickets_link="https://www.ticketmaster.com/solina"
+                "-celloensemble-tickets/artist/2772347",
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "K8vZ917_Fi7"}
                 },
                 genres=["Classical", "Classical/Vocal"],
-                image=HttpUrl(
-                    "https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
-                    "-a7aa-1932aab77518_105461_RECOMENDATION_16_9.jpg"
-                ),
+                image="https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
+                "-a7aa-1932aab77518_105461_RECOMENDATION_16_9.jpg",
             ),
             ArtistUpdate(
                 name="Maze featuring Frankie Beverly",
@@ -138,18 +117,14 @@ class TestClient:
                     youtube=None,
                 ),
                 aliases=["frankie beverly and maze", "maze frankie beverly"],
-                tickets_link=HttpUrl(
-                    "https://www.ticketmaster.com/maze-f"
-                    "eaturing-frankie-beverly-tickets/artist/735607"
-                ),
+                tickets_link="https://www.ticketmaster.com/maze-f"
+                "eaturing-frankie-beverly-tickets/artist/735607",
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "K8vZ9171Idf"}
                 },
                 genres=["R&B", "Soul"],
-                image=HttpUrl(
-                    "https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
-                    "884-4406b8ab64cd_1600911_RECOMENDATION_16_9.jpg"
-                ),
+                image="https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
+                "884-4406b8ab64cd_1600911_RECOMENDATION_16_9.jpg",
             ),
         ]
         assert get_all_artists(ARTISTS_SMALL) == artists_list
@@ -160,20 +135,16 @@ class TestClient:
                 title="Shania Twain: Queen Of Me Tour",
                 date=datetime(2023, 7, 15),
                 venue="Ruoff Music Center",
-                ticket_url=HttpUrl(
-                    "https://concerts.livenation.com/shania-twain-queen-of-me-tour-"
-                    "noblesville-indiana-07-15-2023/event/05005D55DD6D454E"
-                ),
+                ticket_url="https://concerts.livenation.com/shania-twain-queen-of-me-tour-"
+                "noblesville-indiana-07-15-2023/event/05005D55DD6D454E",
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "vvG1fZ949qhf4C"}
                 },
                 venue_city="Noblesville",
                 venue_country="United States Of America",
                 artists=["K8vZ91719n0", "K8vZ917_bOf"],
-                image=HttpUrl(
-                    "https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
-                    "4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg"
-                ),
+                image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+                "4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg",
                 sales=EventUpdateSales(
                     sale_start=datetime(2022, 11, 4),
                     sale_end=datetime(2023, 7, 16),
@@ -186,21 +157,17 @@ class TestClient:
                 title="Imagine Dragons",
                 date=datetime(2023, 7, 8),
                 venue="American Family Insurance Amphitheater - Summerfest Grounds",
-                ticket_url=HttpUrl(
-                    "https://www.ticketmaster.com/imagine-dragon"
-                    "s-milwaukee-wisconsin-07-08-20"
-                    "23/event/07005D689BED1C00"
-                ),
+                ticket_url="https://www.ticketmaster.com/imagine-dragon"
+                "s-milwaukee-wisconsin-07-08-20"
+                "23/event/07005D689BED1C00",
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "vvG1jZ9pxhDoYZ"}
                 },
                 venue_city="Milwaukee",
                 venue_country="United States Of America",
                 artists=["K8vZ917GSz7"],
-                image=HttpUrl(
-                    "https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
-                    "fe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg"
-                ),
+                image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                "fe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg",
                 sales=EventUpdateSales(
                     sale_start=datetime(2022, 11, 18),
                     sale_end=datetime(2023, 7, 9),
