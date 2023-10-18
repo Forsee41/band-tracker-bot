@@ -1,14 +1,7 @@
 from datetime import datetime
 from typing import Any, TypeAlias
 
-from pydantic import (
-    BaseModel,
-    Field,
-    HttpUrl,
-    NonNegativeFloat,
-    StrictStr,
-    field_validator,
-)
+from pydantic import BaseModel, Field, NonNegativeFloat, StrictStr, field_validator
 
 from band_tracker.core.enums import EventSource
 
@@ -30,8 +23,8 @@ class EventUpdate(BaseModel):
     venue: StrictStr | None = Field(None)
     venue_city: StrictStr | None = Field(None)
     venue_country: StrictStr | None = Field(None)
-    image: HttpUrl | None = Field(None)
-    ticket_url: HttpUrl | None = Field(None)
+    image: str | None = Field(None)
+    ticket_url: str | None = Field(None)
     source_specific_data: SourceSpecificEventData = Field(
         {EventSource.ticketmaster_api: {}}
     )
