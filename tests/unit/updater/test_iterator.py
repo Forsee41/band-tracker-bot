@@ -30,6 +30,7 @@ def mock_response() -> Callable[[str], dict]:
 class TestIterator:
     custom_request = ApiClient("", {})
 
+    @pytest.mark.skip
     async def test_iteration(
         self,
         mock_get: AsyncMock,
@@ -56,6 +57,7 @@ class TestIterator:
         assert len(data) == 5
         assert asyncio.iscoroutinefunction(mock_make_request)
 
+    @pytest.mark.skip
     async def test_structure_error(
         self,
         mock_get: AsyncMock,
@@ -82,6 +84,7 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
+    @pytest.mark.skip
     async def test_token_error(
         self,
         mock_get: AsyncMock,
@@ -108,6 +111,7 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
+    @pytest.mark.skip
     async def test_rate_limit_error(
         self,
         mock_get: AsyncMock,

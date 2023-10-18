@@ -13,6 +13,7 @@ from band_tracker.updater.errors import (
     PredictorError,
     RateLimitViolation,
     UnexpectedFaultResponseError,
+    WrongChunkException,
 )
 from band_tracker.updater.timestamp_predictor import TimestampPredictor
 
@@ -36,13 +37,10 @@ class ApiClient:
             "+++++++++++++++++++++++++++  SEND REQUEST  +++++++++++++++++++++++++++"
         )
 
-        reformat_start_date = datetime.strptime(str(start_date), "%Y-%m-%d %H:%M:%S.%f")
-        reformat_start_date = reformat_start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        reformatted_start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        reformatted_end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        reformat_end_date = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S.%f")
-        reformat_end_date = reformat_end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        startEndDateTime = f"{reformat_start_date},{reformat_end_date}"
+        startEndDateTime = f"{reformatted_start_date},{reformatted_end_date}"
         log.debug(startEndDateTime)
 
         response = httpx.get(
@@ -117,7 +115,7 @@ def exception_helper(data: dict[str, dict]) -> dict[str, int]:
                 case "oauth.v2.InvalidApiKey":
                     raise InvalidTokenError()
                 case "policies.ratelimit.SpikeArrestViolation":
-                    raise RateLimitViolation
+                    raise RateLimitViolation()
                 case _:
                     log.debug("edge case catch")
                     raise UnexpectedFaultResponseError(
@@ -131,16 +129,38 @@ class PageIterator:
     def __init__(self, client: ApiClient, predictor: TimestampPredictor) -> None:
         self.client = client
         self.predictor = predictor
-        self.stop_flag = False
         self.chunks: list[EventsChunk] = []
-        self.max_end_time = datetime.strptime(
-            "2025-10-16 16:56:55.359884", "%Y-%m-%d %H:%M:%S.%f"
-        )
+        self.max_end_time = datetime.now()
         self.iterator_start = datetime.now()
+
+    async def _process_large_chunk(self, chunk: EventsChunk) -> None:
+        for country in countries:
+            country_code = country.alpha2
+            response = await self.client.make_request(
+                chunk.start_datetime,
+                chunk.end_datetime,
+                country_code=country_code,
+            )
+            pagination_info = exception_helper(response)
+
+            result_entities = pagination_info.get("elements_number", 0)
+            pages_number = pagination_info.get("pages_number", 0)
+
+            if result_entities == 0:
+                continue
+
+            chunk = EventsChunk(
+                start_datetime=chunk.start_datetime,
+                end_datetime=chunk.end_datetime,
+                pages_number=pages_number,
+                country_code=country_code,
+            )
+            self.chunks.append(chunk)
 
     async def _get_chunk(self) -> EventsChunk | None:
         """
-        Get the next available undone chunk from the list of known chunks; Creates a chunk if no idle.
+        Get the next available undone chunk from the
+        list of known chunks; Creates a chunk if no idle.
         -------
         """
 
@@ -169,28 +189,7 @@ class PageIterator:
             self.max_end_time += timedelta(days=1)
 
         if new_chunk.pages_number >= 1000:
-            for country in countries:
-                country_code = country.alpha2
-                response = await self.client.make_request(
-                    new_chunk.start_datetime,
-                    new_chunk.end_datetime,
-                    country_code=country_code,
-                )
-                pagination_info = exception_helper(response)
-
-                result_entities = pagination_info.get("elements_number")
-                pages_number = pagination_info.get("pages_number")
-
-                if result_entities == 0:
-                    continue
-
-                new_chunk = EventsChunk(
-                    start_datetime=new_chunk.start_datetime,
-                    end_datetime=new_chunk.end_datetime,
-                    pages_number=pages_number,
-                    country_code=country_code,
-                )
-                self.chunks.append(new_chunk)
+            await self._process_large_chunk(new_chunk)
             return new_chunk
         else:
             self.chunks.append(new_chunk)
@@ -199,11 +198,13 @@ class PageIterator:
     async def _create_chunk(self) -> EventsChunk | None:
         """
         Creates and returns a chunk;
-        returns None instead if only a chunk with 0 elements can be created or if the date is more than 2 years away
+        returns None instead if only a chunk with 0 elements can be
+        created or if the date is more than 2 years away
         -------
         """
         log.debug(
-            "++++++++++++++++++++++++++++++++++++   create_chunk invoke   ++++++++++++++++++++++++++++++++++++"
+            "++++++++++++++++++++++++++++++++++++   "
+            "create_chunk invoke   ++++++++++++++++++++++++++++++++++++"
         )
         eventsChunk = None
         start_time = self.max_end_time
@@ -213,8 +214,11 @@ class PageIterator:
                 end_time = self.predictor.get_next_timestamp(
                     start=start_time, target_entities=target_entities
                 )
-            except Exception:
-                raise PredictorError
+            except Exception as e:
+                raise PredictorError(
+                    f"Predictor stopped working "
+                    f"due to the following error: {str(e)}"
+                )
 
             if start_time > end_time:
                 end_time = start_time
@@ -223,8 +227,8 @@ class PageIterator:
 
             pagination_info = exception_helper(response)
 
-            result_entities = pagination_info.get("elements_number")
-            pages_number = pagination_info.get("pages_number")
+            result_entities = pagination_info.get("elements_number", 0)
+            pages_number = pagination_info.get("pages_number", 0)
 
             eventsChunk = EventsChunk(
                 start_datetime=start_time,
@@ -243,6 +247,7 @@ class PageIterator:
 
         if (
             result_entities > 0
+            and eventsChunk
             and eventsChunk.start_datetime < self.iterator_start + timedelta(days=731)
         ):
             return eventsChunk
@@ -265,9 +270,6 @@ class PageIterator:
         return self
 
     async def __anext__(self) -> dict[str, dict]:
-        if self.stop_flag:
-            raise StopAsyncIteration
-
         log.debug("Chunks:  " + str(self.chunks))
         log.debug("max date:  " + str(self.max_end_time))
 
@@ -295,15 +297,8 @@ class PageIterator:
                 except Exception as e:
                     pages.update({current_page: PageProgression.idle})
                     raise e
-
-        else:
-            if self.all_chunks_done():
-                log.debug("No more elements can be fetched")
-                raise StopAsyncIteration
             else:
-                await asyncio.sleep(10)
-                if not self.all_chunks_done():
-                    raise TimeoutError("Chunks were in Progress for too long")
-                else:
-                    log.debug("No more elements can be fetched")
-                    raise StopAsyncIteration
+                current_chunk.progression = ChunkProgression.no_idle
+                raise WrongChunkException
+        else:
+            raise StopAsyncIteration

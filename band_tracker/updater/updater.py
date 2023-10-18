@@ -12,6 +12,7 @@ from band_tracker.updater.errors import (
     QuotaViolation,
     RateLimitViolation,
     UpdateError,
+    WrongChunkException,
 )
 from band_tracker.updater.page_iterator import ApiClient, PageIterator
 from band_tracker.updater.timestamp_predictor import TimestampPredictor
@@ -106,7 +107,7 @@ class Updater:
             if not any(pages):
                 return
             for page in pages:
-                if page is None:
+                if page is None or isinstance(page, WrongChunkException):
                     pass
                 elif isinstance(page, Exception):
                     await self._process_exceptions(

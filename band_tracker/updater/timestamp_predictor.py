@@ -9,9 +9,9 @@ class TimestampPredictor(ABC):
     def get_next_timestamp(self, start: datetime, target_entities: int) -> datetime:
         """Returns best fitting timestamp"""
 
-    @property
+    @abstractmethod
     def start(self) -> datetime:
-        ...
+        """get value of the start property"""
 
 
 class LinearPredictor(TimestampPredictor):
@@ -36,7 +36,6 @@ class LinearPredictor(TimestampPredictor):
                 solution.append(int(item))
         return min(solution)
 
-    @property
     def start(self) -> datetime:
         return self._start
 
