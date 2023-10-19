@@ -3,15 +3,23 @@ from datetime import datetime, timedelta
 
 import sympy
 
+from band_tracker.db.dal import PredictorDAL
+
 
 class TimestampPredictor(ABC):
     @abstractmethod
-    def get_next_timestamp(self, start: datetime, target_entities: int) -> datetime:
+    async def get_next_timestamp(
+        self, start: datetime, target_entities: int
+    ) -> datetime:
         """Returns best fitting timestamp"""
 
     @abstractmethod
     def start(self) -> datetime:
         """get value of the start property"""
+
+    @abstractmethod
+    async def update_params(self) -> None:
+        """Updates parameters for predictor"""
 
 
 class LinearPredictor(TimestampPredictor):
@@ -21,6 +29,12 @@ class LinearPredictor(TimestampPredictor):
         self._a = a
         self._b = b
         self._start = start if start is not None else datetime.now()
+
+    async def update_params(self) -> None:
+        assert self._a
+        assert self._b
+        assert self._start
+        """Updates parameters for predictor"""
 
     def _calculate(self, start: int, target_area: int) -> int:
         a = self._a
@@ -39,10 +53,42 @@ class LinearPredictor(TimestampPredictor):
     def start(self) -> datetime:
         return self._start
 
-    def get_next_timestamp(self, start: datetime, target_entities: int) -> datetime:
+    async def get_next_timestamp(
+        self, start: datetime, target_entities: int
+    ) -> datetime:
         time_passed_to_start: timedelta = start - self._start
         days_passed_to_start: int = time_passed_to_start.days
         target_days_passed = self._calculate(
             start=days_passed_to_start, target_area=target_entities
         )
         return self._start + timedelta(days=int(target_days_passed))
+
+
+class CurrentDataPredictor(TimestampPredictor):
+    def __init__(self, start: datetime, dal: PredictorDAL, max_date: datetime) -> None:
+        self._start = start if start is not None else datetime.now()
+        self._max_date = max_date
+        self._dal = dal
+        self._data: list[tuple[datetime, int]] = []
+
+    async def update_params(self) -> None:
+        data = await self._dal.get_event_amounts()
+        self._data = list(filter(lambda x: x[0] > self._start, data))
+
+    def start(self) -> datetime:
+        return self._start
+
+    async def get_next_timestamp(
+        self, start: datetime, target_entities: int
+    ) -> datetime:
+        data_iter = iter(self._data)
+        while (start_item := next(data_iter))[0] <= start:
+            continue
+
+        entities_cnt = start_item[1]
+        for item in data_iter:
+            entities_cnt += item[1]
+            if entities_cnt >= target_entities:
+                # data might miss days, no reason to pick the last non-empty day
+                return item[0] - timedelta(days=1)
+        return self._max_date
