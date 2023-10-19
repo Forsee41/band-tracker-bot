@@ -73,7 +73,7 @@ class CurrentDataPredictor(TimestampPredictor):
 
     async def update_params(self) -> None:
         data = await self._dal.get_event_amounts()
-        self._data = list(filter(lambda x: x[0] > self._start, data))
+        self._data = list(filter(lambda x: x[0] >= self._start, data))
 
     def start(self) -> datetime:
         return self._start
@@ -82,7 +82,7 @@ class CurrentDataPredictor(TimestampPredictor):
         self, start: datetime, target_entities: int
     ) -> datetime:
         data_iter = iter(self._data)
-        while (start_item := next(data_iter))[0] <= start:
+        while (start_item := next(data_iter))[0] <= start - timedelta(days=1):
             continue
 
         entities_cnt = start_item[1]

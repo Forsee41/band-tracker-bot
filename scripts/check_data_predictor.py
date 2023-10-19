@@ -13,9 +13,9 @@ class TestPredictorDAL:
         start_date = datetime.now()
         date = start_date
         for _ in range(1000):
-            date += timedelta(days=1)
             item = (date, randint(100, 1200))
             data.append(item)
+            date += timedelta(days=1)
         result = data
         return result
 
