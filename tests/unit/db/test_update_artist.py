@@ -2,7 +2,6 @@ from copy import copy
 from typing import Any, Callable, Coroutine
 
 import pytest
-from pydantic import HttpUrl
 from sqlalchemy import select
 
 from band_tracker.core.enums import EventSource
@@ -65,9 +64,9 @@ class TestUpdateArtistupdate_dal:
         artist = get_artist_update()
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         await update_dal._add_artist(artist)
-        artist.socials.instagram = HttpUrl("https://new_artist_instagram.com/")
-        artist.socials.spotify = HttpUrl("https://new_artist_spotify.com/")
-        artist.socials.youtube = HttpUrl("https://new_artist_youtube.com/")
+        artist.socials.instagram = "https://new_artist_instagram.com/"
+        artist.socials.spotify = "https://new_artist_spotify.com/"
+        artist.socials.youtube = "https://new_artist_youtube.com/"
         await update_dal.update_artist(artist)
         queried_artist = await update_dal._get_artist_by_tm_id(tm_id)
         assert queried_artist

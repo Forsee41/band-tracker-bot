@@ -1,6 +1,10 @@
 from band_tracker.core.enums import EventSource
 
 
+class WrongChunkException(Exception):
+    """Chunk with no idle pages was given"""
+
+
 class InvalidResponseStructureError(Exception):
     def __init__(self, message: str) -> None:
         self.message = message
@@ -26,9 +30,6 @@ class QuotaViolation(Exception):
 class RateLimitViolation(Exception):
     """Rate limit exceeded"""
 
-    def __init__(self, page_number: int) -> None:
-        self.page_number = page_number
-
 
 class DeserializationError(Exception):
     def __init__(self, error_str: str, api: EventSource) -> None:
@@ -42,3 +43,9 @@ class UpdateError(Exception):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.exceptions = exceptions
+
+
+class PredictorError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)

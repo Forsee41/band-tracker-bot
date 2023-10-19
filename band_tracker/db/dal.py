@@ -203,6 +203,9 @@ class UpdateDAL(BaseDAL):
         )
         event_tm_id = event_tm_data["id"]
         if not await self._is_event_exists(event_tm_id):
+            log.info(
+                f"Event with tm id {event_tm_id} is not present, adding a new one"
+            )
             return await self._add_event(event)
 
         ticket_url = str(event.ticket_url) if event.ticket_url else None

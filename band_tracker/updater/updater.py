@@ -8,11 +8,14 @@ from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
     InvalidTokenError,
+    PredictorError,
     QuotaViolation,
     RateLimitViolation,
     UpdateError,
+    WrongChunkException,
 )
 from band_tracker.updater.page_iterator import ApiClient, PageIterator
+from band_tracker.updater.timestamp_predictor import TimestampPredictor
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +24,11 @@ class ClientFactory:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = base_url
         self.token = token
-        self.params: dict = {"apikey": self.token, "segmentId": "KZFzniwnSyZfZ7v7nJ"}
+        self.params: dict = {
+            "apikey": self.token,
+            "segmentId": "KZFzniwnSyZfZ7v7nJ",
+            "size": 200,
+        }
 
     def get_events_client(self) -> ApiClient:
         url = "".join((self.base_url, "events"))
@@ -37,6 +44,7 @@ class Updater:
         self,
         client_factory: ClientFactory,
         dal: UpdateDAL,
+        predictor: TimestampPredictor,
         max_fails: int = 5,
         chunk_size: int = 4,
         ratelimit_violation_sleep_time: int = 1,  # seconds
@@ -44,6 +52,7 @@ class Updater:
         self.client_factory = client_factory
         self.chunk_size = chunk_size
         self.max_fails = max_fails
+        self.predictor = predictor
         self.dal = dal
         self.ratelimit_violation_sleep_time = ratelimit_violation_sleep_time
 
@@ -64,6 +73,8 @@ class Updater:
             raise exception
         elif isinstance(exception, QuotaViolation):
             raise exception
+        elif isinstance(exception, PredictorError):
+            raise exception
         elif isinstance(exception, InvalidResponseStructureError):
             target_list.append(exception)
         elif isinstance(exception, RateLimitViolation):
@@ -83,7 +94,7 @@ class Updater:
         client: ApiClient,
         update_dal: Callable,
     ) -> None:
-        page_iterator = PageIterator(client)
+        page_iterator = PageIterator(client=client, predictor=self.predictor)
         exceptions: list[Exception] = []
         while (chunk := self._get_pages_chunk(page_iterator)) is not None:
             log.debug("coroutines spawn")
@@ -91,9 +102,13 @@ class Updater:
             start_time = datetime.now()
 
             pages = await asyncio.gather(*chunk, return_exceptions=True)
+
+            log.debug(pages)
+            if not any(pages):
+                return
             for page in pages:
-                if isinstance(page, StopAsyncIteration):
-                    return
+                if page is None or isinstance(page, WrongChunkException):
+                    pass
                 elif isinstance(page, Exception):
                     await self._process_exceptions(
                         exception=page, target_list=exceptions
@@ -104,6 +119,7 @@ class Updater:
 
                     updates = get(page)
                     for update in updates:
+                        # log.debug("UPDATE " + str(update))
                         await update_dal(update)
 
             exec_time: timedelta = datetime.now() - start_time

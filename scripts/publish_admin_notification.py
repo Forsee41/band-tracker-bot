@@ -1,5 +1,5 @@
 """
-Publishes admin notificaton to mq.
+Publishes admin notification to mq.
 Example:
     `python scripts/publish_admin_notification.py Message`
 """

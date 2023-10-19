@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any, AsyncGenerator, Coroutine, Generator, Never
 
 import pytest
@@ -21,6 +22,7 @@ from band_tracker.db.models import (
     EventTMDataDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
+from band_tracker.updater.timestamp_predictor import LinearPredictor
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -129,6 +131,16 @@ def get_event_update() -> Callable[[str], EventUpdate]:
         return update
 
     return generate_update
+
+
+@pytest.fixture(scope="session")
+def get_linear_predictor() -> Callable[[float, float], LinearPredictor]:
+    def get_predictor(a: float, b: float) -> LinearPredictor:
+        start_time = datetime(year=2000, month=1, day=1)
+        predictor = LinearPredictor(a=a, b=b, start=start_time)
+        return predictor
+
+    return get_predictor
 
 
 @pytest.fixture()
