@@ -26,7 +26,7 @@ async def main() -> None:
     dal = PredictorDAL(db_sessionmaker)
 
     result = await dal.get_event_amounts()
-    assert result
+    print(result[:15])
 
 
 if __name__ == "__main__":
