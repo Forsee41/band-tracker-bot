@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import desc, func, literal, select
@@ -74,6 +75,22 @@ class BaseDAL:
             image=db_artist.image,
         )
         return artist
+
+
+class PredictorDAL:
+    def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
+        self.sessionmaker = sessionmaker
+
+    async def get_event_amounts(self) -> dict[datetime, int]:
+        stmt = """
+        SELECT DATE_TRUNC('day', start_date), count(id)
+        FROM event
+        GROUP_BY DATE_TRUNC('day', start_date)
+        """
+        async with self.sessionmaker.session() as session:
+            raw_result = await session.execute(stmt)
+            raw_result.fetchall()
+        return {}
 
 
 class BotDAL(BaseDAL):
@@ -203,9 +220,7 @@ class UpdateDAL(BaseDAL):
         )
         event_tm_id = event_tm_data["id"]
         if not await self._is_event_exists(event_tm_id):
-            log.info(
-                f"Event with tm id {event_tm_id} is not present, adding a new one"
-            )
+            log.info(f"Event with tm id {event_tm_id} is not present, adding a new one")
             return await self._add_event(event)
 
         ticket_url = str(event.ticket_url) if event.ticket_url else None
