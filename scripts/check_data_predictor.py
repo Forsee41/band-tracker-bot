@@ -1,8 +1,3 @@
-"""
-Adds an admin to database.
-Example:
-    `python scripts/add_admin.py admin_name chat_id`
-"""
 import asyncio
 import os
 import sys
