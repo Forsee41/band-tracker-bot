@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import desc, func, literal, select
+from sqlalchemy import desc, func, literal, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -82,15 +82,19 @@ class PredictorDAL:
         self.sessionmaker = sessionmaker
 
     async def get_event_amounts(self) -> dict[datetime, int]:
-        stmt = """
-        SELECT DATE_TRUNC('day', start_date), count(id)
+        # Using raw sql for query optimization, query has no params
+        stmt = text(
+            """
+        SELECT DATE_TRUNC('day', start_date) as dates, count(id)
         FROM event
-        GROUP_BY DATE_TRUNC('day', start_date)
+        GROUP BY DATE_TRUNC('day', start_date);
         """
+        )
         async with self.sessionmaker.session() as session:
             raw_result = await session.execute(stmt)
-            raw_result.fetchall()
-        return {}
+            data = raw_result.fetchall()
+        result = {item[0]: item[1] for item in data}
+        return result
 
 
 class BotDAL(BaseDAL):
