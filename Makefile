@@ -30,5 +30,8 @@ dump:
 		echo "Database dump created"; \
 	fi
 
+load_dump:
+	psql -p 5432 -U postgres -h localhost -d postgres -f dump.sql
+
 psql:
 	psql -p 5432 -U postgres -h localhost -d postgres
