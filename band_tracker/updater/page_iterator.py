@@ -211,7 +211,7 @@ class PageIterator:
         max_entities = target_entities = result_entities = 1000
         while result_entities >= max_entities:
             try:
-                end_time = self.predictor.get_next_timestamp(
+                end_time = await self.predictor.get_next_timestamp(
                     start=start_time, target_entities=target_entities
                 )
             except Exception as e:
