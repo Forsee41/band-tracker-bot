@@ -65,9 +65,8 @@ class LinearPredictor(TimestampPredictor):
 
 
 class CurrentDataPredictor(TimestampPredictor):
-    def __init__(self, start: datetime, dal: PredictorDAL, max_date: datetime) -> None:
-        self._start = start if start is not None else datetime.now()
-        self._max_date = max_date
+    def __init__(self, dal: PredictorDAL, start: datetime = datetime.now()) -> None:
+        self._start = start
         self._dal = dal
         self._data: list[tuple[datetime, int]] = []
 
@@ -81,14 +80,21 @@ class CurrentDataPredictor(TimestampPredictor):
     async def get_next_timestamp(
         self, start: datetime, target_entities: int
     ) -> datetime:
-        data_iter = iter(self._data)
-        while (start_item := next(data_iter))[0] <= start - timedelta(days=1):
-            continue
+        max_date = self._start + timedelta(days=730)
+        if start == max_date:
+            return max_date + timedelta(days=1)
 
-        entities_cnt = start_item[1]
-        for item in data_iter:
-            entities_cnt += item[1]
-            if entities_cnt >= target_entities:
-                # data might miss days, no reason to pick the last non-empty day
-                return item[0] - timedelta(days=1)
-        return self._max_date
+        data_iter = iter(self._data)
+        try:
+            while (start_item := next(data_iter))[0] <= start - timedelta(days=1):
+                continue
+            entities_cnt = start_item[1]
+            for item in data_iter:
+                entities_cnt += item[1]
+                if entities_cnt >= target_entities:
+                    # data might miss days, no reason to pick the last non-empty day
+                    return item[0] - timedelta(days=1)
+        except StopIteration:
+            pass
+
+        return max_date

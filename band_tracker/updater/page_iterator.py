@@ -248,7 +248,7 @@ class PageIterator:
         if (
             result_entities > 0
             and eventsChunk
-            and eventsChunk.start_datetime < self.iterator_start + timedelta(days=731)
+            and eventsChunk.end_datetime < self.iterator_start + timedelta(days=731)
         ):
             return eventsChunk
         else:

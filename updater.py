@@ -6,9 +6,12 @@ from dotenv import load_dotenv
 
 from band_tracker.config.env_loader import db_env_vars, events_api_env_vars
 from band_tracker.config.log import load_log_config
-from band_tracker.db.dal import UpdateDAL
+from band_tracker.db.dal import PredictorDAL, UpdateDAL
 from band_tracker.db.session import AsyncSessionmaker
-from band_tracker.updater.timestamp_predictor import LinearPredictor
+from band_tracker.updater.timestamp_predictor import (
+    CurrentDataPredictor,
+    LinearPredictor,
+)
 from band_tracker.updater.updater import ClientFactory, Updater
 
 
@@ -30,8 +33,12 @@ def main() -> None:
         database=db_env.DB_NAME,
     )
     dal = UpdateDAL(db_sessionmaker)
-    predictor = LinearPredictor(a=-0.1, b=100, start=datetime.now())
-    updater = Updater(client_factory=api_client_factory, dal=dal, predictor=predictor)
+    predictor_dal = PredictorDAL(db_sessionmaker)
+    linear_predictor = LinearPredictor(a=-0.1, b=100, start=datetime.now())
+    data_predictor = CurrentDataPredictor(predictor_dal)
+    updater = Updater(
+        client_factory=api_client_factory, dal=dal, predictor=data_predictor
+    )
     log.debug(
         "---------------------------------------------Updater"
         " start---------------------------------------------"
