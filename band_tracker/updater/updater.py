@@ -94,6 +94,7 @@ class Updater:
         client: ApiClient,
         update_dal: Callable,
     ) -> None:
+        await self.predictor.update_params()
         page_iterator = PageIterator(client=client, predictor=self.predictor)
         exceptions: list[Exception] = []
         while (chunk := self._get_pages_chunk(page_iterator)) is not None:
