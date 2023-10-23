@@ -100,6 +100,8 @@ class CurrentDataPredictor(TimestampPredictor):
             while (start_item := next(data_iter))[0] <= start - timedelta(days=1):
                 continue
             entities_cnt = start_item[1]
+            if entities_cnt >= target_entities:
+                return start_item[0]
             for item in data_iter:
                 entities_cnt += item[1]
                 if entities_cnt >= target_entities:
