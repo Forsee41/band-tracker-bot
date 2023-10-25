@@ -1,9 +1,17 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from typing import Protocol
 
 import sympy
 
-from band_tracker.db.dal import PredictorDAL
+
+class PredictorDAL(Protocol):
+    async def get_event_amounts(self) -> list[tuple[datetime, int]]:
+        """
+        Returns a list of tuples with 1st element being certain datetime, and
+        second element - an amount of events on that day
+        """
+        ...
 
 
 class TimestampPredictor(ABC):
@@ -77,6 +85,9 @@ class CurrentDataPredictor(TimestampPredictor):
     def start(self) -> datetime:
         return self._start
 
+    def total_events(self) -> int:
+        return sum([item[1] for item in self._data])
+
     async def get_next_timestamp(
         self, start: datetime, target_entities: int
     ) -> datetime:
@@ -89,6 +100,8 @@ class CurrentDataPredictor(TimestampPredictor):
             while (start_item := next(data_iter))[0] <= start - timedelta(days=1):
                 continue
             entities_cnt = start_item[1]
+            if entities_cnt >= target_entities:
+                return start_item[0]
             for item in data_iter:
                 entities_cnt += item[1]
                 if entities_cnt >= target_entities:
