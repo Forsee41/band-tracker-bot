@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import NamedTuple
 
@@ -71,3 +72,17 @@ def db_env_vars() -> DBEnvVars:
     env_var_dict = _load_vars(env_var_names)
 
     return DBEnvVars(**env_var_dict)
+
+
+def get_log_level() -> int:
+    env_lvl = os.getenv("LOG_LEVEL", "INFO")
+    print("env_lvl:", env_lvl)
+    levels = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+
+    return levels[env_lvl] if env_lvl in levels else logging.INFO
