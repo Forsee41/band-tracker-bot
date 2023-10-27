@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlalchemy import desc, func, literal, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.enums import AdminNotificationLevel, EventSource
@@ -22,6 +22,7 @@ from band_tracker.db.models import (
     EventArtistDB,
     EventDB,
     EventTMDataDB,
+    GenreDB,
     SalesDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
@@ -59,13 +60,14 @@ class BaseDAL:
         return event
 
     def _build_core_artist(
-        self, db_artist: ArtistDB, db_socials: ArtistSocialsDB
+        self, db_artist: ArtistDB, db_socials: ArtistSocialsDB, genres: list[GenreDB]
     ) -> Artist:
         socials = ArtistSocials(
             spotify=db_socials.spotify,
             instagram=db_socials.instagram,
             youtube=db_socials.youtube,
         )
+        genre_names = [genre.name for genre in genres]
 
         artist = Artist(
             id=db_artist.id,
@@ -73,6 +75,7 @@ class BaseDAL:
             tickets_link=db_artist.tickets_link,
             socials=socials,
             image=db_artist.image,
+            genres=genre_names,
         )
         return artist
 
@@ -123,12 +126,15 @@ class BotDAL(BaseDAL):
             .order_by(desc(subquery.c.max_similarity))
             .limit(10)
             .options(joinedload(ArtistDB.socials))
+            .options(selectinload(ArtistDB.genres))
         )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artists = scalars.all()
             return [
-                self._build_core_artist(db_artist=artist, db_socials=artist.socials)
+                self._build_core_artist(
+                    db_artist=artist, db_socials=artist.socials, genres=artist.genres
+                )
                 for artist in artists
             ]
 
@@ -169,7 +175,11 @@ class BotDAL(BaseDAL):
             return event
 
     async def get_artist(self, id: UUID) -> Artist | None:
-        stmt = select(ArtistDB).where(ArtistDB.id == id)
+        stmt = (
+            select(ArtistDB)
+            .where(ArtistDB.id == id)
+            .options(joinedload(ArtistDB.genres))
+        )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artist_db = scalars.first()
@@ -178,7 +188,9 @@ class BotDAL(BaseDAL):
             socials_db_result = await artist_db.awaitable_attrs.socials
             socials_db = socials_db_result
 
-        artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
+        artist = self._build_core_artist(
+            db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
+        )
         return artist
 
 
@@ -274,7 +286,9 @@ class UpdateDAL(BaseDAL):
                 return None
             socials_db = await artist_db.awaitable_attrs.socials
 
-        artist = self._build_core_artist(db_artist=artist_db, db_socials=socials_db)
+        artist = self._build_core_artist(
+            db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
+        )
         return artist
 
     async def _get_event_by_tm_id(self, tm_id: str) -> Event | None:
@@ -295,7 +309,10 @@ class UpdateDAL(BaseDAL):
         self, session: AsyncSession, tm_id: str
     ) -> ArtistDB | None:
         artist_query = (
-            select(ArtistDB).join(ArtistTMDataDB).where(ArtistTMDataDB.id == tm_id)
+            select(ArtistDB)
+            .join(ArtistTMDataDB)
+            .where(ArtistTMDataDB.id == tm_id)
+            .options(joinedload(ArtistDB.genres))
         )
         scalar = await session.scalars(artist_query)
         artist_db = scalar.first()
