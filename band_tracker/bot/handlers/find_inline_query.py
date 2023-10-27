@@ -21,6 +21,9 @@ async def handle_inline_query(
     query_raw = update.inline_query.query
     query = " ".join(query_raw.split()[1:])
     result_artists = await dal.search_artist(query)
+
+    log.debug(f"Result artists amount: {len(result_artists)}")
+
     inline_results: list[InlineQueryResultArticle] = []
     id = 0
     for artist in result_artists:
