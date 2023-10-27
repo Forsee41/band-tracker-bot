@@ -1,13 +1,19 @@
+import logging
+
 from telegram import InlineQueryResultArticle, InputTextMessageContent, Update
 from telegram.ext import ContextTypes, InlineQueryHandler
 
 from band_tracker.db.dal import BotDAL
+
+log = logging.getLogger(__name__)
 
 
 async def handle_inline_query(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     dal: BotDAL = context.bot_data["dal"]
+
+    log.debug("In inline query handler")
 
     if not update.inline_query:
         return

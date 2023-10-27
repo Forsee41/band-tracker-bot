@@ -105,6 +105,8 @@ class BotDAL(BaseDAL):
     async def search_artist(
         self, search_str: str, similarity_min: float = 0.3
     ) -> list[Artist]:
+        log.debug("In search artist")
+
         sanitized_search_str = re.sub(r"\W+", "", search_str)
         max_similarity = func.max(
             func.similarity(ArtistAliasDB.alias, literal(sanitized_search_str))
@@ -131,6 +133,7 @@ class BotDAL(BaseDAL):
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artists = scalars.all()
+            log.debug(f"First artist genres: {artists[0].genres}")
             return [
                 self._build_core_artist(
                     db_artist=artist, db_socials=artist.socials, genres=artist.genres
