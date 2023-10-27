@@ -142,6 +142,22 @@ class BotDAL(BaseDAL):
                 for artist in artists
             ]
 
+    async def get_artist_by_name(self, name: str) -> Artist | None:
+        stmt = (
+            select(ArtistDB)
+            .where(ArtistDB.name == name)
+            .options(joinedload(ArtistDB.socials))
+            .options(selectinload(ArtistDB.genres))
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            artist = scalars.first()
+        if artist is None:
+            return None
+        return self._build_core_artist(
+            db_artist=artist, db_socials=artist.socials, genres=artist.genres
+        )
+
     async def add_admin(
         self,
         name: str,
