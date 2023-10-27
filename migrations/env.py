@@ -31,6 +31,8 @@ target_metadata = Base.metadata
 
 
 def include_object(object, name, type_, reflected, _) -> bool:  # noqa: ignore
+    if reflected and object:
+        assert reflected
     if type_ == "index" and name == "artist_alias_gin_trgm_idx":
         return False
     return True
