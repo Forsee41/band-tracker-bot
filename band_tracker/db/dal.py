@@ -133,7 +133,8 @@ class BotDAL(BaseDAL):
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artists = scalars.all()
-            log.debug(f"First artist genres: {artists[0].genres}")
+            if artists:
+                log.debug(f"First artist genres: {artists[0].genres}")
             return [
                 self._build_core_artist(
                     db_artist=artist, db_socials=artist.socials, genres=artist.genres
