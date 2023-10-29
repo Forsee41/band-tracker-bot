@@ -13,7 +13,7 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     args = context.args
     assert args
-    name = "".join(args)
+    name = " ".join(args)
 
     if len(name) > 255:
         name = name[:255]
