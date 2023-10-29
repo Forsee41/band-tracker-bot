@@ -32,7 +32,7 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         InlineKeyboardButton("Subscribe", callback_data="subscribe"),
         InlineKeyboardButton("Follow", callback_data="follow"),
     ]
-    markup = InlineKeyboardMarkup([buttons])
+    markup = InlineKeyboardMarkup([buttons, buttons])
 
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
