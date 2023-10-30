@@ -15,7 +15,6 @@ def main() -> None:
     load_log_config()
     log = logging.getLogger(__name__)
 
-    load_dotenv()
     try:
         env_vars = tg_bot_env_vars()
     except EnvironmentError as e:
@@ -43,4 +42,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

@@ -1,5 +1,6 @@
 # Project specific
 dump.sql
+.log
 
 
 # Byte-compiled / optimized / DLL files

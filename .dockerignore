@@ -9,6 +9,7 @@ volumes/
 
 # Project specific
 dump.sql
+.log
 
 
 # From .gitignore
