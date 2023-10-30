@@ -10,9 +10,18 @@ log = logging.getLogger(__name__)
 
 async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dal: BotDAL = context.bot_data["dal"]
+    if not update.effective_chat:
+        log.warning("Artist handler can't find an effective chat of an update")
+        return
 
     args = context.args
-    assert args
+    if not args:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Please enter an artist name",
+        )
+        return
+
     name = " ".join(args)
 
     if len(name) > 255:
@@ -20,9 +29,6 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     artist = await dal.get_artist_by_name(name)
 
-    if not update.effective_chat:
-        log.warning("Artist handler can't find an effective chat of an update")
-        return
     if artist is None:
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Can't find an artist"
