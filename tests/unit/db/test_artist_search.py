@@ -3,7 +3,8 @@ from typing import Callable
 import pytest
 
 from band_tracker.db.artist_update import ArtistUpdate
-from band_tracker.db.dal import BotDAL, UpdateDAL
+from band_tracker.db.dal import UpdateDAL
+from band_tracker.db.dal_bot import BotDAL
 
 
 class TestArtistTextSearch:
