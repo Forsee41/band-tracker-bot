@@ -2,7 +2,7 @@ from typing import Callable
 
 from telegram.ext import Application, ApplicationBuilder
 
-from band_tracker.db.dal import BotDAL
+from band_tracker.db.dal_bot import BotDAL
 
 
 def build_app(

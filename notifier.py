@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from telegram import Bot
 
 from band_tracker.config.env_loader import db_env_vars, mq_env_vars, tg_bot_env_vars
-from band_tracker.db.dal import BotDAL
+from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.session import AsyncSessionmaker
 from band_tracker.notifier import Notifier
 
