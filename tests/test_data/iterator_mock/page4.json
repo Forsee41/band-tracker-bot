@@ -8,7 +8,8 @@
     }
   },
   "page": {
-    "totalPages": 5,
+    "totalElements": 5,
+    "totalPages": 4,
     "number": 3
   }
 }

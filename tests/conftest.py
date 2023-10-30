@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, AsyncGenerator, Coroutine, Generator, Never
 
 import pytest
@@ -23,7 +23,7 @@ from band_tracker.db.models import (
     EventTMDataDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
-from band_tracker.updater.timestamp_predictor import LinearPredictor
+from band_tracker.updater.timestamp_predictor import LinearPredictor, TimestampPredictor
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -139,6 +139,31 @@ def get_linear_predictor() -> Callable[[float, float], LinearPredictor]:
     def get_predictor(a: float, b: float) -> LinearPredictor:
         start_time = datetime(year=2000, month=1, day=1)
         predictor = LinearPredictor(a=a, b=b, start=start_time)
+        return predictor
+
+    return get_predictor
+
+
+@pytest.fixture(scope="session")
+def get_timestamp_predictor() -> Callable[[timedelta], TimestampPredictor]:
+    class MockPredictor(TimestampPredictor):
+        def __init__(self, delta: timedelta, start: datetime = datetime.now()) -> None:
+            self.delta = delta
+            self._start = start
+
+        async def get_next_timestamp(
+            self, start: datetime, target_entities: int
+        ) -> datetime:
+            return start + self.delta
+
+        async def update_params(self) -> None:
+            pass
+
+        def start(self) -> datetime:
+            return self._start
+
+    def get_predictor(delta: timedelta) -> TimestampPredictor:
+        predictor = MockPredictor(delta)
         return predictor
 
     return get_predictor
