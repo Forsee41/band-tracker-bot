@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 from band_tracker.config.env_loader import db_env_vars, events_api_env_vars
 from band_tracker.config.log import load_log_config
-from band_tracker.db.dal import UpdateDAL
 from band_tracker.db.dal_predictor import PredictorDAL
+from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.session import AsyncSessionmaker
 from band_tracker.updater.timestamp_predictor import CurrentDataPredictor
 from band_tracker.updater.updater import ClientFactory, Updater

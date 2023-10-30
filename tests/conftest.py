@@ -12,8 +12,8 @@ from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import joinedload
 
 from band_tracker.db.artist_update import ArtistUpdate
-from band_tracker.db.dal import UpdateDAL
 from band_tracker.db.dal_bot import BotDAL
+from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.event_update import EventUpdate
 from band_tracker.db.models import (
     ArtistDB,

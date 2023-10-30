@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Callable, Coroutine
 
-from band_tracker.db.dal import UpdateDAL
+from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
