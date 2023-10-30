@@ -5,7 +5,7 @@ from aio_pika import ExchangeType, connect
 from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
 from telegram import Bot
 
-from band_tracker.db.dal import BotDAL
+from band_tracker.db.dal_bot import BotDAL
 
 
 class Notifier:

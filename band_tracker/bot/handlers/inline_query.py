@@ -3,7 +3,7 @@ import logging
 from telegram import InlineQueryResultArticle, InputTextMessageContent, Update
 from telegram.ext import ContextTypes, InlineQueryHandler
 
-from band_tracker.db.dal import BotDAL
+from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
 
