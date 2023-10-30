@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 async def main() -> None:
     from band_tracker.config.env_loader import db_env_vars
-    from band_tracker.db.dal import PredictorDAL
+    from band_tracker.db.dal_predictor import PredictorDAL
     from band_tracker.db.session import AsyncSessionmaker
 
     db_env = db_env_vars()
