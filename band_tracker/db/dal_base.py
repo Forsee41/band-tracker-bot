@@ -71,7 +71,7 @@ class BaseDAL:
     def _core_to_db_user(self, user: User) -> UserDB:
         db_settings = self._core_to_db_user_settings(user.settings)
         db_user = UserDB(
-            id=UUID(user.id),
+            tg_id=user.id,
             name=user.name,
             join_date=user.join_date,
             settings=db_settings,
