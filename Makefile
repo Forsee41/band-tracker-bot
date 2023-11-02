@@ -14,6 +14,22 @@ test:
 	fi
 	python -m pytest -vv --asyncio-mode=auto
 
+prepare:
+	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=db))
+	if [ -z "$(CONTAINER_ID)" ]; then \
+		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
+		echo "Waiting for containers to spawn"; \
+		sleep 1.5; \
+		alembic upgrade head; \
+	else \
+		docker compose -f docker-compose-dev.yaml down &> /dev/null; \
+		echo "Shutting down containers"; \
+		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
+		echo "Waiting for containers to spawn"; \
+		sleep 1.5; \
+		alembic upgrade head; \
+	fi
+
 down:
 	docker compose -f docker-compose-dev.yaml down &> /dev/null
 
