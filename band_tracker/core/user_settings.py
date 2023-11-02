@@ -12,3 +12,11 @@ class UserSettings:
     default_tracking_distance: TrackingDistance
     autofollow: bool
     autosubscribe: bool
+
+    @classmethod
+    def default(cls: type) -> "UserSettings":
+        return cls(
+            default_tracking_distance=TrackingDistance.worldwide,
+            autofollow=False,
+            autosubscribe=False,
+        )
