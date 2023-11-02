@@ -139,6 +139,7 @@ class BotDAL(BaseDAL):
             .where(UserDB.tg_id == tg_id)
             .options(selectinload(UserDB.follows))
             .options(selectinload(UserDB.subscriptions))
+            .options(selectinload(UserDB.settings))
         )
         async with self.sessionmaker.session() as session:
             scalars: ScalarResult = await session.scalars(stmt)
