@@ -4,13 +4,14 @@ from band_tracker.bot.handlers import artist, inline_query, query, start, test
 
 
 def _get_handlers() -> list[BaseHandler]:
-    handler_lists: list = [
-        query.handlers,
-        test.handlers,
-        inline_query.handlers,
-        artist.handlers,
-        start.handlers,
+    modules: list = [
+        query,
+        test,
+        inline_query,
+        artist,
+        start,
     ]
+    handler_lists: list = [module.handlers for module in modules]
 
     result: list[BaseHandler] = []
     for handler_list in handler_lists:
