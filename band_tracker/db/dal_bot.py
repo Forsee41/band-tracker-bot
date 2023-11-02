@@ -3,6 +3,7 @@ import re
 from uuid import UUID
 
 from sqlalchemy import ScalarResult, desc, func, literal, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
@@ -10,6 +11,7 @@ from band_tracker.core.enums import AdminNotificationLevel
 from band_tracker.core.event import Event
 from band_tracker.core.user import User
 from band_tracker.db.dal_base import BaseDAL
+from band_tracker.db.errors import UserAlreadyExists
 from band_tracker.db.models import AdminDB, ArtistAliasDB, ArtistDB, EventDB, UserDB
 
 log = logging.getLogger(__name__)
@@ -131,7 +133,10 @@ class BotDAL(BaseDAL):
         async with self.sessionmaker.session() as session:
             user_db = self._core_to_db_user(user)
             session.add(user_db)
-            await session.commit()
+            try:
+                await session.commit()
+            except IntegrityError:
+                raise UserAlreadyExists()
 
     async def get_user(self, tg_id: int) -> User | None:
         stmt = (
