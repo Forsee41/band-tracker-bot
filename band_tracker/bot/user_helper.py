@@ -30,6 +30,7 @@ async def get_user(tg_user: TgUser, dal: BotDAL) -> User:
     """
     user = await dal.get_user(tg_user.id)
     if user:
+        log.debug("get_user bot helper found a user right away")
         return user
     user = default_user(tg_user)
     await dal.add_user(user)

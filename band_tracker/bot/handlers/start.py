@@ -25,7 +25,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     welcoming_text = f"Welcome {user.name}! Use `/help` command to get started!"
-    await dal.add_user(user)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text=welcoming_text
     )

@@ -2,7 +2,7 @@ import logging
 import re
 from uuid import UUID
 
-from sqlalchemy import desc, func, literal, select
+from sqlalchemy import ScalarResult, desc, func, literal, select
 from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
@@ -131,7 +131,7 @@ class BotDAL(BaseDAL):
         async with self.sessionmaker.session() as session:
             user_db = self._core_to_db_user(user)
             session.add(user_db)
-            session.commit()
+            await session.commit()
 
     async def get_user(self, tg_id: int) -> User | None:
         stmt = (
@@ -141,8 +141,11 @@ class BotDAL(BaseDAL):
             .options(selectinload(UserDB.subscriptions))
         )
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
+            scalars: ScalarResult = await session.scalars(stmt)
+
             user_db = scalars.first()
             if user_db is None:
+                log.debug("Getting users, got zero results")
                 return None
+            log.debug("Getting users, got at least one result")
             return self._db_to_core_user(user_db)
