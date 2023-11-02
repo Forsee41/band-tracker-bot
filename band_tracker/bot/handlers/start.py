@@ -16,7 +16,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     assert dal
 
     user_tg = update.effective_user
-    assert user_tg
+    if not user_tg:
+        log.warning("Start handler can't find an effective user!")
+        return
 
     user_settings = UserSettings.default()
     user = User(
@@ -29,7 +31,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
     if not update.effective_chat:
-        log.warning("Test handler can't find an effective chat of an update")
+        log.warning("Start handler can't find an effective chat of an update")
         return
     welcoming_text = f"Welcome {user.name}! Use `/help` command to get started!"
     await dal.add_user(user)
