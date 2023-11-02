@@ -27,7 +27,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         join_date=datetime.now(),
         settings=user_settings,
     )
-    log.info(f"registered a new user with uuid {user.id}")
 
     if not update.effective_chat:
         log.warning("Test handler can't find an effective chat of an update")
