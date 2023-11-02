@@ -10,7 +10,7 @@ from band_tracker.core.enums import AdminNotificationLevel
 from band_tracker.core.event import Event
 from band_tracker.core.user import User
 from band_tracker.db.dal_base import BaseDAL
-from band_tracker.db.models import AdminDB, ArtistAliasDB, ArtistDB, EventDB
+from band_tracker.db.models import AdminDB, ArtistAliasDB, ArtistDB, EventDB, UserDB
 
 log = logging.getLogger(__name__)
 
@@ -132,3 +132,17 @@ class BotDAL(BaseDAL):
             user_db = self._core_to_db_user(user)
             session.add(user_db)
             session.commit()
+
+    async def get_user(self, tg_id: int) -> User | None:
+        stmt = (
+            select(UserDB)
+            .where(UserDB.tg_id == tg_id)
+            .options(selectinload(UserDB.follows))
+            .options(selectinload(UserDB.subscriptions))
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            user_db = scalars.first()
+            if user_db is None:
+                return None
+            return self._db_to_core_user(user_db)
