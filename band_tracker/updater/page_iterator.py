@@ -72,6 +72,7 @@ class EventsChunk:
     pages_number: int
     start_datetime: datetime
     end_datetime: datetime
+    entities_number: int
     pages: dict[int, PageProgression] = field(default_factory=dict)
     progression: ChunkProgression = ChunkProgression.has_idle
     country_code: str = field(default="")
@@ -133,7 +134,7 @@ class PageIterator:
         self.max_end_time = datetime.now()
         self.iterator_start = datetime.now()
 
-    async def _process_large_chunk(self, chunk: EventsChunk) -> None:
+    async def _process_large_chunk(self, chunk: EventsChunk) -> EventsChunk:
         for country in countries:
             country_code = country.alpha2
             response = await self.client.make_request(
@@ -154,8 +155,11 @@ class PageIterator:
                 end_datetime=chunk.end_datetime,
                 pages_number=pages_number,
                 country_code=country_code,
+                entities_number=result_entities,
             )
             self.chunks.append(chunk)
+
+        return chunk
 
     async def _get_chunk(self) -> EventsChunk | None:
         """
@@ -188,9 +192,9 @@ class PageIterator:
         if new_chunk.start_datetime == new_chunk.end_datetime == self.max_end_time:
             self.max_end_time += timedelta(days=1)
 
-        if new_chunk.pages_number >= 1000:
-            await self._process_large_chunk(new_chunk)
-            return new_chunk
+        if new_chunk.entities_number >= 1000:
+            processed_chunk = await self._process_large_chunk(new_chunk)
+            return processed_chunk
         else:
             self.chunks.append(new_chunk)
             return new_chunk
@@ -234,6 +238,7 @@ class PageIterator:
                 start_datetime=start_time,
                 end_datetime=end_time,
                 pages_number=pages_number,
+                entities_number=result_entities,
             )
             log.debug(str(result_entities) + " " + str(target_entities))
 

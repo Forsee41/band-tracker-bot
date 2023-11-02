@@ -1,5 +1,6 @@
 import asyncio
 import json
+from datetime import datetime, timedelta
 from typing import Callable
 from unittest.mock import AsyncMock, patch
 
@@ -11,7 +12,7 @@ from band_tracker.updater.errors import (
     RateLimitViolation,
 )
 from band_tracker.updater.page_iterator import ApiClient, PageIterator
-from band_tracker.updater.timestamp_predictor import LinearPredictor
+from band_tracker.updater.timestamp_predictor import LinearPredictor, TimestampPredictor
 
 
 @pytest.fixture()
@@ -30,49 +31,86 @@ def mock_response() -> Callable[[str], dict]:
 class TestIterator:
     custom_request = ApiClient("", {})
 
-    @pytest.mark.skip
-    async def test_iteration(
+    async def test_chunk_progression(
         self,
         mock_get: AsyncMock,
         mock_response: Callable[[str], dict],
-        get_linear_predictor: Callable[[float, float], LinearPredictor],
+        get_timestamp_predictor: Callable[[timedelta], TimestampPredictor],
     ) -> None:
-        async def mock_make_request(page_number: int) -> dict:
+        async def mock_make_request(
+            start_date: datetime,
+            end_date: datetime,
+            page_number: int = 0,
+            country_code: str = "",
+        ) -> dict:
             await asyncio.sleep(0.1)
-
-            return mock_response(f"page{page_number}")
+            return mock_response(f"page{page_number + 1}")
 
         mock_get.side_effect = mock_make_request
-        predictor = get_linear_predictor(-0.1, 1000)
 
+        predictor = get_timestamp_predictor(timedelta(days=365))
         iterator = PageIterator(self.custom_request, predictor=predictor)
+        initial_max_date = iterator.max_end_time
 
-        data = []
         async for i in iterator:
-            data.append(i)
+            pass
 
-        page_response = mock_response("page3")
+        chunks = iterator.chunks
 
-        assert data[2] == page_response
-        assert len(data) == 5
-        assert asyncio.iscoroutinefunction(mock_make_request)
+        assert len(chunks) == 2
+        assert iterator.all_chunks_done() is True
+        assert iterator.max_end_time > initial_max_date
 
     @pytest.mark.skip
+    async def test_process_large_chunk(
+        self,
+        mock_get: AsyncMock,
+        mock_response: Callable[[str], dict],
+        get_timestamp_predictor: Callable[[timedelta], TimestampPredictor],
+    ) -> None:
+        async def mock_make_request(
+            start_date: datetime,
+            end_date: datetime,
+            page_number: int = 0,
+            country_code: str = "",
+        ) -> dict:
+            await asyncio.sleep(0.1)
+
+            if country_code == "US" or country_code == "BR" or country_code == "":
+                return mock_response("large_page")
+            else:
+                return mock_response("processed_page")
+
+        mock_get.side_effect = mock_make_request
+
+        predictor = get_timestamp_predictor(timedelta(days=0))
+        iterator = PageIterator(self.custom_request, predictor=predictor)
+        iterator.max_end_time += timedelta(days=731)
+
+        async for i in iterator:
+            pass
+
+        assert len(iterator.chunks) == 2
+
     async def test_structure_error(
         self,
         mock_get: AsyncMock,
         mock_response: Callable[[str], dict],
         get_linear_predictor: Callable[[float, float], LinearPredictor],
     ) -> None:
-        async def mock_make_request(page_number: int) -> dict:
+        async def mock_make_request(
+            start_date: datetime,
+            end_date: datetime,
+            page_number: int = 0,
+            country_code: str = "",
+        ) -> dict:
             await asyncio.sleep(0.1)
-
             if page_number == 3:
-                """simulation of response with invalid structure on the 3. page"""
+                """simulation of response when invalid structure was given"""
 
                 return mock_response("invalid_structure_error")
 
-            return mock_response(f"page{page_number}")
+            return mock_response(f"page{page_number + 1}")
 
         mock_get.side_effect = mock_make_request
         predictor = get_linear_predictor(-0.1, 1000)
@@ -84,22 +122,26 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
-    @pytest.mark.skip
     async def test_token_error(
         self,
         mock_get: AsyncMock,
         mock_response: Callable[[str], dict],
         get_linear_predictor: Callable[[float, float], LinearPredictor],
     ) -> None:
-        async def mock_make_request(page_number: int) -> dict:
+        async def mock_make_request(
+            start_date: datetime,
+            end_date: datetime,
+            page_number: int = 0,
+            country_code: str = "",
+        ) -> dict:
             await asyncio.sleep(0.1)
 
-            if page_number == 1:
+            if page_number == 3:
                 """simulation of response when invalid token was given"""
 
                 return mock_response("invalid_token")
 
-            return mock_response(f"page{page_number}")
+            return mock_response(f"page{page_number + 1}")
 
         mock_get.side_effect = mock_make_request
         predictor = get_linear_predictor(-0.1, 1000)
@@ -111,22 +153,26 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
-    @pytest.mark.skip
     async def test_rate_limit_error(
         self,
         mock_get: AsyncMock,
         mock_response: Callable[[str], dict],
         get_linear_predictor: Callable[[float, float], LinearPredictor],
     ) -> None:
-        async def mock_make_request(page_number: int) -> dict:
+        async def mock_make_request(
+            start_date: datetime,
+            end_date: datetime,
+            page_number: int = 0,
+            country_code: str = "",
+        ) -> dict:
             await asyncio.sleep(0.1)
 
-            if page_number == 4:
+            if page_number == 3:
                 """simulation of response when rate limit is exceeded"""
 
                 return mock_response("rate_limit_error")
 
-            return mock_response(f"page{page_number}")
+            return mock_response(f"page{page_number + 1}")
 
         mock_get.side_effect = mock_make_request
         predictor = get_linear_predictor(-0.1, 1000)
