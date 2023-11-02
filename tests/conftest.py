@@ -153,7 +153,10 @@ def get_timestamp_predictor() -> Callable[[timedelta], TimestampPredictor]:
             self.delta = delta
             self._start = start
 
-        async def get_next_timestamp(self, start: datetime, _: int) -> datetime:
+        async def get_next_timestamp(
+            self, start: datetime, target_entities: int
+        ) -> datetime:
+            assert target_entities or not target_entities
             return start + self.delta
 
         async def update_params(self) -> None:

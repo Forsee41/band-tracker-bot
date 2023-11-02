@@ -24,7 +24,7 @@ class TestGetUser:
 
     async def test_multiple_users(self, user: UserFixture, bot_dal: BotDAL) -> None:
         user1 = user(1, "user1")
-        user2 = user(1, "user1")
+        user2 = user(2, "user1")
         await bot_dal.add_user(user1)
         await bot_dal.add_user(user2)
         result1 = await bot_dal.get_user(1)
