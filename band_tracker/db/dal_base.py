@@ -3,7 +3,17 @@ from uuid import UUID
 
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.event import Event, EventSales
-from band_tracker.db.models import ArtistDB, ArtistSocialsDB, EventDB, GenreDB, SalesDB
+from band_tracker.core.user import User
+from band_tracker.core.user_settings import UserSettings
+from band_tracker.db.models import (
+    ArtistDB,
+    ArtistSocialsDB,
+    EventDB,
+    GenreDB,
+    SalesDB,
+    UserDB,
+    UserSettingsDB,
+)
 from band_tracker.db.session import AsyncSessionmaker
 
 log = logging.getLogger(__name__)
@@ -57,3 +67,18 @@ class BaseDAL:
             genres=genre_names,
         )
         return artist
+
+    def _core_to_db_user(self, user: User) -> UserDB:
+        db_settings = self._core_to_db_user_settings(user.settings)
+        db_user = UserDB(
+            id=UUID(user.id),
+            name=user.name,
+            join_date=user.join_date,
+            settings=db_settings,
+        )
+        return db_user
+
+    def _core_to_db_user_settings(self, settings: UserSettings) -> UserSettingsDB:
+        assert settings
+        settings_db = UserSettingsDB(is_muted=False)
+        return settings_db
