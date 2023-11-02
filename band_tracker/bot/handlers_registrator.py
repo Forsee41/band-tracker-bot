@@ -1,6 +1,6 @@
 from telegram.ext import Application, BaseHandler
 
-from band_tracker.bot.handlers import artist, inline_query, query, test
+from band_tracker.bot.handlers import artist, inline_query, query, start, test
 
 
 def _get_handlers() -> list[BaseHandler]:
@@ -9,6 +9,7 @@ def _get_handlers() -> list[BaseHandler]:
         test.handlers,
         inline_query.handlers,
         artist.handlers,
+        start.handlers,
     ]
 
     result: list[BaseHandler] = []
