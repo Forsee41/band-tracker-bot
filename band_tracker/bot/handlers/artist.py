@@ -1,8 +1,10 @@
 import logging
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, ContextTypes
 
+from band_tracker.bot.user_helper import get_user
+from band_tracker.core.artist import Artist
 from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
@@ -10,9 +12,15 @@ log = logging.getLogger(__name__)
 
 async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dal: BotDAL = context.bot_data["dal"]
+
     if not update.effective_chat:
         log.warning("Artist handler can't find an effective chat of an update")
         return
+    if not update.effective_user:
+        log.warning("Artist handler can't find an effective user of an update")
+        return
+
+    user = await get_user(tg_user=update.effective_user, dal=dal)
 
     args = context.args
     if not args:
@@ -34,14 +42,50 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             chat_id=update.effective_chat.id, text="Can't find an artist"
         )
         return
-    buttons = [
-        InlineKeyboardButton("Subscribe", callback_data="subscribe"),
-        InlineKeyboardButton("Follow", callback_data="follow"),
-    ]
-    markup = InlineKeyboardMarkup([buttons, buttons])
 
-    await context.bot.send_photo(
-        chat_id=update.effective_chat.id,
+    if artist.id in [follow.artist for follow in user.follows]:
+        method = _show_followed_amp
+    elif artist.id in user.subscriptions:
+        method = _show_subscribed_amp
+    else:
+        method = _show_unsubscribed_amp
+    await method(bot=context.bot, chat_id=update.effective_chat.id, artist=artist)
+
+
+async def _show_unsubscribed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
+    buttons = [
+        InlineKeyboardButton("Subscribe", callback_data=f"subscribe {artist.id}"),
+    ]
+    markup = InlineKeyboardMarkup([buttons])
+
+    await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
+
+
+async def _show_subscribed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
+    buttons = [
+        InlineKeyboardButton("Unsubscribe", callback_data=f"unsubscribe {artist.id}"),
+        InlineKeyboardButton("Follow", callback_data=f"follow {artist.id}"),
+    ]
+    markup = InlineKeyboardMarkup([buttons])
+
+    await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
+
+
+async def _show_followed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
+    buttons = [
+        InlineKeyboardButton("Unsubscribe", callback_data=f"unsubscribe {artist.id}"),
+        InlineKeyboardButton("Unfollow", callback_data=f"unfollow {artist.id}"),
+    ]
+    markup = InlineKeyboardMarkup([buttons])
+
+    await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
+
+
+async def _send_result(
+    bot: Bot, chat_id: int, artist: Artist, markup: InlineKeyboardMarkup
+) -> None:
+    await bot.send_photo(
+        chat_id=chat_id,
         photo=artist.image,  # type: ignore
         caption="Text data",
         reply_markup=markup,
