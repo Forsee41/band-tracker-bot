@@ -7,7 +7,7 @@ from band_tracker.core.user_settings import UserSettings
 
 @dataclass
 class User:
-    id: str
+    id: int
     name: str
     subscriptions: list[str]
     follows: list[Follow]

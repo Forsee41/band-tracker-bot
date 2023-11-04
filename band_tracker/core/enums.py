@@ -13,10 +13,10 @@ class EventSource(Enum):
 
 
 class TrackingDistance(Enum):
-    city: None
-    country: None
-    region: None
-    worldwide: None
+    city = "city"
+    country = "country"
+    region = "region"
+    worldwide = "worldwide"
 
 
 class AdminNotificationLevel(Enum):

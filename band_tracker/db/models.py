@@ -87,6 +87,7 @@ class UserDB(Base):
         primary_key=True,
         server_default=alchemy_text("gen_random_uuid()"),
     )
+    tg_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     join_date: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.now()

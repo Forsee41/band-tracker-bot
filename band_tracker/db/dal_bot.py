@@ -2,14 +2,17 @@ import logging
 import re
 from uuid import UUID
 
-from sqlalchemy import desc, func, literal, select
+from sqlalchemy import ScalarResult, desc, func, literal, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import AdminNotificationLevel
 from band_tracker.core.event import Event
+from band_tracker.core.user import User
 from band_tracker.db.dal_base import BaseDAL
-from band_tracker.db.models import AdminDB, ArtistAliasDB, ArtistDB, EventDB
+from band_tracker.db.errors import UserAlreadyExists
+from band_tracker.db.models import AdminDB, ArtistAliasDB, ArtistDB, EventDB, UserDB
 
 log = logging.getLogger(__name__)
 
@@ -125,3 +128,30 @@ class BotDAL(BaseDAL):
             db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
         )
         return artist
+
+    async def add_user(self, user: User) -> None:
+        async with self.sessionmaker.session() as session:
+            user_db = self._core_to_db_user(user)
+            session.add(user_db)
+            try:
+                await session.commit()
+            except IntegrityError:
+                raise UserAlreadyExists()
+
+    async def get_user(self, tg_id: int) -> User | None:
+        stmt = (
+            select(UserDB)
+            .where(UserDB.tg_id == tg_id)
+            .options(selectinload(UserDB.follows))
+            .options(selectinload(UserDB.subscriptions))
+            .options(selectinload(UserDB.settings))
+        )
+        async with self.sessionmaker.session() as session:
+            scalars: ScalarResult = await session.scalars(stmt)
+
+            user_db = scalars.first()
+            if user_db is None:
+                log.debug("Getting users, got zero results")
+                return None
+            log.debug("Getting users, got at least one result")
+            return self._db_to_core_user(user_db)

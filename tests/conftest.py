@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import joinedload
 
+from band_tracker.core.user import User
+from band_tracker.core.user_settings import UserSettings
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.dal_update import UpdateDAL
@@ -154,6 +156,7 @@ def get_timestamp_predictor() -> Callable[[timedelta], TimestampPredictor]:
         async def get_next_timestamp(
             self, start: datetime, target_entities: int
         ) -> datetime:
+            assert target_entities or not target_entities
             return start + self.delta
 
         async def update_params(self) -> None:
@@ -235,3 +238,22 @@ def update_dal(sessionmaker: AsyncSessionmaker) -> UpdateDAL:
 def bot_dal(sessionmaker: AsyncSessionmaker) -> BotDAL:
     dal = BotDAL(sessionmaker)
     return dal
+
+
+@pytest.fixture(scope="session")
+def user() -> Callable[[int, str], User]:
+    def get_user(id: int, name: str) -> User:
+        join_date = datetime(year=2000, month=1, day=1)
+        user_settings = UserSettings.default()
+        user = User(
+            id=id,
+            name=name,
+            join_date=join_date,
+            settings=user_settings,
+            subscriptions=[],
+            follows=[],
+        )
+        id += 1
+        return user
+
+    return get_user
