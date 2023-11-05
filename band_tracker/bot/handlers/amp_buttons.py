@@ -1,10 +1,15 @@
 import logging
+from typing import Callable
 from uuid import UUID
 
-from telegram import CallbackQuery, Update
+from telegram import CallbackQuery, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, InvalidCallbackData
 
-from band_tracker.bot.artist_main_page import subscribed_markup
+from band_tracker.bot.artist_main_page import (
+    followed_markup,
+    subscribed_markup,
+    unsubscribed_markup,
+)
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +36,11 @@ def _get_callback_data(query: CallbackQuery | None) -> UUID:
     return artist_id
 
 
-async def subscribe(update: Update, context: CallbackContext) -> None:
+async def _change_markup(
+    update: Update,
+    context: CallbackContext,
+    markup_generator: Callable[[UUID], InlineKeyboardMarkup],
+) -> None:
     query = update.callback_query
     try:
         artist_id = _get_callback_data(query)
@@ -43,7 +52,8 @@ async def subscribe(update: Update, context: CallbackContext) -> None:
     assert query
     assert query.message
 
-    new_markup = subscribed_markup(artist_id=artist_id)
+    await query.answer()
+    new_markup = markup_generator(artist_id)
     await context.bot.edit_message_reply_markup(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
@@ -51,16 +61,28 @@ async def subscribe(update: Update, context: CallbackContext) -> None:
     )
 
 
+async def subscribe(update: Update, context: CallbackContext) -> None:
+    await _change_markup(
+        update=update, context=context, markup_generator=subscribed_markup
+    )
+
+
 async def follow(update: Update, context: CallbackContext) -> None:
-    ...
+    await _change_markup(
+        update=update, context=context, markup_generator=followed_markup
+    )
 
 
 async def unsubscribe(update: Update, context: CallbackContext) -> None:
-    ...
+    await _change_markup(
+        update=update, context=context, markup_generator=unsubscribed_markup
+    )
 
 
 async def unfollow(update: Update, context: CallbackContext) -> None:
-    ...
+    await _change_markup(
+        update=update, context=context, markup_generator=subscribed_markup
+    )
 
 
 handlers = [
