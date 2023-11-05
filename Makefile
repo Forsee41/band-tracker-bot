@@ -54,3 +54,8 @@ psql:
 
 bot:
 	python bot.py > .log 2>&1
+
+pre-commit:
+	make test
+	make check
+
