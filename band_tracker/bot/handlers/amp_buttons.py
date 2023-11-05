@@ -40,13 +40,9 @@ async def _change_markup(
     update: Update,
     context: CallbackContext,
     markup_generator: Callable[[UUID], InlineKeyboardMarkup],
+    artist_id: UUID,
 ) -> None:
     query = update.callback_query
-    try:
-        artist_id = _get_callback_data(query)
-    except InvalidCallbackData as e:
-        log.warning(e.message)
-        return
 
     assert context.bot
     assert query
@@ -62,26 +58,66 @@ async def _change_markup(
 
 
 async def subscribe(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    try:
+        artist_id = _get_callback_data(query)
+    except InvalidCallbackData as e:
+        log.warning(e.message)
+        return
+
     await _change_markup(
-        update=update, context=context, markup_generator=subscribed_markup
+        update=update,
+        context=context,
+        markup_generator=subscribed_markup,
+        artist_id=artist_id,
     )
 
 
 async def follow(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    try:
+        artist_id = _get_callback_data(query)
+    except InvalidCallbackData as e:
+        log.warning(e.message)
+        return
+
     await _change_markup(
-        update=update, context=context, markup_generator=followed_markup
+        update=update,
+        context=context,
+        markup_generator=followed_markup,
+        artist_id=artist_id,
     )
 
 
 async def unsubscribe(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    try:
+        artist_id = _get_callback_data(query)
+    except InvalidCallbackData as e:
+        log.warning(e.message)
+        return
+
     await _change_markup(
-        update=update, context=context, markup_generator=unsubscribed_markup
+        update=update,
+        context=context,
+        markup_generator=unsubscribed_markup,
+        artist_id=artist_id,
     )
 
 
 async def unfollow(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    try:
+        artist_id = _get_callback_data(query)
+    except InvalidCallbackData as e:
+        log.warning(e.message)
+        return
+
     await _change_markup(
-        update=update, context=context, markup_generator=subscribed_markup
+        update=update,
+        context=context,
+        markup_generator=subscribed_markup,
+        artist_id=artist_id,
     )
 
 
