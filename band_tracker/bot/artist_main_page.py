@@ -40,7 +40,7 @@ def followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
     ]
     row2 = [
         InlineKeyboardButton(
-            "Configure Subscription", callback_data=f"subscription {artist_id}"
+            "Configure Follow", callback_data=f"subscription {artist_id}"
         ),
     ]
     row3 = [
