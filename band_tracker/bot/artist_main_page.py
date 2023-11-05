@@ -9,28 +9,45 @@ log = logging.getLogger(__name__)
 
 
 def unsubscribed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
-    buttons = [
+    row1 = [
         InlineKeyboardButton("Subscribe", callback_data=f"subscribe {artist_id}"),
     ]
-    markup = InlineKeyboardMarkup([buttons])
+    row2 = [
+        InlineKeyboardButton("Events", callback_data=f"tickets {artist_id}"),
+        InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
+    ]
+    markup = InlineKeyboardMarkup([row1, row2])
     return markup
 
 
 def subscribed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
-    buttons = [
+    row1 = [
         InlineKeyboardButton("Unsubscribe", callback_data=f"unsubscribe {artist_id}"),
         InlineKeyboardButton("Follow", callback_data=f"follow {artist_id}"),
     ]
-    markup = InlineKeyboardMarkup([buttons])
+    row2 = [
+        InlineKeyboardButton("Events", callback_data=f"tickets {artist_id}"),
+        InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
+    ]
+    markup = InlineKeyboardMarkup([row1, row2])
     return markup
 
 
 def followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
-    buttons = [
+    row1 = [
         InlineKeyboardButton("Unsubscribe", callback_data=f"unsubscribe {artist_id}"),
         InlineKeyboardButton("Unfollow", callback_data=f"unfollow {artist_id}"),
     ]
-    markup = InlineKeyboardMarkup([buttons])
+    row2 = [
+        InlineKeyboardButton(
+            "Configure Subscription", callback_data=f"subscription {artist_id}"
+        ),
+    ]
+    row3 = [
+        InlineKeyboardButton("Events", callback_data=f"tickets {artist_id}"),
+        InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
+    ]
+    markup = InlineKeyboardMarkup([row1, row2, row3])
     return markup
 
 
