@@ -53,22 +53,22 @@ async def show_followed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
 async def _send_result(
     bot: Bot, chat_id: int, artist: Artist, markup: InlineKeyboardMarkup
 ) -> None:
-    text_data = f"<b>{artist.name}</b>\n"
+    text_data = f"<b>{artist.name}</b>\n\n"
     if artist.genres:
         genres = " ".join(artist.genres)
         genres_str = f"Genres: {genres}\n"
         text_data += genres_str
     if artist.socials.instagram:
-        text_data += f"[Instagram]({artist.socials.instagram})\n"
+        text_data += f'<a href="{artist.socials.instagram}">Instagram</a>\n'
     if artist.socials.youtube:
-        text_data += f"[Youtube]({artist.socials.youtube})\n"
+        text_data += f'<a href="{artist.socials.youtube}">YouTube</a>\n'
     if artist.socials.spotify:
-        text_data += f"[Spotify]({artist.socials.spotify})\n"
+        text_data += f'<a href="{artist.socials.spotify}">Spotify</a>\n'
 
     await bot.send_photo(
         chat_id=chat_id,
         photo=artist.image,  # type: ignore
-        caption="Text data",
+        caption=text_data,
         reply_markup=markup,
         parse_mode="HTML",
     )
