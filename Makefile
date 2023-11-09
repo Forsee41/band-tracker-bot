@@ -53,4 +53,9 @@ psql:
 	psql -p 5432 -U postgres -h localhost -d postgres
 
 bot:
-	python bot.py > .log 2>&1
+	python bot.py 2>&1 | tee .log 
+
+pre-commit:
+	make test
+	make check
+

@@ -1,8 +1,10 @@
 import logging
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
 
+from band_tracker.bot.artist_main_page import show_followed_amp, show_unfollowed_amp
+from band_tracker.bot.user_helper import get_user
 from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
@@ -10,9 +12,15 @@ log = logging.getLogger(__name__)
 
 async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dal: BotDAL = context.bot_data["dal"]
+
     if not update.effective_chat:
         log.warning("Artist handler can't find an effective chat of an update")
         return
+    if not update.effective_user:
+        log.warning("Artist handler can't find an effective user of an update")
+        return
+
+    user = await get_user(tg_user=update.effective_user, dal=dal)
 
     args = context.args
     if not args:
@@ -34,18 +42,12 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             chat_id=update.effective_chat.id, text="Can't find an artist"
         )
         return
-    buttons = [
-        InlineKeyboardButton("Subscribe", callback_data="subscribe"),
-        InlineKeyboardButton("Follow", callback_data="follow"),
-    ]
-    markup = InlineKeyboardMarkup([buttons, buttons])
 
-    await context.bot.send_photo(
-        chat_id=update.effective_chat.id,
-        photo=artist.image,  # type: ignore
-        caption="Text data",
-        reply_markup=markup,
-    )
+    if artist.id in [follow.artist for follow in user.follows]:
+        method = show_followed_amp
+    else:
+        method = show_unfollowed_amp
+    await method(bot=context.bot, chat_id=update.effective_chat.id, artist=artist)
 
 
 handlers = [CommandHandler("artist", show_artist)]
