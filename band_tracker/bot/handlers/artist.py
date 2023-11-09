@@ -3,11 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
 
-from band_tracker.bot.artist_main_page import (
-    show_followed_amp,
-    show_subscribed_amp,
-    show_unsubscribed_amp,
-)
+from band_tracker.bot.artist_main_page import show_followed_amp, show_unfollowed_amp
 from band_tracker.bot.user_helper import get_user
 from band_tracker.db.dal_bot import BotDAL
 
@@ -49,10 +45,8 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if artist.id in [follow.artist for follow in user.follows]:
         method = show_followed_amp
-    elif artist.id in user.subscriptions:
-        method = show_subscribed_amp
     else:
-        method = show_unsubscribed_amp
+        method = show_unfollowed_amp
     await method(bot=context.bot, chat_id=update.effective_chat.id, artist=artist)
 
 

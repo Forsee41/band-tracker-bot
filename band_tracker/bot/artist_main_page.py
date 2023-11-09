@@ -8,25 +8,12 @@ from band_tracker.core.artist import Artist
 log = logging.getLogger(__name__)
 
 
-def unsubscribed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
+def unfollowed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
     row1 = [
-        InlineKeyboardButton("Subscribe", callback_data=f"subscribe {artist_id}"),
-    ]
-    row2 = [
-        InlineKeyboardButton("Events", callback_data=f"tickets {artist_id}"),
-        InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
-    ]
-    markup = InlineKeyboardMarkup([row1, row2])
-    return markup
-
-
-def subscribed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
-    row1 = [
-        InlineKeyboardButton("Unsubscribe", callback_data=f"unsubscribe {artist_id}"),
         InlineKeyboardButton("Follow", callback_data=f"follow {artist_id}"),
     ]
     row2 = [
-        InlineKeyboardButton("Events", callback_data=f"tickets {artist_id}"),
+        InlineKeyboardButton("Events", callback_data=f"events {artist_id}"),
         InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
     ]
     markup = InlineKeyboardMarkup([row1, row2])
@@ -35,29 +22,21 @@ def subscribed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
 
 def followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
     row1 = [
-        InlineKeyboardButton("Unsubscribe", callback_data=f"unsubscribe {artist_id}"),
         InlineKeyboardButton("Unfollow", callback_data=f"unfollow {artist_id}"),
-    ]
-    row2 = [
         InlineKeyboardButton(
-            "Configure Follow", callback_data=f"subscription {artist_id}"
+            "Configure notifications", callback_data=f"notifications {artist_id}"
         ),
     ]
-    row3 = [
-        InlineKeyboardButton("Events", callback_data=f"tickets {artist_id}"),
+    row2 = [
+        InlineKeyboardButton("Events", callback_data=f"events {artist_id}"),
         InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
     ]
-    markup = InlineKeyboardMarkup([row1, row2, row3])
+    markup = InlineKeyboardMarkup([row1, row2])
     return markup
 
 
-async def show_unsubscribed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
-    markup = unsubscribed_markup(artist.id)
-    await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
-
-
-async def show_subscribed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
-    markup = subscribed_markup(artist.id)
+async def show_unfollowed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
+    markup = followed_markup(artist.id)
 
     await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
 

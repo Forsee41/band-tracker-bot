@@ -5,11 +5,7 @@ from uuid import UUID
 from telegram import CallbackQuery, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, InvalidCallbackData
 
-from band_tracker.bot.artist_main_page import (
-    followed_markup,
-    subscribed_markup,
-    unsubscribed_markup,
-)
+from band_tracker.bot.artist_main_page import followed_markup, unfollowed_markup
 
 log = logging.getLogger(__name__)
 
@@ -57,22 +53,6 @@ async def _change_markup(
     )
 
 
-async def subscribe(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    try:
-        artist_id = _get_callback_data(query)
-    except InvalidCallbackData as e:
-        log.warning(e.message)
-        return
-
-    await _change_markup(
-        update=update,
-        context=context,
-        markup_generator=subscribed_markup,
-        artist_id=artist_id,
-    )
-
-
 async def follow(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     try:
@@ -89,22 +69,6 @@ async def follow(update: Update, context: CallbackContext) -> None:
     )
 
 
-async def unsubscribe(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    try:
-        artist_id = _get_callback_data(query)
-    except InvalidCallbackData as e:
-        log.warning(e.message)
-        return
-
-    await _change_markup(
-        update=update,
-        context=context,
-        markup_generator=unsubscribed_markup,
-        artist_id=artist_id,
-    )
-
-
 async def unfollow(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     try:
@@ -116,14 +80,12 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
     await _change_markup(
         update=update,
         context=context,
-        markup_generator=subscribed_markup,
+        markup_generator=unfollowed_markup,
         artist_id=artist_id,
     )
 
 
 handlers = [
-    CallbackQueryHandler(callback=subscribe, pattern="subscribe .*"),
     CallbackQueryHandler(callback=follow, pattern="follow .*"),
-    CallbackQueryHandler(callback=unsubscribe, pattern="unsubscribe .*"),
     CallbackQueryHandler(callback=unfollow, pattern="unfollow .*"),
 ]
