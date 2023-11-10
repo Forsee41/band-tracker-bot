@@ -3,7 +3,10 @@ import logging
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
 
-from band_tracker.bot.artist_main_page import show_followed_amp, show_unfollowed_amp
+from band_tracker.bot.helpers.artist_main_page import (
+    show_followed_amp,
+    show_unfollowed_amp,
+)
 from band_tracker.bot.user_helper import get_user
 from band_tracker.db.dal_bot import BotDAL
 

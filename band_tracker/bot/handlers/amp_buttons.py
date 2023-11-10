@@ -5,7 +5,7 @@ from uuid import UUID
 from telegram import CallbackQuery, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, InvalidCallbackData
 
-from band_tracker.bot.artist_main_page import followed_markup, unfollowed_markup
+from band_tracker.bot.helpers.artist_main_page import followed_markup, unfollowed_markup
 
 log = logging.getLogger(__name__)
 
