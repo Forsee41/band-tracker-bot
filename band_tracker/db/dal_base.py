@@ -1,6 +1,10 @@
 import logging
 from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.event import Event, EventSales
 from band_tracker.core.follow import Follow
@@ -24,6 +28,38 @@ log = logging.getLogger(__name__)
 class BaseDAL:
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
+
+    async def _artist_by_uuid(
+        self,
+        session: AsyncSession,
+        artist_id: UUID,
+        follows: bool = True,
+        genres: bool = True,
+        socials: bool = True,
+    ) -> ArtistDB | None:
+        stmt = select(ArtistDB).where(ArtistDB.id == artist_id)
+        if follows:
+            stmt = stmt.options(selectinload(ArtistDB.follows))
+        if genres:
+            stmt = stmt.options(selectinload(ArtistDB.genres))
+        if socials:
+            stmt = stmt.options(selectinload(ArtistDB.socials))
+        scalars = await session.scalars(stmt)
+        artist = scalars.first()
+        return artist
+
+    async def _user_by_tg_id(
+        self,
+        session: AsyncSession,
+        tg_id: int,
+        follows: bool = True,
+    ) -> UserDB | None:
+        stmt = select(UserDB).where(UserDB.tg_id == tg_id)
+        if follows:
+            stmt = stmt.options(selectinload(UserDB.follows))
+        scalars = await session.scalars(stmt)
+        user = scalars.first()
+        return user
 
     def _build_core_event(
         self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
@@ -93,7 +129,7 @@ class BaseDAL:
         return user
 
     def _db_to_core_follow(self, follow_db: FollowDB) -> Follow:
-        return Follow(artist=str(follow_db.artist.id), locations=None)
+        return Follow(artist=str(follow_db.artist_id), locations=None)
 
     def _core_to_db_user_settings(self, settings: UserSettings) -> UserSettingsDB:
         assert settings

@@ -7,12 +7,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
-from band_tracker.core.enums import AdminNotificationLevel
+from band_tracker.core.enums import AdminNotificationLevel, Range
 from band_tracker.core.event import Event
 from band_tracker.core.user import User
 from band_tracker.db.dal_base import BaseDAL
-from band_tracker.db.errors import UserAlreadyExists
-from band_tracker.db.models import AdminDB, ArtistAliasDB, ArtistDB, EventDB, UserDB
+from band_tracker.db.errors import ArtistNotFound, UserAlreadyExists, UserNotFound
+from band_tracker.db.models import (
+    AdminDB,
+    ArtistAliasDB,
+    ArtistDB,
+    EventDB,
+    FollowDB,
+    UserDB,
+)
 
 log = logging.getLogger(__name__)
 
@@ -73,6 +80,35 @@ class BotDAL(BaseDAL):
         return self._build_core_artist(
             db_artist=artist, db_socials=artist.socials, genres=artist.genres
         )
+
+    async def add_follow(self, user_tg_id: int, artist_id: UUID) -> None:
+        async with self.sessionmaker.session() as session:
+            user = await self._user_by_tg_id(
+                session=session, tg_id=user_tg_id, follows=False
+            )
+            if user is None:
+                raise UserNotFound
+            existing_follow = await session.get(
+                FollowDB, {"user_id": user.id, "artist_id": artist_id}
+            )
+            if existing_follow is not None:
+                log.warning(
+                    "Not adding a follow since it already exists. User shouldn't "
+                    "be able to trigger this event"
+                )
+                return
+            artist = await self._artist_by_uuid(
+                session=session,
+                artist_id=artist_id,
+                genres=False,
+                follows=False,
+                socials=False,
+            )
+            if artist is None:
+                raise ArtistNotFound
+            follow = FollowDB(user=user, artist=artist, range_=Range.WORLDWIDE)
+            session.add(follow)
+            await session.commit()
 
     async def add_admin(
         self,

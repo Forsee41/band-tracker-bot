@@ -6,6 +6,9 @@ from telegram import CallbackQuery, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, InvalidCallbackData
 
 from band_tracker.bot.helpers.artist_main_page import followed_markup, unfollowed_markup
+from band_tracker.bot.helpers.follow import add_follow
+from band_tracker.bot.helpers.user import get_user
+from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +57,7 @@ async def _change_markup(
 
 
 async def follow(update: Update, context: CallbackContext) -> None:
+    dal: BotDAL = context.bot_data["dal"]
     query = update.callback_query
     try:
         artist_id = _get_callback_data(query)
@@ -61,6 +65,9 @@ async def follow(update: Update, context: CallbackContext) -> None:
         log.warning(e.message)
         return
 
+    assert update.effective_user
+    user = await get_user(dal=dal, tg_user=update.effective_user)
+    await add_follow(dal=dal, user_id=user.id, artist_id=artist_id)
     await _change_markup(
         update=update,
         context=context,

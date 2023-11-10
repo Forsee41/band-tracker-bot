@@ -36,7 +36,7 @@ def followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
 
 
 async def show_unfollowed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
-    markup = followed_markup(artist.id)
+    markup = unfollowed_markup(artist.id)
 
     await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
 
