@@ -41,7 +41,6 @@ async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
         "follow",
         "genre",
         "sales",
-        "subscription",
         '"user"',
         "user_settings",
         "artist_socials",
@@ -250,7 +249,6 @@ def user() -> Callable[[int, str], User]:
             name=name,
             join_date=join_date,
             settings=user_settings,
-            subscriptions=[],
             follows=[],
         )
         id += 1
