@@ -7,7 +7,7 @@ from band_tracker.bot.helpers.artist_main_page import (
     show_followed_amp,
     show_unfollowed_amp,
 )
-from band_tracker.bot.user_helper import get_user
+from band_tracker.bot.helpers.user import get_user
 from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
