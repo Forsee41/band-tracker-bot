@@ -28,10 +28,6 @@ class ArtistDB(Base):
     tickets_link: Mapped[str | None] = mapped_column(String, nullable=True)
     image: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    subscribers: Mapped[list["UserDB"]] = relationship(
-        back_populates="subscriptions",
-        secondary="subscription",
-    )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     aliases: Mapped[list["ArtistAliasDB"]] = relationship(back_populates="artist")
     genres: Mapped[list["GenreDB"]] = relationship(secondary="artist_genre")
@@ -93,9 +89,6 @@ class UserDB(Base):
         DateTime, nullable=False, default=datetime.now()
     )
 
-    subscriptions: Mapped[list["ArtistDB"]] = relationship(
-        back_populates="subscribers", secondary="subscription"
-    )
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="user")
     settings: Mapped["UserSettingsDB"] = relationship(back_populates="user")
 
@@ -220,21 +213,6 @@ class UserSettingsDB(Base):
     is_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     user: Mapped[UserDB] = relationship(back_populates="settings")
-
-
-class SubscriptionDB(Base):
-    __tablename__ = "subscription"
-
-    user_id: Mapped[UUID] = mapped_column(
-        UUID_PG(as_uuid=True),
-        ForeignKey("user.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    artist_id: Mapped[UUID] = mapped_column(
-        UUID_PG(as_uuid=True),
-        ForeignKey("artist.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
 
 
 class ArtistAliasDB(Base):

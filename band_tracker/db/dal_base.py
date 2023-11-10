@@ -82,14 +82,12 @@ class BaseDAL:
 
     def _db_to_core_user(self, user_db: UserDB) -> User:
         settings = self._db_to_core_user_settings(user_db.settings)
-        subscriptions = [str(artist.id) for artist in user_db.subscriptions]
         follows = [self._db_to_core_follow(follow_db) for follow_db in user_db.follows]
         user = User(
             id=user_db.tg_id,
             name=user_db.name,
             join_date=user_db.join_date,
             settings=settings,
-            subscriptions=subscriptions,
             follows=follows,
         )
         return user
