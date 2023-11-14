@@ -27,7 +27,7 @@ class TestAddFollowDAL:
         assert user_result
         follows = user_result.follows
         assert len(follows) == 1
-        assert str(artist_id) in follows
+        assert artist_id in follows
 
     async def test_add_several_follows(
         self,
@@ -48,8 +48,8 @@ class TestAddFollowDAL:
         assert user_result
         follows = user_result.follows
         assert len(follows) == 2
-        assert str(artist1_id) in follows
-        assert str(artist2_id) in follows
+        assert artist1_id in follows
+        assert artist2_id in follows
 
     async def test_remove_follow(
         self,
@@ -89,8 +89,8 @@ class TestAddFollowDAL:
         assert user_result
         follows = user_result.follows
         assert len(follows) == 1
-        assert str(artist1_id) not in follows
-        assert str(artist2_id) in follows
+        assert artist1_id not in follows
+        assert artist2_id in follows
 
     async def test_refollow(
         self,
@@ -110,7 +110,7 @@ class TestAddFollowDAL:
         assert user_result
         follows = user_result.follows
         assert len(follows) == 1
-        assert str(artist_id) in follows
+        assert artist_id in follows
 
 
 if __name__ == "__main__":

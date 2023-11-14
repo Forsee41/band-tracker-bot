@@ -119,7 +119,7 @@ class BaseDAL:
     def _db_to_core_user(self, user_db: UserDB) -> User:
         settings = self._db_to_core_user_settings(user_db.settings)
         follows = {
-            str(follow_db.artist_id): self._db_to_core_follow(follow_db)
+            follow_db.artist_id: self._db_to_core_follow(follow_db)
             for follow_db in user_db.follows
             if follow_db.active
         }
@@ -134,7 +134,7 @@ class BaseDAL:
 
     def _db_to_core_follow(self, follow_db: FollowDB) -> Follow:
         return Follow(
-            artist=str(follow_db.artist_id),
+            artist=follow_db.artist_id,
             range_=follow_db.range_,
             notify=follow_db.notify,
         )
