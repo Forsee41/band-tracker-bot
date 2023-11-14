@@ -77,6 +77,7 @@ async def follow(update: Update, context: CallbackContext) -> None:
 
 
 async def unfollow(update: Update, context: CallbackContext) -> None:
+    dal: BotDAL = context.bot_data["dal"]
     query = update.callback_query
     try:
         artist_id = _get_callback_data(query)
@@ -84,6 +85,9 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
         log.warning(e.message)
         return
 
+    assert update.effective_user
+    user = await get_user(dal=dal, tg_user=update.effective_user)
+    await dal.unfollow(user_tg_id=user.id, artist_id=artist_id)
     await _change_markup(
         update=update,
         context=context,
