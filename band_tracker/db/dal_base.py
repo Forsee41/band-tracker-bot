@@ -121,6 +121,7 @@ class BaseDAL:
         follows = {
             str(follow_db.artist_id): self._db_to_core_follow(follow_db)
             for follow_db in user_db.follows
+            if follow_db.active
         }
         user = User(
             id=user_db.tg_id,
