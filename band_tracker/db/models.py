@@ -240,8 +240,14 @@ class FollowDB(Base):
         ForeignKey("artist.id", ondelete="CASCADE"),
         primary_key=True,
     )
+    notify: Mapped[bool] = mapped_column(
+        "notify", Boolean, nullable=False, default=True
+    )
     range_: Mapped[Range] = mapped_column(
         "range", EnumDB(Range), nullable=False, default=Range.WORLDWIDE
+    )
+    active: Mapped[bool] = mapped_column(
+        "active", Boolean, nullable=False, default=True
     )
 
     user: Mapped[UserDB] = relationship(back_populates="follows")
