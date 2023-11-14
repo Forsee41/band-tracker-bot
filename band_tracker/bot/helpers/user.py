@@ -15,7 +15,7 @@ def default_user(user_tg: TgUser) -> User:
     user = User(
         id=int(user_tg.id),
         name=user_tg.name,
-        follows=[],
+        follows={},
         join_date=datetime.now(),
         settings=user_settings,
     )

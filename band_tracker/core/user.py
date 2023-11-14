@@ -9,6 +9,6 @@ from band_tracker.core.user_settings import UserSettings
 class User:
     id: int
     name: str
-    follows: list[Follow]
+    follows: dict[str, Follow]
     join_date: datetime
     settings: UserSettings
