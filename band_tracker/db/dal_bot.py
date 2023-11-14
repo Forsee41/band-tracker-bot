@@ -81,6 +81,23 @@ class BotDAL(BaseDAL):
             db_artist=artist, db_socials=artist.socials, genres=artist.genres
         )
 
+    async def unfollow(self, user_tg_id: int, artist_id: UUID) -> None:
+        async with self.sessionmaker.session() as session:
+            user = await self._user_by_tg_id(
+                session=session, tg_id=user_tg_id, follows=False
+            )
+            if user is None:
+                raise UserNotFound
+            existing_follow = await session.get(
+                FollowDB, {"user_id": user.id, "artist_id": artist_id}
+            )
+            if existing_follow is None:
+                log.warning("Trying to remove unexisting follow, ignoring")
+                return
+            existing_follow.active = False
+            session.add(existing_follow)
+            await session.commit()
+
     async def add_follow(self, user_tg_id: int, artist_id: UUID) -> None:
         async with self.sessionmaker.session() as session:
             user = await self._user_by_tg_id(
@@ -92,9 +109,14 @@ class BotDAL(BaseDAL):
                 FollowDB, {"user_id": user.id, "artist_id": artist_id}
             )
             if existing_follow is not None:
+                if existing_follow.active is False:
+                    existing_follow.active = True
+                    session.add(existing_follow)
+                    await session.commit()
+                    return
                 log.warning(
-                    "Not adding a follow since it already exists. User shouldn't "
-                    "be able to trigger this event"
+                    "Not adding a follow since it already exists and active. User "
+                    "shouldn't be able to trigger this event"
                 )
                 return
             artist = await self._artist_by_uuid(
