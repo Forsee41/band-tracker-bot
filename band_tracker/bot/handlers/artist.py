@@ -46,7 +46,7 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         )
         return
 
-    if artist.id in user.follows:
+    if str(artist.id) in user.follows:
         method = show_followed_amp
     else:
         method = show_unfollowed_amp
