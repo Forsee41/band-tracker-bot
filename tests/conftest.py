@@ -249,7 +249,7 @@ def user() -> Callable[[int, str], User]:
             name=name,
             join_date=join_date,
             settings=user_settings,
-            follows=[],
+            follows={},
         )
         id += 1
         return user
