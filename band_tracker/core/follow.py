@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 
+from band_tracker.core.enums import Range
+
 
 @dataclass
 class Follow:
     artist: str
-    locations: None  # TODO
+    range_: Range
+    notify: bool

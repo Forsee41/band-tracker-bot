@@ -129,7 +129,11 @@ class BaseDAL:
         return user
 
     def _db_to_core_follow(self, follow_db: FollowDB) -> Follow:
-        return Follow(artist=str(follow_db.artist_id), locations=None)
+        return Follow(
+            artist=str(follow_db.artist_id),
+            range_=follow_db.range_,
+            notify=follow_db.notify,
+        )
 
     def _core_to_db_user_settings(self, settings: UserSettings) -> UserSettingsDB:
         assert settings
