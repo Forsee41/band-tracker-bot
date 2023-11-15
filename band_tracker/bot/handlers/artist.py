@@ -17,7 +17,7 @@ from telegram.ext import (
     InvalidCallbackData,
 )
 
-from band_tracker.bot.helpers.user import get_user
+from band_tracker.bot.helpers.get_user import get_user
 from band_tracker.core.artist import Artist
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.errors import ArtistNotFound, UserNotFound
