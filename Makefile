@@ -21,6 +21,7 @@ prepare:
 		echo "Waiting for containers to spawn"; \
 		sleep 1.5; \
 		alembic upgrade head; \
+		make load_dump \
 	else \
 		docker compose -f docker-compose-dev.yaml down &> /dev/null; \
 		echo "Shutting down containers"; \
@@ -28,6 +29,7 @@ prepare:
 		echo "Waiting for containers to spawn"; \
 		sleep 1.5; \
 		alembic upgrade head; \
+		make load_dump \
 	fi
 
 down:
@@ -47,10 +49,10 @@ dump:
 	fi
 
 load_dump:
-	psql -p 5432 -U postgres -h localhost -d postgres -f dump.sql
+	PGPASSWORD='postgres' psql -p 5432 -U postgres -h localhost -d postgres -f dump.sql
 
 psql:
-	psql -p 5432 -U postgres -h localhost -d postgres
+	PGPASSWORD='postgres' psql -p 5432 -U postgres -h localhost -d postgres
 
 bot:
 	python bot.py 2>&1 | tee .log 
