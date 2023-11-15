@@ -87,15 +87,6 @@ async def _send_result(
     )
 
 
-async def _add_follow(dal: BotDAL, user_id: int, artist_id: UUID) -> None:
-    try:
-        await dal.add_follow(user_tg_id=user_id, artist_id=artist_id)
-    except ArtistNotFound:
-        log.warning("Can't create a follow, artist is not present in db")
-    except UserNotFound:
-        log.warning("Can't create a follow, user is not present in db")
-
-
 def _get_callback_data(query: CallbackQuery | None) -> UUID:
     if query is None:
         raise InvalidCallbackData(
@@ -150,7 +141,16 @@ async def follow(update: Update, context: CallbackContext) -> None:
 
     assert update.effective_user
     user = await get_user(dal=dal, tg_user=update.effective_user)
-    await _add_follow(dal=dal, user_id=user.id, artist_id=artist_id)
+
+    try:
+        await dal.add_follow(user_tg_id=user.id, artist_id=artist_id)
+    except ArtistNotFound:
+        log.warning("Can't create a follow, artist is not present in db")
+        return
+    except UserNotFound:
+        log.warning("Can't create a follow, user is not present in db")
+        return
+
     await _change_markup(
         update=update,
         context=context,
