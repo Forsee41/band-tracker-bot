@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
-
-from telegram import User as TgUser
+from typing import Protocol
 
 from band_tracker.core.user import User
 from band_tracker.core.user_settings import UserSettings
@@ -10,13 +9,20 @@ from band_tracker.db.dal_bot import BotDAL
 log = logging.getLogger(__name__)
 
 
+class TgUser(Protocol):
+    id: int
+
+    @property
+    def name(self) -> str:
+        ...
+
+
 def default_user(user_tg: TgUser) -> User:
     user_settings = UserSettings.default()
     user = User(
         id=int(user_tg.id),
         name=user_tg.name,
-        subscriptions=[],
-        follows=[],
+        follows={},
         join_date=datetime.now(),
         settings=user_settings,
     )

@@ -1,6 +1,10 @@
 import logging
 from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.event import Event, EventSales
 from band_tracker.core.follow import Follow
@@ -24,6 +28,38 @@ log = logging.getLogger(__name__)
 class BaseDAL:
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
+
+    async def _artist_by_uuid(
+        self,
+        session: AsyncSession,
+        artist_id: UUID,
+        follows: bool = True,
+        genres: bool = True,
+        socials: bool = True,
+    ) -> ArtistDB | None:
+        stmt = select(ArtistDB).where(ArtistDB.id == artist_id)
+        if follows:
+            stmt = stmt.options(selectinload(ArtistDB.follows))
+        if genres:
+            stmt = stmt.options(selectinload(ArtistDB.genres))
+        if socials:
+            stmt = stmt.options(selectinload(ArtistDB.socials))
+        scalars = await session.scalars(stmt)
+        artist = scalars.first()
+        return artist
+
+    async def _user_by_tg_id(
+        self,
+        session: AsyncSession,
+        tg_id: int,
+        follows: bool = True,
+    ) -> UserDB | None:
+        stmt = select(UserDB).where(UserDB.tg_id == tg_id)
+        if follows:
+            stmt = stmt.options(selectinload(UserDB.follows))
+        scalars = await session.scalars(stmt)
+        user = scalars.first()
+        return user
 
     def _build_core_event(
         self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
@@ -82,20 +118,26 @@ class BaseDAL:
 
     def _db_to_core_user(self, user_db: UserDB) -> User:
         settings = self._db_to_core_user_settings(user_db.settings)
-        subscriptions = [str(artist.id) for artist in user_db.subscriptions]
-        follows = [self._db_to_core_follow(follow_db) for follow_db in user_db.follows]
+        follows = {
+            follow_db.artist_id: self._db_to_core_follow(follow_db)
+            for follow_db in user_db.follows
+            if follow_db.active
+        }
         user = User(
             id=user_db.tg_id,
             name=user_db.name,
             join_date=user_db.join_date,
             settings=settings,
-            subscriptions=subscriptions,
             follows=follows,
         )
         return user
 
     def _db_to_core_follow(self, follow_db: FollowDB) -> Follow:
-        return Follow(artist=str(follow_db.artist.id), locations=None)
+        return Follow(
+            artist=follow_db.artist_id,
+            range_=follow_db.range_,
+            notify=follow_db.notify,
+        )
 
     def _core_to_db_user_settings(self, settings: UserSettings) -> UserSettingsDB:
         assert settings
