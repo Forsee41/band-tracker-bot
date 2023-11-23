@@ -190,8 +190,8 @@ class UpdateDAL(BaseDAL):
             .join(ArtistGenreDB, GenreDB.id == ArtistGenreDB.genre_id)
             .filter(ArtistGenreDB.artist_id == artist_id)
         )
-        current_genre_names = await session.execute(artist_genre_names)
-        current_genre_names = [name[0] for name in current_genre_names]
+        execution_result = await session.execute(artist_genre_names)
+        current_genre_names = [name[0] for name in execution_result]
 
         new_genre_names = [
             genre for genre in genres if genre not in current_genre_names

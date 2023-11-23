@@ -62,8 +62,10 @@ class TestAddArtistDAL:
         artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         result_db_artist = await query_artist(artist_tm_id)
 
+        assert result_artist
+        assert result_db_artist
         for genre in result_db_artist.genres:
-            db_genre = await query_genre(genre.id)
+            db_genre = await query_genre(str(genre.id))
             assert db_genre
             assert db_genre.name in set(result_artist.genres)
 
