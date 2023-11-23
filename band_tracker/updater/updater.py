@@ -90,7 +90,7 @@ class Updater:
 
     async def _update(
         self,
-        get: Callable[[dict[str, dict]], list],
+        get_elements: Callable[[dict[str, dict]], list],
         client: ApiClient,
         update_dal: Callable,
     ) -> None:
@@ -118,7 +118,7 @@ class Updater:
                 else:
                     log.info("Successful response. Start parsing")
 
-                    updates = get(page)
+                    updates = get_elements(page)
                     for update in updates:
                         # log.debug("UPDATE " + str(update))
                         await update_dal(update)

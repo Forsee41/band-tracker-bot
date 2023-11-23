@@ -7,7 +7,7 @@ from sqlalchemy import select
 from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_update import UpdateDAL as DAL
-from band_tracker.db.models import ArtistDB, ArtistTMDataDB
+from band_tracker.db.models import ArtistDB, ArtistTMDataDB, GenreDB
 
 
 class TestUpdateArtistupdate_dal:
@@ -107,6 +107,27 @@ class TestUpdateArtistupdate_dal:
         assert result_db_artist
         result_aliases = [alias.alias for alias in result_db_artist.aliases]
         assert set(result_aliases) == set(artist_old_aliases)
+
+    async def test_genres_updated(
+        self,
+        update_dal: DAL,
+        get_artist_update: Callable[[str], ArtistUpdate],
+        query_artist: Callable[[str], Coroutine[Any, Any, ArtistDB | None]],
+        query_genre: Callable[[str], Coroutine[Any, Any, GenreDB | None]],
+    ) -> None:
+        artist = get_artist_update("gosha")
+        await update_dal._add_artist(artist)
+
+        artist.genres.append("shoegaze")
+        await update_dal.update_artist(artist)
+
+        artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
+        result_db_artist = await query_artist(artist_tm_id)
+
+        for genre in result_db_artist.genres:
+            db_genre = await query_genre(genre.id)
+            assert db_genre
+            assert db_genre.name in set(artist.genres)
 
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ from band_tracker.db.models import (
     Base,
     EventDB,
     EventTMDataDB,
+    GenreDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
 from band_tracker.updater.timestamp_predictor import LinearPredictor, TimestampPredictor
@@ -196,6 +197,20 @@ def query_artist(
             return artist_db
 
     return get_artist
+
+
+@pytest.fixture()
+def query_genre(
+    sessionmaker: AsyncSessionmaker,
+) -> Callable[[str], Coroutine[Any, Any, GenreDB | None]]:
+    async def get_genre(genre_id: str) -> GenreDB | None:
+        stmt = select(GenreDB).where(GenreDB.id == genre_id)
+        async with sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            genre_db = scalars.first()
+            return genre_db
+
+    return get_genre
 
 
 @pytest.fixture()
