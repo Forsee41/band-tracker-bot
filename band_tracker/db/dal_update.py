@@ -200,26 +200,24 @@ class UpdateDAL(BaseDAL):
 
         return new_db_genres
 
-    async def _get_genre(self, session: AsyncSession, name: str) -> GenreDB | None:
-        genre_query = select(GenreDB).where(GenreDB.name == name)
-        scalar = await session.scalars(genre_query)
-        genre_db = scalar.first()
-        return genre_db
-
-    def _add_genre(self, name: str) -> GenreDB:
-        genre_db = GenreDB(name=name)
-        return genre_db
-
     async def _get_db_genres(
         self, session: AsyncSession, genres: list[str]
     ) -> list[GenreDB]:
+        genres_query = select(GenreDB).filter(GenreDB.name.in_(genres))
+        existing_genres = (await session.execute(genres_query)).fetchall()
+
+        existing_genres_names = {genre[0].name: genre[0] for genre in existing_genres}
+
         result = []
         for genre in genres:
-            genre_db = await self._get_genre(session, genre)
+            genre_db = existing_genres_names.get(genre)
+
             if not genre_db:
-                genre_db = self._add_genre(genre)
+                genre_db = GenreDB(name=genre)
                 session.add(genre_db)
             result.append(genre_db)
+        await session.commit()
+
         return result
 
     def _build_db_artist_aliases(
