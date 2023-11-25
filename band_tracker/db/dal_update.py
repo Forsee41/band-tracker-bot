@@ -15,11 +15,13 @@ from band_tracker.db.event_update import EventUpdate, EventUpdateSales
 from band_tracker.db.models import (
     ArtistAliasDB,
     ArtistDB,
+    ArtistGenreDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
     EventArtistDB,
     EventDB,
     EventTMDataDB,
+    GenreDB,
     SalesDB,
 )
 from band_tracker.db.session import AsyncSessionmaker
@@ -43,10 +45,13 @@ class UpdateDAL(BaseDAL):
 
         async with self.sessionmaker.session() as session:
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
+
             assert artist_db is not None
+
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
             artist_db.image = str(artist.image)
+
             socials = await artist_db.awaitable_attrs.socials
             socials.instagram = (
                 str(artist.socials.instagram) if artist.socials.instagram else None
@@ -57,9 +62,16 @@ class UpdateDAL(BaseDAL):
             socials.spotify = (
                 str(artist.socials.spotify) if artist.socials.spotify else None
             )
+
+            new_genres = await self._get_new_genres(
+                session=session, artist_id=artist_db.id, genres=artist.genres
+            )
+            artist_db.genres.extend(new_genres)
+
             await self._add_new_aliases(
                 session=session, artist_id=artist_db.id, aliases=artist.aliases
             )
+
             session.add(socials)
             await session.commit()
             return artist_db.id
@@ -170,6 +182,44 @@ class UpdateDAL(BaseDAL):
         )
         return socials_db
 
+    async def _get_new_genres(
+        self, session: AsyncSession, artist_id: UUID, genres: list[str]
+    ) -> list[GenreDB]:
+        artist_genre_names = (
+            select(GenreDB.name)
+            .join(ArtistGenreDB, GenreDB.id == ArtistGenreDB.genre_id)
+            .filter(ArtistGenreDB.artist_id == artist_id)
+        )
+        execution_result = await session.execute(artist_genre_names)
+        current_genre_names = [name[0] for name in execution_result]
+
+        new_genre_names = [
+            genre for genre in genres if genre not in current_genre_names
+        ]
+        new_db_genres = await self._get_db_genres(session, new_genre_names)
+
+        return new_db_genres
+
+    async def _get_db_genres(
+        self, session: AsyncSession, genres: list[str]
+    ) -> list[GenreDB]:
+        genres_query = select(GenreDB).filter(GenreDB.name.in_(genres))
+        existing_genres = (await session.execute(genres_query)).fetchall()
+
+        existing_genres_names = {genre[0].name: genre[0] for genre in existing_genres}
+
+        result = []
+        for genre in genres:
+            genre_db = existing_genres_names.get(genre)
+
+            if not genre_db:
+                genre_db = GenreDB(name=genre)
+                session.add(genre_db)
+            result.append(genre_db)
+        await session.commit()
+
+        return result
+
     def _build_db_artist_aliases(
         self, artist_id: UUID, aliases: list[str]
     ) -> list[ArtistAliasDB]:
@@ -199,11 +249,16 @@ class UpdateDAL(BaseDAL):
             image=str(artist.image),
         )
         async with self.sessionmaker.session() as session:
+            db_genres = await self._get_db_genres(session, artist.genres)
+            artist_db.genres.extend(db_genres)
             session.add(artist_db)
+
             await session.flush()
+
             uuid = artist_db.id
             socials_db = self._build_db_socials(artist_id=uuid, socials=artist.socials)
             tm_data_db = ArtistTMDataDB(id=artist_tm_data["id"], artist_id=uuid)
+
             await self._add_new_aliases(
                 session=session, artist_id=uuid, aliases=artist.aliases
             )

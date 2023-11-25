@@ -23,8 +23,8 @@ class ArtistUpdate(BaseModel):
         {EventSource.ticketmaster_api: {}}
     )
     image: str | None = Field(None)
-    genres: list[str] = Field([])
-    aliases: list[str] = Field([])
+    genres: list[str] = Field(default_factory=list)
+    aliases: list[str] = Field(default_factory=list)
 
     @field_validator("source_specific_data")
     def id_presence(
