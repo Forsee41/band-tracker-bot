@@ -50,7 +50,7 @@ class UpdateDAL(BaseDAL):
 
             artist_db.name = artist.name
             artist_db.tickets_link = str(artist.tickets_link)
-            artist_db.image = str(artist.image)
+            artist_db.image = str(artist.main_image)
 
             socials = await artist_db.awaitable_attrs.socials
             socials.instagram = (
@@ -246,7 +246,7 @@ class UpdateDAL(BaseDAL):
         artist_db = ArtistDB(
             name=artist.name,
             tickets_link=str(artist.tickets_link),
-            image=str(artist.image),
+            image=str(artist.main_image),
         )
         async with self.sessionmaker.session() as session:
             db_genres = await self._get_db_genres(session, artist.genres)

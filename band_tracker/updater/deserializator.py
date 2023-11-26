@@ -62,7 +62,19 @@ def get_artist(raw_artist: dict) -> ArtistUpdate:
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
-        "image": [
+        "main_image": [
+            image.get("url")
+            for image in raw_artist.get("images", [])
+            if "RETINA_PORTRAIT_3_2" in image.get("url")
+        ][0]
+        if [
+            image.get("url")
+            for image in raw_artist.get("images", [])
+            if "RETINA_PORTRAIT_3_2" in image.get("url")
+        ]
+        is not None
+        else raw_artist.get("images", {})[0].get("url"),
+        "thumbnail_image": [
             image.get("url")
             for image in raw_artist.get("images", [])
             if "RECOMENDATION" in image.get("url")
@@ -164,12 +176,12 @@ def get_event(raw_event: dict) -> EventUpdate:
         "image": [
             image.get("url")
             for image in raw_event.get("images", [])
-            if "RECOMENDATION" in image.get("url")
+            if "RETINA_PORTRAIT_3_2" in image.get("url")
         ][0]
         if [
             image.get("url")
             for image in raw_event.get("images", [])
-            if "RECOMENDATION" in image.get("url")
+            if "RETINA_PORTRAIT_3_2" in image.get("url")
         ]
         is not None
         else None,
