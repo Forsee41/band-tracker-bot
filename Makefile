@@ -21,7 +21,7 @@ prepare:
 		echo "Waiting for containers to spawn"; \
 		sleep 1.5; \
 		alembic upgrade head; \
-		make load_dump \
+		make load_dump; \
 	else \
 		docker compose -f docker-compose-dev.yaml down &> /dev/null; \
 		echo "Shutting down containers"; \
@@ -29,8 +29,8 @@ prepare:
 		echo "Waiting for containers to spawn"; \
 		sleep 1.5; \
 		alembic upgrade head; \
-		make load_dump \
-	fi
+		make load_dump; \
+	fi 
 
 down:
 	docker compose -f docker-compose-dev.yaml down &> /dev/null
