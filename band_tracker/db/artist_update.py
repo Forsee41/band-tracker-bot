@@ -22,7 +22,8 @@ class ArtistUpdate(BaseModel):
     source_specific_data: SourceSpecificArtistData = Field(
         {EventSource.ticketmaster_api: {}}
     )
-    image: str | None = Field(None)
+    main_image: str | None = Field(None)
+    thumbnail_image: str | None = Field(None)
     genres: list[str] = Field(default_factory=list)
     aliases: list[str] = Field(default_factory=list)
 
