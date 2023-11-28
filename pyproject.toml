@@ -6,3 +6,6 @@ ignore = ['E203', 'W503', 'ANN101']
 line-length = 88
 
 [tool.pytest.ini_options]
+markers = [
+	"debug"
+]
