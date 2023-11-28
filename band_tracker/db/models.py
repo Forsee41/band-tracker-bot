@@ -27,6 +27,7 @@ class ArtistDB(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     tickets_link: Mapped[str | None] = mapped_column(String, nullable=True)
     image: Mapped[str | None] = mapped_column(String, nullable=True)
+    thumbnail: Mapped[str | None] = mapped_column(String, nullable=True)
 
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     aliases: Mapped[list["ArtistAliasDB"]] = relationship(back_populates="artist")

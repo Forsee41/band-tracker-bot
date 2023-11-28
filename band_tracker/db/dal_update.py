@@ -49,8 +49,13 @@ class UpdateDAL(BaseDAL):
             assert artist_db is not None
 
             artist_db.name = artist.name
-            artist_db.tickets_link = str(artist.tickets_link)
-            artist_db.image = str(artist.image)
+            artist_db.tickets_link = (
+                str(artist.tickets_link) if artist.tickets_link else None
+            )
+            artist_db.image = str(artist.main_image) if artist.main_image else None
+            artist_db.thumbnail = (
+                str(artist.thumbnail_image) if artist.thumbnail_image else None
+            )
 
             socials = await artist_db.awaitable_attrs.socials
             socials.instagram = (
@@ -243,10 +248,14 @@ class UpdateDAL(BaseDAL):
         artist_tm_data = artist.get_source_specific_data(
             source=EventSource.ticketmaster_api
         )
+        tickets_link = str(artist.tickets_link) if artist.tickets_link else None
+        image = str(artist.main_image) if artist.main_image else None
+        thumbnail = str(artist.thumbnail_image) if artist.thumbnail_image else None
         artist_db = ArtistDB(
             name=artist.name,
-            tickets_link=str(artist.tickets_link),
-            image=str(artist.image),
+            tickets_link=tickets_link,
+            image=image,
+            thumbnail=thumbnail,
         )
         async with self.sessionmaker.session() as session:
             db_genres = await self._get_db_genres(session, artist.genres)

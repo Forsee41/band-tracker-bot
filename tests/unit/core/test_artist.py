@@ -9,7 +9,12 @@ class TestArtist:
     def test_artist_constructor(self) -> None:
         socials = ArtistSocials(instagram=None, spotify=None, youtube=None)
         artist = Artist(
-            id=uuid4(), name="", tickets_link=None, socials=socials, image=None
+            id=uuid4(),
+            name="",
+            tickets_link=None,
+            socials=socials,
+            image=None,
+            thumbnail=None,
         )
         assert artist
 
