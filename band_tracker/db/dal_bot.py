@@ -65,6 +65,14 @@ class BotDAL(BaseDAL):
                 for artist in artists
             ]
 
+    async def get_artist_names(self, ids: list[UUID]) -> dict[UUID, str]:
+        stmt = select(ArtistDB).filter(ArtistDB.id.in_(ids))
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+        result = {artist.id: artist.name for artist in query_results}
+        return result
+
     async def get_artist_by_name(self, name: str) -> Artist | None:
         stmt = (
             select(ArtistDB)
