@@ -1,15 +1,18 @@
+import importlib
+import pkgutil
+
 from telegram.ext import Application, BaseHandler
 
-from band_tracker.bot.handlers import artist, inline_query, query, start, test
+import band_tracker.bot.handlers
 
 
 def _get_handlers() -> list[BaseHandler]:
+    handlers_path = band_tracker.bot.handlers.__path__
+    module_names: list = [name for _, name, _ in pkgutil.iter_modules(handlers_path)]
+    pkg_name = "band_tracker.bot.handlers"
     modules: list = [
-        query,
-        test,
-        inline_query,
-        artist,
-        start,
+        importlib.import_module(f"{pkg_name}.{module_name}")
+        for module_name in module_names
     ]
     handler_lists: list = [module.handlers for module in modules]
 
