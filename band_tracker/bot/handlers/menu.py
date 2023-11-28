@@ -12,7 +12,7 @@ async def send_menu(update: Update, context: CallbackContext) -> None:
             InlineKeyboardButton("Follows", callback_data="follows"),
         ],
         [
-            InlineKeyboardButton("Config", callback_data="config"),
+            InlineKeyboardButton("Settings", callback_data="settings"),
         ],
         [
             InlineKeyboardButton("Help", callback_data="help"),
@@ -24,8 +24,8 @@ async def send_menu(update: Update, context: CallbackContext) -> None:
     assert update.effective_chat.id
 
     query = update.callback_query
-    assert query
-    await query.answer()
+    if query:
+        await query.answer()
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,

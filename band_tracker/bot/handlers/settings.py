@@ -14,11 +14,11 @@ async def _generate_markup(dal: BotDAL, user_tg_id: int) -> InlineKeyboardMarkup
     assert dal
     markup_layout = [
         [
-            InlineKeyboardButton("Set range", callback_data="config_set_range"),
+            InlineKeyboardButton("Set range", callback_data="settings set_range"),
         ],
         [
             InlineKeyboardButton(
-                "Disable notifications", callback_data="config_disable_notifications"
+                "Disable notifications", callback_data="settings disable_notifications"
             ),
         ],
         [
@@ -29,7 +29,7 @@ async def _generate_markup(dal: BotDAL, user_tg_id: int) -> InlineKeyboardMarkup
     return markup
 
 
-async def show_config(update: Update, context: CallbackContext) -> None:
+async def show_settings(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
     tg_user = update.effective_user
     assert tg_user
@@ -40,17 +40,17 @@ async def show_config(update: Update, context: CallbackContext) -> None:
     assert update.effective_chat.id
 
     query = update.callback_query
-    assert query
-    await query.answer()
+    if query:
+        await query.answer()
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Config",
+        text="Settings",
         reply_markup=markup,
     )
 
 
 handlers = [
-    CommandHandler("config", show_config),
-    CallbackQueryHandler(callback=show_config, pattern="config"),
+    CommandHandler("settings", show_settings),
+    CallbackQueryHandler(callback=show_settings, pattern="settings"),
 ]
