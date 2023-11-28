@@ -22,6 +22,7 @@ class Artist:
     socials: ArtistSocials
     tickets_link: str | None
     image: str | None
+    thumbnail: str | None
     genres: list[str] = field(default_factory=list)
     event_ids: list[str] = field(default_factory=list)
 

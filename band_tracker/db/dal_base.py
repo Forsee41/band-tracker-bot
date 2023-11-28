@@ -102,6 +102,7 @@ class BaseDAL:
             tickets_link=db_artist.tickets_link,
             socials=socials,
             image=db_artist.image,
+            thumbnail=db_artist.thumbnail,
             genres=genre_names,
         )
         return artist
