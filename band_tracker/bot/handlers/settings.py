@@ -52,5 +52,5 @@ async def show_settings(update: Update, context: CallbackContext) -> None:
 
 handlers = [
     CommandHandler("settings", show_settings),
-    CallbackQueryHandler(callback=show_settings, pattern="settings"),
+    CallbackQueryHandler(callback=show_settings, pattern="^settings$"),
 ]

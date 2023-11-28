@@ -36,5 +36,5 @@ async def send_menu(update: Update, context: CallbackContext) -> None:
 
 handlers = [
     CommandHandler("menu", send_menu),
-    CallbackQueryHandler(callback=send_menu, pattern="menu"),
+    CallbackQueryHandler(callback=send_menu, pattern="^menu$"),
 ]
