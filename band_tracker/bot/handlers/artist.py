@@ -13,12 +13,13 @@ from telegram.ext import (
     CallbackContext,
     CallbackQueryHandler,
     CommandHandler,
-    ContextTypes,
     InvalidCallbackData,
 )
 
+from band_tracker.bot.helpers.callback_data import get_callback_data
 from band_tracker.bot.helpers.get_user import get_user
 from band_tracker.core.artist import Artist
+from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.errors import ArtistNotFound, UserNotFound
 
@@ -87,23 +88,10 @@ async def _send_result(
     )
 
 
-def _get_callback_data(query: CallbackQuery | None) -> UUID:
-    if query is None:
-        raise InvalidCallbackData(
-            "Subscribe button callback handler can't find callback query"
-        )
-    if query.data is None:
-        raise InvalidCallbackData(
-            "Subscribe button callback handler can't find callback query data"
-        )
-    data_parts = query.data.split()
-    if len(data_parts) != 2:
-        raise InvalidCallbackData(
-            "Subscribe button callback handler got invalid callback data,"
-            f" {query.data}"
-        )
+def _get_callback_artist_id(query: CallbackQuery | None) -> UUID:
+    result_text = get_callback_data(query=query)
     try:
-        artist_id = UUID(data_parts[1])
+        artist_id = UUID(result_text)
     except ValueError:
         raise InvalidCallbackData("Invalid artist id")
     return artist_id
@@ -134,7 +122,7 @@ async def follow(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
     query = update.callback_query
     try:
-        artist_id = _get_callback_data(query)
+        artist_id = _get_callback_artist_id(query)
     except InvalidCallbackData as e:
         log.warning(e.message)
         return
@@ -163,7 +151,7 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
     query = update.callback_query
     try:
-        artist_id = _get_callback_data(query)
+        artist_id = _get_callback_artist_id(query)
     except InvalidCallbackData as e:
         log.warning(e.message)
         return
@@ -179,15 +167,33 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
     )
 
 
-async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def artist_button(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
-
     if not update.effective_chat:
         log.warning("Artist handler can't find an effective chat of an update")
         return
-    if not update.effective_user:
-        log.warning("Artist handler can't find an effective user of an update")
+    assert update.effective_user
+
+    user = await get_user(tg_user=update.effective_user, dal=dal)
+    query = update.callback_query
+    assert query
+    await query.answer()
+    try:
+        artist_id = _get_callback_artist_id(query)
+    except InvalidCallbackData as e:
+        log.warning(e.message)
         return
+
+    artist = await dal.get_artist(artist_id)
+    await _show_artist(update=update, context=context, artist=artist, user=user)
+
+
+async def artist_command(update: Update, context: CallbackContext) -> None:
+    dal: BotDAL = context.bot_data["dal"]
+    if not update.effective_chat:
+        log.warning("Artist handler can't find an effective chat of an update")
+        return
+    assert update.effective_user
 
     user = await get_user(tg_user=update.effective_user, dal=dal)
 
@@ -205,7 +211,18 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         name = name[:255]
 
     artist = await dal.get_artist_by_name(name)
+    await _show_artist(update=update, context=context, artist=artist, user=user)
 
+
+async def _show_artist(
+    update: Update, context: CallbackContext, artist: Artist | None, user: User
+) -> None:
+    if not update.effective_chat:
+        log.warning("Artist handler can't find an effective chat of an update")
+        return
+    if not update.effective_user:
+        log.warning("Artist handler can't find an effective user of an update")
+        return
     if artist is None:
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Can't find an artist"
@@ -220,7 +237,8 @@ async def show_artist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 handlers = [
-    CommandHandler("artist", show_artist),
+    CommandHandler("artist", artist_command),
+    CallbackQueryHandler(callback=artist_button, pattern="artist .*"),
     CallbackQueryHandler(callback=follow, pattern="follow .*"),
     CallbackQueryHandler(callback=unfollow, pattern="unfollow .*"),
 ]
