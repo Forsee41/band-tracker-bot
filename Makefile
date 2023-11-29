@@ -49,7 +49,7 @@ dump:
 	fi
 
 load_dump:
-	PGPASSWORD='postgres' psql -p 5432 -U postgres -h localhost -d postgres -f dump.sql
+	PGPASSWORD='postgres' psql -p 5432 -U postgres -h localhost -d postgres -f dump.sql -a
 
 psql:
 	PGPASSWORD='postgres' psql -p 5432 -U postgres -h localhost -d postgres
