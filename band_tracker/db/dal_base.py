@@ -61,12 +61,13 @@ class BaseDAL:
         return user
 
     def _build_core_event(self, db_event: EventDB) -> Event:
+        db_sales = db_event.sales[0]
         sales = EventSales(
-            price_min=db_event.sales[0].price_min,
-            sale_start=db_event.sales[0].sale_start,
-            sale_end=db_event.sales[0].sale_end,
-            price_max=db_event.sales[0].price_max,
-            currency=db_event.sales[0].currency,
+            price_min=db_sales.price_min,
+            sale_start=db_sales.sale_start,
+            sale_end=db_sales.sale_end,
+            price_max=db_sales.price_max,
+            currency=db_sales.currency,
         )
 
         event = Event(
