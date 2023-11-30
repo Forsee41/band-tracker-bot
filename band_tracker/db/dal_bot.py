@@ -16,6 +16,7 @@ from band_tracker.db.models import (
     AdminDB,
     ArtistAliasDB,
     ArtistDB,
+    EventArtistDB,
     EventDB,
     FollowDB,
     UserDB,
@@ -64,6 +65,22 @@ class BotDAL(BaseDAL):
                 )
                 for artist in artists
             ]
+
+    async def get_all_events_for_user(self, user_tg_id: int) -> list[Event]:
+        stmt = (
+            select(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
+            .join(UserDB, UserDB.id == FollowDB.user_id)
+            .where(UserDB.tg_id == user_tg_id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+
+        return [self._build_core_event(event) for event in query_results]
 
     async def get_artist_names(self, ids: list[UUID]) -> dict[UUID, str]:
         stmt = select(ArtistDB).filter(ArtistDB.id.in_(ids))
@@ -162,18 +179,19 @@ class BotDAL(BaseDAL):
             return chats
 
     async def get_event(self, id: UUID) -> Event | None:
-        stmt = select(EventDB).where(EventDB.id == id)
+        stmt = (
+            select(EventDB)
+            .where(EventDB.id == id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+        )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             event_db = scalars.first()
             if event_db is None:
                 return None
-            sales_result = await event_db.awaitable_attrs.sales
-            sales_db = sales_result[0]
-            artists = await event_db.awaitable_attrs.artists
-            artist_ids = [artist.id for artist in artists]
 
-            event = self._build_core_event(event_db, sales_db, artist_ids)
+            event = self._build_core_event(event_db)
             return event
 
     async def get_artist(self, id: UUID) -> Artist | None:

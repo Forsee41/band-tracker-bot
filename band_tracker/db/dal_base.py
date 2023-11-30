@@ -16,7 +16,6 @@ from band_tracker.db.models import (
     EventDB,
     FollowDB,
     GenreDB,
-    SalesDB,
     UserDB,
     UserSettingsDB,
 )
@@ -61,20 +60,18 @@ class BaseDAL:
         user = scalars.first()
         return user
 
-    def _build_core_event(
-        self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
-    ) -> Event:
+    def _build_core_event(self, db_event: EventDB) -> Event:
         sales = EventSales(
-            price_min=db_sales.price_min,
-            sale_start=db_sales.sale_start,
-            sale_end=db_sales.sale_end,
-            price_max=db_sales.price_max,
-            currency=db_sales.currency,
+            price_min=db_event.sales[0].price_min,
+            sale_start=db_event.sales[0].sale_start,
+            sale_end=db_event.sales[0].sale_end,
+            price_max=db_event.sales[0].price_max,
+            currency=db_event.sales[0].currency,
         )
 
         event = Event(
             id=db_event.id,
-            artist_ids=artist_ids,
+            artist_ids=[artist.id for artist in db_event.artists],
             sales=sales,
             title=db_event.title,
             date=db_event.start_date,

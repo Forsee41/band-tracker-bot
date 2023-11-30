@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import EventSource
@@ -146,13 +146,8 @@ class UpdateDAL(BaseDAL):
             event_db = await self._event_by_tm_id(session=session, tm_id=tm_id)
             if event_db is None:
                 return None
-            sales_result = await event_db.awaitable_attrs.sales
-            sales_db = sales_result[0]
 
-            artists = await event_db.awaitable_attrs.artists
-            artist_ids = [artist.id for artist in artists]
-
-            event = self._build_core_event(event_db, sales_db, artist_ids)
+            event = self._build_core_event(event_db)
             return event
 
     async def _artist_by_tm_id(
@@ -171,7 +166,13 @@ class UpdateDAL(BaseDAL):
     async def _event_by_tm_id(
         self, session: AsyncSession, tm_id: str
     ) -> EventDB | None:
-        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
+        stmt = (
+            select(EventDB)
+            .join(EventTMDataDB)
+            .where(EventTMDataDB.id == tm_id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+        )
         scalar = await session.scalars(stmt)
         event_db = scalar.first()
         return event_db
