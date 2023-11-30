@@ -59,12 +59,7 @@ class BotDAL(BaseDAL):
             artists = scalars.all()
             if artists:
                 log.debug(f"First artist genres: {artists[0].genres}")
-            return [
-                self._build_core_artist(
-                    db_artist=artist, db_socials=artist.socials, genres=artist.genres
-                )
-                for artist in artists
-            ]
+            return [self._build_core_artist(db_artist=artist) for artist in artists]
 
     async def get_all_events_for_user(self, user_tg_id: int) -> list[Event]:
         stmt = (
@@ -102,9 +97,7 @@ class BotDAL(BaseDAL):
             artist = scalars.first()
         if artist is None:
             return None
-        return self._build_core_artist(
-            db_artist=artist, db_socials=artist.socials, genres=artist.genres
-        )
+        return self._build_core_artist(db_artist=artist)
 
     async def unfollow(self, user_tg_id: int, artist_id: UUID) -> None:
         async with self.sessionmaker.session() as session:
@@ -199,18 +192,15 @@ class BotDAL(BaseDAL):
             select(ArtistDB)
             .where(ArtistDB.id == id)
             .options(joinedload(ArtistDB.genres))
+            .options(selectinload(ArtistDB.socials))
         )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artist_db = scalars.first()
             if artist_db is None:
                 return None
-            socials_db_result = await artist_db.awaitable_attrs.socials
-            socials_db = socials_db_result
 
-        artist = self._build_core_artist(
-            db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
-        )
+        artist = self._build_core_artist(db_artist=artist_db)
         return artist
 
     async def add_user(self, user: User) -> None:

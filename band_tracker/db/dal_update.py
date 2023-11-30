@@ -134,11 +134,8 @@ class UpdateDAL(BaseDAL):
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             if artist_db is None:
                 return None
-            socials_db = await artist_db.awaitable_attrs.socials
 
-        artist = self._build_core_artist(
-            db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
-        )
+        artist = self._build_core_artist(db_artist=artist_db)
         return artist
 
     async def _get_event_by_tm_id(self, tm_id: str) -> Event | None:
@@ -158,6 +155,7 @@ class UpdateDAL(BaseDAL):
             .join(ArtistTMDataDB)
             .where(ArtistTMDataDB.id == tm_id)
             .options(joinedload(ArtistDB.genres))
+            .options(selectinload(ArtistDB.socials))
         )
         scalar = await session.scalars(artist_query)
         artist_db = scalar.first()
