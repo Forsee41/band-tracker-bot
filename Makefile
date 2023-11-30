@@ -8,8 +8,17 @@ check:
 test:
 	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=test_db))
 	if [ -z "$(CONTAINER_ID)" ]; then \
-		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
 		echo "Waiting for containers to spawn"; \
+		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
+		sleep 1.5; \
+	fi
+	python -m pytest -vv --asyncio-mode=auto -m "not slow"
+
+fulltest:
+	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=test_db))
+	if [ -z "$(CONTAINER_ID)" ]; then \
+		echo "Waiting for containers to spawn"; \
+		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
 		sleep 1.5; \
 	fi
 	python -m pytest -vv --asyncio-mode=auto
@@ -23,10 +32,10 @@ prepare:
 		alembic upgrade head; \
 		make load_dump; \
 	else \
-		docker compose -f docker-compose-dev.yaml down &> /dev/null; \
 		echo "Shutting down containers"; \
-		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
+		docker compose -f docker-compose-dev.yaml down &> /dev/null; \
 		echo "Waiting for containers to spawn"; \
+		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
 		sleep 1.5; \
 		alembic upgrade head; \
 		make load_dump; \
