@@ -15,6 +15,9 @@ async def send_menu(update: Update, context: CallbackContext) -> None:
             InlineKeyboardButton("Settings", callback_data="settings"),
         ],
         [
+            InlineKeyboardButton("Events", callback_data="eventsall 0"),
+        ],
+        [
             InlineKeyboardButton("Help", callback_data="help"),
         ],
     ]

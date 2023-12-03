@@ -97,6 +97,36 @@ class BotDAL(BaseDAL):
             result = await session.scalar(stmt)
         return result
 
+    async def get_events_for_artist(
+        self, artist_id: UUID, page: int, events_per_page: int = 5
+    ) -> list[Event]:
+        stmt = (
+            select(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+            .where(EventArtistDB.artist_id == artist_id)
+            .order_by(EventDB.id)
+            .limit(events_per_page)
+            .offset(page * events_per_page)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+
+        return [self._build_core_event(event) for event in query_results]
+
+    async def get_artist_events_amount(self, artist_id: UUID) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .where(EventArtistDB.artist_id == artist_id)
+        )
+        async with self.sessionmaker.session() as session:
+            result = await session.scalar(stmt)
+        return result
+
     async def get_artist_names(self, ids: list[UUID]) -> dict[UUID, str]:
         stmt = select(ArtistDB).filter(ArtistDB.id.in_(ids))
         async with self.sessionmaker.session() as session:

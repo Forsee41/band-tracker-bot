@@ -156,6 +156,8 @@ async def all_events_btn(update: Update, context: CallbackContext) -> None:
         user_id, events_per_page=EVENTS_PER_PAGE, page=page
     )
 
+    assert query
+    await query.answer()
     total_events = await dal.get_user_events_amount(user_id)
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > page:
