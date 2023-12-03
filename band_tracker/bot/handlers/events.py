@@ -1,7 +1,13 @@
 import logging
 from uuid import UUID
 
-from telegram import Bot, CallbackQuery, Update
+from telegram import (
+    Bot,
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Update,
+)
 from telegram.ext import (
     CallbackContext,
     CallbackQueryHandler,
@@ -14,6 +20,7 @@ from band_tracker.bot.helpers.callback_data import (
     get_callback_data,
     get_multiple_fields,
 )
+from band_tracker.config.constants import EVENTS_PER_PAGE
 from band_tracker.core.event import Event
 from band_tracker.db.dal_bot import BotDAL
 
@@ -49,21 +56,83 @@ def _get_all_events_callback_data(query: CallbackQuery | None) -> UUID:
     return uuid
 
 
+def _event_markup(event: Event) -> InlineKeyboardMarkup:
+    layout = [
+        [
+            InlineKeyboardButton(text="Explore", callback_data=f"event {event.id}"),
+            InlineKeyboardButton(
+                text="Buy Tickets", callback_data=f"tickets {event.id}"
+            ),
+        ],
+    ]
+    return InlineKeyboardMarkup(layout)
+
+
+def _events_nav_markup(next_page: bool, page: int = 0) -> InlineKeyboardMarkup:
+    nav_row: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav_row.append(
+            InlineKeyboardButton(text="Prev", callback_data=f"eventsall {page-1}")
+        )
+    if next_page:
+        nav_row.append(
+            InlineKeyboardButton(text="Next", callback_data=f"eventsall {page+1}")
+        )
+    back_btn = InlineKeyboardButton(text="Back", callback_data="menu")
+    markup = InlineKeyboardMarkup([nav_row, [back_btn]])
+    return markup
+
+
+def _event_text(event: Event) -> str:
+    result = f"{event.title}\n\n{event.date.strftime('%Y %B %d')}"
+    return result
+
+
 async def _send_events(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, events: list[Event]
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    events: list[Event],
+    next_page: bool,
+    page: int = 0,
 ) -> None:
     bot: Bot = context.bot
     if not update.effective_chat:
         log.warning("Can't send events cause can't find an effective chat of an update")
         return
     for event in events:
-        if event.image:
-            await bot.send_photo(chat_id=update.effective_chat.id, photo=event.image)
-        else:
-            await bot.send_message(chat_id=update.effective_chat.id, text="hello")
+        event_text = _event_text(event)
+        event_markup = _event_markup(event)
+        await bot.send_message(
+            chat_id=update.effective_chat.id, text=event_text, reply_markup=event_markup
+        )
+    nav_markup = _events_nav_markup(next_page=next_page, page=page)
+    await bot.send_message(
+        chat_id=update.effective_chat.id, text="Navigation", reply_markup=nav_markup
+    )
 
 
-async def all_events(update: Update, context: CallbackContext) -> None:
+async def all_events_command(update: Update, context: CallbackContext) -> None:
+    dal: BotDAL = context.bot_data["dal"]
+
+    if not update.effective_chat:
+        log.warning("Follows handler can't find an effective chat of an update")
+        return
+    if not update.effective_user:
+        log.warning("Follows handler can't find an effective user of an update")
+        return
+
+    user_id = update.effective_user.id
+    events = await dal.get_events_for_user(user_id, events_per_page=EVENTS_PER_PAGE)
+    total_events = await dal.get_user_events_amount(user_id)
+    next_page = False
+    if (total_events - 1) // EVENTS_PER_PAGE > 0:
+        next_page = True
+    await _send_events(
+        update=update, context=context, events=events, next_page=next_page
+    )
+
+
+async def all_events_btn(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
 
     if not update.effective_chat:
@@ -90,7 +159,7 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
 
 
 handlers = [
-    CommandHandler("events", all_events),
+    CommandHandler("events", all_events_command),
     CallbackQueryHandler(callback=artist_events, pattern="^eventsar .*$"),
-    CallbackQueryHandler(callback=all_events, pattern="^eventsall .*$"),
+    CallbackQueryHandler(callback=all_events_btn, pattern="^eventsall .*$"),
 ]

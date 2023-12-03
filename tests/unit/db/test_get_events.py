@@ -33,7 +33,7 @@ async def test_returns_required_events(
     for event in events:
         update_event = get_event_update(event)
         await update_dal._add_event(update_event)
-    result = await bot_dal.get_all_events_for_user(user_tg_id=1)
+    result = await bot_dal.get_events_for_user(user_tg_id=1)
 
     assert len(result) == 2
     assert result[0].title == "fest" or result[1].title == "fest"
@@ -61,12 +61,8 @@ async def test_pagination(
     for event in events:
         update_event = get_event_update(event)
         await update_dal._add_event(update_event)
-    result1 = await bot_dal.get_all_events_for_user(
-        user_tg_id=1, page_max_elements=1, page=0
-    )
-    result2 = await bot_dal.get_all_events_for_user(
-        user_tg_id=1, page_max_elements=1, page=1
-    )
+    result1 = await bot_dal.get_events_for_user(user_tg_id=1, events_per_page=1, page=0)
+    result2 = await bot_dal.get_events_for_user(user_tg_id=1, events_per_page=1, page=1)
 
     assert len(result1) == 1
     assert len(result2) == 1
