@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from typing import Awaitable
 from uuid import UUID
 
 from telegram import (
@@ -46,14 +48,14 @@ def _get_artist_events_callback_data(query: CallbackQuery | None) -> tuple[UUID,
     return uuid, target_page
 
 
-def _get_all_events_callback_data(query: CallbackQuery | None) -> UUID:
+def _get_all_events_callback_data(query: CallbackQuery | None) -> int:
     data = get_callback_data(query=query)
 
     try:
-        uuid = UUID(data)
+        page_number = int(data)
     except ValueError:
         raise InvalidCallbackData("Invalid UUID")
-    return uuid
+    return page_number
 
 
 def _event_markup(event: Event) -> InlineKeyboardMarkup:
@@ -99,13 +101,19 @@ async def _send_events(
     if not update.effective_chat:
         log.warning("Can't send events cause can't find an effective chat of an update")
         return
+    tasks: list[Awaitable] = []
     for event in events:
         event_text = _event_text(event)
         event_markup = _event_markup(event)
-        await bot.send_message(
-            chat_id=update.effective_chat.id, text=event_text, reply_markup=event_markup
+        tasks.append(
+            bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=event_text,
+                reply_markup=event_markup,
+            )
         )
     nav_markup = _events_nav_markup(next_page=next_page, page=page)
+    await asyncio.gather(*tasks)
     await bot.send_message(
         chat_id=update.effective_chat.id, text="Navigation", reply_markup=nav_markup
     )
@@ -142,7 +150,20 @@ async def all_events_btn(update: Update, context: CallbackContext) -> None:
         log.warning("Follows handler can't find an effective user of an update")
         return
     query = update.callback_query
-    assert dal, query
+    page = _get_all_events_callback_data(query)
+    user_id = update.effective_user.id
+    events = await dal.get_events_for_user(
+        user_id, events_per_page=EVENTS_PER_PAGE, page=page
+    )
+
+    total_events = await dal.get_user_events_amount(user_id)
+    next_page = False
+    if (total_events - 1) // EVENTS_PER_PAGE > page:
+        next_page = True
+
+    await _send_events(
+        update=update, context=context, events=events, next_page=next_page, page=page
+    )
 
 
 async def artist_events(update: Update, context: CallbackContext) -> None:
