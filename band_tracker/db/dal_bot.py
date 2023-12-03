@@ -82,6 +82,19 @@ class BotDAL(BaseDAL):
 
         return [self._build_core_event(event) for event in query_results]
 
+    async def get_user_events_amount(self, user_tg_id: int) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
+            .join(UserDB, UserDB.id == FollowDB.user_id)
+            .where(UserDB.tg_id == user_tg_id)
+        )
+        async with self.sessionmaker.session() as session:
+            result = await session.scalar(stmt)
+        return result
+
     async def get_artist_names(self, ids: list[UUID]) -> dict[UUID, str]:
         stmt = select(ArtistDB).filter(ArtistDB.id.in_(ids))
         async with self.sessionmaker.session() as session:
