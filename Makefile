@@ -67,7 +67,7 @@ bot:
 	python bot.py 2>&1 | tee .log 
 
 pre-commit:
-	make test
+	make fulltest
 	make check
 
 debug:
