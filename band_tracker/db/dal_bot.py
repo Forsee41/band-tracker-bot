@@ -70,6 +70,7 @@ class BotDAL(BaseDAL):
             .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
             .join(UserDB, UserDB.id == FollowDB.user_id)
             .where(UserDB.tg_id == user_tg_id)
+            .where(FollowDB.active)
             .options(selectinload(EventDB.sales))
             .options(selectinload(EventDB.artists))
             .order_by(EventDB.id)
@@ -90,6 +91,7 @@ class BotDAL(BaseDAL):
             .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
             .join(UserDB, UserDB.id == FollowDB.user_id)
             .where(UserDB.tg_id == user_tg_id)
+            .where(FollowDB.active)
         )
         async with self.sessionmaker.session() as session:
             result = await session.scalar(stmt)
