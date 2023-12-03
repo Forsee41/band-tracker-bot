@@ -61,7 +61,9 @@ class BotDAL(BaseDAL):
                 log.debug(f"First artist genres: {artists[0].genres}")
             return [self._build_core_artist(db_artist=artist) for artist in artists]
 
-    async def get_all_events_for_user(self, user_tg_id: int) -> list[Event]:
+    async def get_all_events_for_user(
+        self, user_tg_id: int, page: int = 0, page_max_elements: int = 5
+    ) -> list[Event]:
         stmt = (
             select(EventDB)
             .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
@@ -70,6 +72,9 @@ class BotDAL(BaseDAL):
             .where(UserDB.tg_id == user_tg_id)
             .options(selectinload(EventDB.sales))
             .options(selectinload(EventDB.artists))
+            .order_by(EventDB.id)
+            .limit(page_max_elements)
+            .offset(page * page_max_elements)
         )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)

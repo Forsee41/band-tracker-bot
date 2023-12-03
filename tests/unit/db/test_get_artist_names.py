@@ -8,7 +8,6 @@ from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.dal_update import UpdateDAL
 
 
-@pytest.mark.debug
 async def test_returns_all_names(
     update_dal: UpdateDAL,
     get_artist_update: Callable[[str], ArtistUpdate],
