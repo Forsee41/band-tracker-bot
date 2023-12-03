@@ -31,7 +31,7 @@ def _unfollowed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
         InlineKeyboardButton("Follow", callback_data=f"follow {artist_id}"),
     ]
     row2 = [
-        InlineKeyboardButton("Events", callback_data=f"events {artist_id}"),
+        InlineKeyboardButton("Events", callback_data=f"eventsar {artist_id} 0"),
         InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
     ]
     markup = InlineKeyboardMarkup([row1, row2])
@@ -46,7 +46,7 @@ def _followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
         ),
     ]
     row2 = [
-        InlineKeyboardButton("Events", callback_data=f"events {artist_id}"),
+        InlineKeyboardButton("Events", callback_data=f"eventsar {artist_id} 0"),
         InlineKeyboardButton("Buy Tickets", callback_data=f"tickets {artist_id}"),
     ]
     markup = InlineKeyboardMarkup([row1, row2])
