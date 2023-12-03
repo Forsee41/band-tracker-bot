@@ -3,6 +3,11 @@ check:
 	flake8 band_tracker tests --count --max-complexity=10 --max-line-length=88 --statistics
 	pyright band_tracker tests
 	mypy band_tracker tests
+	if grep -r --include=\*.py "@pytest.mark.debug" tests; then \
+		echo "Debug mark found in tests. Debug marks are not allowed in prs."; \
+		echo "Use 'make debug' command to check which tests have debug mark."; \
+		exit 1; \
+	fi; \
 	echo "All checks passed"
 
 test:
@@ -11,7 +16,7 @@ test:
 		echo "Waiting for containers to spawn"; \
 		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
 		sleep 1.5; \
-	fi
+	fi; \
 	python -m pytest -vv --asyncio-mode=auto -m "not slow"
 
 fulltest:
@@ -65,6 +70,7 @@ psql:
 
 bot:
 	python bot.py 2>&1 | tee .log 
+
 
 pre-commit:
 	make fulltest
