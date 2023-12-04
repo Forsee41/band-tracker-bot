@@ -12,6 +12,7 @@ from telegram.ext import (
 
 from band_tracker.bot.helpers.callback_data import get_callback_data
 from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.config.constants import ARTISTS_PER_PAGE
 from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 
@@ -28,26 +29,25 @@ def _get_callback_follows_page(query: CallbackQuery | None) -> int:
 
 
 async def _follows_markup(user: User, page: int, dal: BotDAL) -> InlineKeyboardMarkup:
-    follows_per_page = 10
     button_list: list[list[InlineKeyboardButton]] = []
     follows_list = [follow for follow in user.follows.values()]
     follows_list.sort(key=lambda follow: follow.artist)
-    if len(follows_list) // follows_per_page < page:
+    if len(follows_list) // ARTISTS_PER_PAGE < page:
         raise ValueError("Not enough follows to fill selected page")
 
     # substracting 1 from length cause you need at least 1 extra for the next page to
     # contain something
     follows_amount = len(follows_list)
-    total_pages = max(0, ((follows_amount - 1) // follows_per_page) + 1)
+    total_pages = max(0, ((follows_amount - 1) // ARTISTS_PER_PAGE) + 1)
     next_page_exists = total_pages >= (page + 2)
     log.debug(
         f"follows: {len(follows_list)}, {page=}, {next_page_exists=}, {total_pages=}"
     )
     if next_page_exists:
-        start_index = follows_per_page * page
-        target_follows = follows_list[start_index : start_index + follows_per_page]
+        start_index = ARTISTS_PER_PAGE * page
+        target_follows = follows_list[start_index : start_index + ARTISTS_PER_PAGE]
     else:
-        target_follows = follows_list[follows_per_page * page :]
+        target_follows = follows_list[ARTISTS_PER_PAGE * page :]
 
     names: dict[UUID, str] = await dal.get_artist_names(
         [follow.artist for follow in target_follows]

@@ -16,6 +16,7 @@ from band_tracker.db.models import (
     AdminDB,
     ArtistAliasDB,
     ArtistDB,
+    EventArtistDB,
     EventDB,
     FollowDB,
     UserDB,
@@ -58,12 +59,73 @@ class BotDAL(BaseDAL):
             artists = scalars.all()
             if artists:
                 log.debug(f"First artist genres: {artists[0].genres}")
-            return [
-                self._build_core_artist(
-                    db_artist=artist, db_socials=artist.socials, genres=artist.genres
-                )
-                for artist in artists
-            ]
+            return [self._build_core_artist(db_artist=artist) for artist in artists]
+
+    async def get_events_for_user(
+        self, user_tg_id: int, page: int = 0, events_per_page: int = 5
+    ) -> list[Event]:
+        stmt = (
+            select(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
+            .join(UserDB, UserDB.id == FollowDB.user_id)
+            .where(UserDB.tg_id == user_tg_id)
+            .where(FollowDB.active)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+            .order_by(EventDB.id)
+            .limit(events_per_page)
+            .offset(page * events_per_page)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+
+        return [self._build_core_event(event) for event in query_results]
+
+    async def get_user_events_amount(self, user_tg_id: int) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
+            .join(UserDB, UserDB.id == FollowDB.user_id)
+            .where(UserDB.tg_id == user_tg_id)
+            .where(FollowDB.active)
+        )
+        async with self.sessionmaker.session() as session:
+            result = await session.scalar(stmt)
+        return result
+
+    async def get_events_for_artist(
+        self, artist_id: UUID, page: int, events_per_page: int = 5
+    ) -> list[Event]:
+        stmt = (
+            select(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+            .where(EventArtistDB.artist_id == artist_id)
+            .order_by(EventDB.id)
+            .limit(events_per_page)
+            .offset(page * events_per_page)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+
+        return [self._build_core_event(event) for event in query_results]
+
+    async def get_artist_events_amount(self, artist_id: UUID) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(EventDB)
+            .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .where(EventArtistDB.artist_id == artist_id)
+        )
+        async with self.sessionmaker.session() as session:
+            result = await session.scalar(stmt)
+        return result
 
     async def get_artist_names(self, ids: list[UUID]) -> dict[UUID, str]:
         stmt = select(ArtistDB).filter(ArtistDB.id.in_(ids))
@@ -85,9 +147,7 @@ class BotDAL(BaseDAL):
             artist = scalars.first()
         if artist is None:
             return None
-        return self._build_core_artist(
-            db_artist=artist, db_socials=artist.socials, genres=artist.genres
-        )
+        return self._build_core_artist(db_artist=artist)
 
     async def unfollow(self, user_tg_id: int, artist_id: UUID) -> None:
         async with self.sessionmaker.session() as session:
@@ -162,18 +222,19 @@ class BotDAL(BaseDAL):
             return chats
 
     async def get_event(self, id: UUID) -> Event | None:
-        stmt = select(EventDB).where(EventDB.id == id)
+        stmt = (
+            select(EventDB)
+            .where(EventDB.id == id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+        )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             event_db = scalars.first()
             if event_db is None:
                 return None
-            sales_result = await event_db.awaitable_attrs.sales
-            sales_db = sales_result[0]
-            artists = await event_db.awaitable_attrs.artists
-            artist_ids = [artist.id for artist in artists]
 
-            event = self._build_core_event(event_db, sales_db, artist_ids)
+            event = self._build_core_event(event_db)
             return event
 
     async def get_artist(self, id: UUID) -> Artist | None:
@@ -181,18 +242,15 @@ class BotDAL(BaseDAL):
             select(ArtistDB)
             .where(ArtistDB.id == id)
             .options(joinedload(ArtistDB.genres))
+            .options(selectinload(ArtistDB.socials))
         )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)
             artist_db = scalars.first()
             if artist_db is None:
                 return None
-            socials_db_result = await artist_db.awaitable_attrs.socials
-            socials_db = socials_db_result
 
-        artist = self._build_core_artist(
-            db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
-        )
+        artist = self._build_core_artist(db_artist=artist_db)
         return artist
 
     async def add_user(self, user: User) -> None:

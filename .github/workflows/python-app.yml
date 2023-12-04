@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: ['main', 'dev']
+    branches: ["main", "dev"]
   pull_request:
-    branches: ['main', 'dev']
+    branches: ["main", "dev"]
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v3
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -49,12 +49,20 @@ jobs:
         run: |
           mypy band_tracker tests
 
+      - name: Check for debug marks in tests
+        run: |
+          if grep -r --include=\*.py "@pytest.mark.debug" tests; then
+            echo "Debug mark found in tests. Debug marks are not allowed in prs."
+            echo "Use 'make debug' command to check which tests have debug mark."
+            exit 1
+          fi
+
       - name: Test with pytest
         env:
-          TEST_DB_LOGIN: 'test_postgres'
-          TEST_DB_PASSWORD: 'test_postgres'
-          TEST_DB_IP: 'localhost'
-          TEST_DB_PORT: '5433'
-          TEST_DB_NAME: 'test_postgres'
+          TEST_DB_LOGIN: "test_postgres"
+          TEST_DB_PASSWORD: "test_postgres"
+          TEST_DB_IP: "localhost"
+          TEST_DB_PORT: "5433"
+          TEST_DB_NAME: "test_postgres"
         run: |
           python -m pytest --asyncio-mode=auto

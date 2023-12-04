@@ -10,16 +10,7 @@ from band_tracker.core.event import Event, EventSales
 from band_tracker.core.follow import Follow
 from band_tracker.core.user import User
 from band_tracker.core.user_settings import UserSettings
-from band_tracker.db.models import (
-    ArtistDB,
-    ArtistSocialsDB,
-    EventDB,
-    FollowDB,
-    GenreDB,
-    SalesDB,
-    UserDB,
-    UserSettingsDB,
-)
+from band_tracker.db.models import ArtistDB, EventDB, FollowDB, UserDB, UserSettingsDB
 from band_tracker.db.session import AsyncSessionmaker
 
 log = logging.getLogger(__name__)
@@ -61,9 +52,8 @@ class BaseDAL:
         user = scalars.first()
         return user
 
-    def _build_core_event(
-        self, db_event: EventDB, db_sales: SalesDB, artist_ids: list[UUID]
-    ) -> Event:
+    def _build_core_event(self, db_event: EventDB) -> Event:
+        db_sales = db_event.sales[0]
         sales = EventSales(
             price_min=db_sales.price_min,
             sale_start=db_sales.sale_start,
@@ -74,7 +64,7 @@ class BaseDAL:
 
         event = Event(
             id=db_event.id,
-            artist_ids=artist_ids,
+            artist_ids=[artist.id for artist in db_event.artists],
             sales=sales,
             title=db_event.title,
             date=db_event.start_date,
@@ -86,14 +76,14 @@ class BaseDAL:
         )
         return event
 
-    def _build_core_artist(
-        self, db_artist: ArtistDB, db_socials: ArtistSocialsDB, genres: list[GenreDB]
-    ) -> Artist:
+    def _build_core_artist(self, db_artist: ArtistDB) -> Artist:
+        db_socials = db_artist.socials
         socials = ArtistSocials(
             spotify=db_socials.spotify,
             instagram=db_socials.instagram,
             youtube=db_socials.youtube,
         )
+        genres = db_artist.genres
         genre_names = [genre.name for genre in genres]
 
         artist = Artist(
