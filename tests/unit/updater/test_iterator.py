@@ -31,6 +31,7 @@ def mock_response() -> Callable[[str], dict]:
 class TestIterator:
     custom_request = ApiClient("", {})
 
+    @pytest.mark.slow
     async def test_chunk_progression(
         self,
         mock_get: AsyncMock,
@@ -61,6 +62,7 @@ class TestIterator:
         assert iterator.all_chunks_done() is True
         assert iterator.max_end_time > initial_max_date
 
+    @pytest.mark.slow
     @pytest.mark.skip
     async def test_process_large_chunk(
         self,
@@ -92,6 +94,7 @@ class TestIterator:
 
         assert len(iterator.chunks) == 2
 
+    @pytest.mark.slow
     async def test_structure_error(
         self,
         mock_get: AsyncMock,
@@ -122,6 +125,7 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
+    @pytest.mark.slow
     async def test_token_error(
         self,
         mock_get: AsyncMock,
@@ -153,6 +157,7 @@ class TestIterator:
             async for i in iterator:
                 data.append(i)
 
+    @pytest.mark.slow
     async def test_rate_limit_error(
         self,
         mock_get: AsyncMock,

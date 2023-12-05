@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from telegram.error import InvalidToken
 
 from band_tracker.bot.app import build_app, run
-from band_tracker.bot.handlers_registrator import register_handlers
+from band_tracker.bot.helpers.handlers_registrator import register_handlers
 from band_tracker.config.env_loader import db_env_vars, tg_bot_env_vars
 from band_tracker.config.log import load_log_config
 from band_tracker.db.dal_bot import BotDAL

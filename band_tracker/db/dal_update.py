@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import EventSource
@@ -134,11 +134,8 @@ class UpdateDAL(BaseDAL):
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             if artist_db is None:
                 return None
-            socials_db = await artist_db.awaitable_attrs.socials
 
-        artist = self._build_core_artist(
-            db_artist=artist_db, db_socials=socials_db, genres=artist_db.genres
-        )
+        artist = self._build_core_artist(db_artist=artist_db)
         return artist
 
     async def _get_event_by_tm_id(self, tm_id: str) -> Event | None:
@@ -146,13 +143,8 @@ class UpdateDAL(BaseDAL):
             event_db = await self._event_by_tm_id(session=session, tm_id=tm_id)
             if event_db is None:
                 return None
-            sales_result = await event_db.awaitable_attrs.sales
-            sales_db = sales_result[0]
 
-            artists = await event_db.awaitable_attrs.artists
-            artist_ids = [artist.id for artist in artists]
-
-            event = self._build_core_event(event_db, sales_db, artist_ids)
+            event = self._build_core_event(event_db)
             return event
 
     async def _artist_by_tm_id(
@@ -163,6 +155,7 @@ class UpdateDAL(BaseDAL):
             .join(ArtistTMDataDB)
             .where(ArtistTMDataDB.id == tm_id)
             .options(joinedload(ArtistDB.genres))
+            .options(selectinload(ArtistDB.socials))
         )
         scalar = await session.scalars(artist_query)
         artist_db = scalar.first()
@@ -171,7 +164,13 @@ class UpdateDAL(BaseDAL):
     async def _event_by_tm_id(
         self, session: AsyncSession, tm_id: str
     ) -> EventDB | None:
-        stmt = select(EventDB).join(EventTMDataDB).where(EventTMDataDB.id == tm_id)
+        stmt = (
+            select(EventDB)
+            .join(EventTMDataDB)
+            .where(EventTMDataDB.id == tm_id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+        )
         scalar = await session.scalars(stmt)
         event_db = scalar.first()
         return event_db
