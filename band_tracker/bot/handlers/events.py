@@ -217,7 +217,9 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > page:
         next_page = True
-    nav_markup = _artist_events_nav_markup(next_page=next_page, artist_id=artist_id)
+    nav_markup = _artist_events_nav_markup(
+        next_page=next_page, artist_id=artist_id, page=page
+    )
     await _send_events(
         update=update, context=context, events=events, nav_markup=nav_markup
     )
