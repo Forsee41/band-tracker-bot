@@ -1,0 +1,17 @@
+name: Move linked issues to In Review column on PR
+on:
+  pull_request:
+    types: [opened]
+jobs:
+  move-linked-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move linked issues to 'In Review' column
+        uses: fojia/action-move-issues-to-column@v1.0.2
+        with:
+          project: "Band Tracker"
+          column: "👀 In review"
+          owner: "Forsee41"
+          repo: "band-tracker-bot"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: dev
