@@ -34,7 +34,7 @@ def _event_markup(event: Event) -> InlineKeyboardMarkup:
         )
     else:
         artist_btn = InlineKeyboardButton(
-            text="Artists", callback_data=f"eventartists {event.id}"
+            text="Artists", callback_data=f"eventartists {event.id} 0"
         )
 
     layout = [
