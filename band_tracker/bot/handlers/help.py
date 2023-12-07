@@ -44,8 +44,7 @@ async def _show_help_answer(update: Update, text: str) -> None:
     query = update.callback_query
     assert query
     await query.answer()
-    await query.edit_message_text(text=text)
-    await query.edit_message_reply_markup(reply_markup=_back_markup())
+    await query.edit_message_text(text=text, reply_markup=_back_markup())
 
 
 async def show_help(update: Update, context: CallbackContext) -> None:
@@ -73,8 +72,7 @@ async def back_to_help(update: Update, _: CallbackContext) -> None:
     await query.answer()
 
     markup = _help_markup()
-    await query.edit_message_text(text="Q&A. Choose a question.")
-    await query.edit_message_reply_markup(reply_markup=markup)
+    await query.edit_message_text(text="Q&A. Choose a question.", reply_markup=markup)
 
 
 async def how_it_works(update: Update, _: CallbackContext) -> None:
