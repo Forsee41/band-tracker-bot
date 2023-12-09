@@ -32,8 +32,8 @@ async def get_description(url: str) -> str | None:
             return None
 
         content_text = content_div.find(
-            "div", {"class": "mw-parser-output"}
-        )  # type: ignore
+            "div", {"class": "mw-parser-output"}  # type: ignore
+        )
 
         if not content_text or isinstance(content_text, int):
             log.error("Could not find right div class")
