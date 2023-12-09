@@ -1,7 +1,6 @@
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime
-from typing import Any
 
 import httpx
 
@@ -73,12 +72,6 @@ class ApiClient(ABC):
         self.timeout = httpx.Timeout(5.0, pool=5)
         self.change_token_flag = False
 
-    @abstractmethod
-    async def make_request(self, **kwargs: dict[str, Any]) -> None:
-        if self.change_token_flag:
-            await self._change_token()
-            self.change_token_flag = True
-
     async def _change_token(self) -> None:
         for token in self.tokens:
             try:
@@ -103,6 +96,10 @@ class ApiClientEvents(ApiClient):
         page_number: int = 0,
         country_code: str = "",
     ) -> dict[str, dict]:
+        if self.change_token_flag:
+            await self._change_token()
+            self.change_token_flag = True
+
         log.debug(
             "+++++++++++++++++++++++++++  SEND REQUEST  +++++++++++++++++++++++++++"
         )
@@ -135,6 +132,10 @@ class ApiClientEvents(ApiClient):
 
 class ApiClientArtists(ApiClient):
     async def make_request(self, keyword: str) -> dict[str, dict]:
+        if self.change_token_flag:
+            await self._change_token()
+            self.change_token_flag = True
+
         log.debug(
             "+++++++++++++++++++++++++++  SEND REQUEST  +++++++++++++++++++++++++++"
         )

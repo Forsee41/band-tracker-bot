@@ -3,7 +3,7 @@ import re
 from typing import Any, TypeAlias
 
 import httpx
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, StrictStr, field_validator
 
 from band_tracker.core.enums import EventSource
@@ -26,25 +26,24 @@ async def get_description(url: str) -> str | None:
         html = response.text
         soup = BeautifulSoup(html, "html.parser")
 
-        content_div: Tag | None | NavigableString = soup.find(
-            "div", {"id": "mw-content-text"}
-        )
+        content_div = soup.find("div", {"id": "mw-content-text"})
         if not content_div:
-            raise DescriptionFetchError("Could not find content div")
+            log.error("Could not find content div")
+            return None
 
-        content_text: Tag | None = content_div.find(
+        content_text = content_div.find(
             "div", {"class": "mw-parser-output"}
-        )
-
-        if not content_text or isinstance(content_text, int):
-            raise DescriptionFetchError("Could not find right div class")
-
-        first_paragraph: Tag | None = content_text.find(
-            "p", class_=False, id=False  # type: ignore
         )  # type: ignore
 
+        if not content_text or isinstance(content_text, int):
+            log.error("Could not find right div class")
+            return None
+
+        find_params = {"class_": False, "id": False}
+        first_paragraph = content_text.find("p", **find_params)
+
         log.debug(first_paragraph)
-        if not first_paragraph:
+        if not first_paragraph or isinstance(first_paragraph, int):
             return None
 
         text = re.sub(r"\[\d+\]", "", first_paragraph.get_text())
