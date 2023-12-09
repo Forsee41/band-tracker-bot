@@ -43,6 +43,7 @@ class TestClient:
                     thumbnail_image="https://s1.ticketm.net/dam/"
                     "a/5a1/d9a78cdb-a7ce-4e40-861d-4ad1c"
                     "6b355a1_264701_RECOMENDATION_16_9.jpg",
+                    description=None,
                 ),
             ),
             (
@@ -71,6 +72,7 @@ class TestClient:
                     "c/bea/03d47f66-d37b-4aca-"
                     "aa17-0135be64dbea_105801_RECOMENDATIO"
                     "N_16_9.jpg",
+                    description=None,
                 ),
             ),
         ],
@@ -94,7 +96,9 @@ class TestClient:
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
             main_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
             "4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg",
-            thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg",
+            thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-"
+            "4904-4dec-b1d6-539e44a521d1_1825531_RECOMEND"
+            "ATION_16_9.jpg",
             sales=EventUpdateSales(
                 sale_start=datetime(2022, 11, 4),
                 sale_end=datetime(2023, 7, 16),
@@ -126,6 +130,7 @@ class TestClient:
                 "4f7e-a7aa-1932aab77518_105461_RETINA_PORTRAIT_3_2.jpg",
                 thumbnail_image="https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
                 "-a7aa-1932aab77518_105461_RECOMENDATION_16_9.jpg",
+                description=None,
             ),
             ArtistUpdate(
                 name="Maze featuring Frankie Beverly",
@@ -146,6 +151,7 @@ class TestClient:
                 "4406b8ab64cd_1600911_RETINA_PORTRAIT_3_2.jpg",
                 thumbnail_image="https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
                 "884-4406b8ab64cd_1600911_RECOMENDATION_16_9.jpg",
+                description=None,
             ),
         ]
         assert get_all_artists(ARTISTS_SMALL) == artists_list
@@ -167,7 +173,9 @@ class TestClient:
                 artists=["K8vZ91719n0", "K8vZ917_bOf"],
                 main_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-"
                 "4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg",
-                thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg",
+                thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-49"
+                "04-4dec-b1d6-539e44a521d1_1825531_R"
+                "ECOMENDATION_16_9.jpg",
                 sales=EventUpdateSales(
                     sale_start=datetime(2022, 11, 4),
                     sale_end=datetime(2023, 7, 16),
@@ -191,7 +199,9 @@ class TestClient:
                 artists=["K8vZ917GSz7"],
                 main_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f"
                 "-4afe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg",
-                thumbnail_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg",
+                thumbnail_image="https://s1.ticketm.net/dam/a/c90/67a18"
+                "d21-394f-4afe-84f9-15560d797c90_16529"
+                "11_RECOMENDATION_16_9.jpg",
                 sales=EventUpdateSales(
                     sale_start=datetime(2022, 11, 18),
                     sale_end=datetime(2023, 7, 9),

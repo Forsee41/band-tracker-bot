@@ -59,6 +59,7 @@ class TestAddArtistDAL:
         await update_dal._add_artist(artist)
         result_db_artist = await query_artist(artist_tm_id)
 
+        assert result_db_artist
         assert result_db_artist.description
 
     async def test_genres_added(

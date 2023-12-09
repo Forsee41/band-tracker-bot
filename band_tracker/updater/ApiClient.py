@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Any
 
 import httpx
 
@@ -73,7 +74,7 @@ class ApiClient(ABC):
         self.change_token_flag = False
 
     @abstractmethod
-    async def make_request(self, **kwargs) -> None:
+    async def make_request(self, **kwargs: dict[str, Any]) -> None:
         if self.change_token_flag:
             await self._change_token()
             self.change_token_flag = True
@@ -85,7 +86,8 @@ class ApiClient(ABC):
                 response = httpx.get(self.url, params=self.query_params).json()
                 exception_helper(response)
                 log.debug(
-                    "+++++++++++++++++++++++++++  TOKEN SWAP  +++++++++++++++++++++++++++"
+                    "+++++++++++++++++++++++++++  TOKEN SWAP  "
+                    "+++++++++++++++++++++++++++"
                 )
                 return
             except QuotaViolation:
@@ -128,7 +130,7 @@ class ApiClientEvents(ApiClient):
                 continue
         else:
             log.error("TIMEOUT")
-            raise httpx.TimeoutException
+            raise httpx.TimeoutException("ClientEvent Timeout")
 
 
 class ApiClientArtists(ApiClient):
@@ -152,4 +154,4 @@ class ApiClientArtists(ApiClient):
                 continue
         else:
             log.error("TIMEOUT")
-            raise httpx.TimeoutException
+            raise httpx.TimeoutException("ClientArtist Timeout")

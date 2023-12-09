@@ -119,12 +119,14 @@ class TestUpdateArtistupdate_dal:
         await artist.set_description()
         await update_dal._add_artist(artist)
         init_db_artist = await query_artist(artist_tm_id)
+        assert init_db_artist
         init_description = init_db_artist.description
 
         artist.socials.wiki = None
         await artist.set_description()
         await update_dal.update_artist(artist)
         result_db_artist = await query_artist(artist_tm_id)
+        assert result_db_artist
         result_description = result_db_artist.description
 
         assert init_db_artist.name == result_db_artist.name

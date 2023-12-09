@@ -254,7 +254,7 @@ class EventIterator(PageIterator):
 
 
 class ArtistIterator(PageIterator):
-    def __init__(self, client: ApiClientArtists, artists: dict[int, str]):
+    def __init__(self, client: ApiClientArtists, artists: dict[int, str]) -> None:
         self.client = client
         self.artists: list[ArtistRequestEntity] = [
             ArtistRequestEntity(id_, name) for id_, name in artists.items()

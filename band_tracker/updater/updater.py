@@ -59,7 +59,7 @@ class Updater:
         self,
         client_factory: ClientFactory,
         dal: UpdateDAL,
-        predictor: TimestampPredictor = None,
+        predictor: TimestampPredictor | None = None,
         max_fails: int = 5,
         chunk_size: int = 4,
         ratelimit_violation_sleep_time: int = 5,  # seconds
@@ -113,6 +113,9 @@ class Updater:
         client: ApiClientEvents,
         update_dal: Callable,
     ) -> None:
+        if not self.predictor:
+            raise PredictorError("Predictor was not given to Updater constructor")
+
         await self.predictor.update_params()
         page_iterator = EventIterator(client=client, predictor=self.predictor)
         exceptions: list[Exception] = []
