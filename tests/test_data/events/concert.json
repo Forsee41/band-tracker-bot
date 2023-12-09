@@ -7,7 +7,7 @@
 	"venue": "The Dome Of Paris",
 	"venue_city": "Paris",
 	"venue_country": "France",
-	"image": "https://dome_of_paris_img_1.com",
+	"main_image": "https://dome_of_paris_img_1.com",
 	"ticket_url": "https://concert_ticket_url.com",
 	"source_specific_data": {
 		"ticketmaster_api": {

@@ -1,58 +1,22 @@
 import asyncio
 import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 
-import httpx
 from iso3166 import countries
 
-from band_tracker.updater.errors import (
-    InvalidResponseStructureError,
-    InvalidTokenError,
-    PredictorError,
-    RateLimitViolation,
-    UnexpectedFaultResponseError,
-    WrongChunkException,
+from band_tracker.updater.ApiClient import (
+    ApiClientArtists,
+    ApiClientEvents,
+    exception_helper,
 )
+from band_tracker.updater.errors import PredictorError, WrongChunkException
 from band_tracker.updater.timestamp_predictor import TimestampPredictor
 
 log = logging.getLogger(__name__)
 lock = asyncio.Lock()
-
-
-class ApiClient:
-    def __init__(self, url: str, query_params: dict[str, str]) -> None:
-        self.url = url
-        self.query_params = query_params
-
-    async def make_request(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        page_number: int = 0,
-        country_code: str = "",
-    ) -> dict[str, dict]:
-        log.debug(
-            "+++++++++++++++++++++++++++  SEND REQUEST  +++++++++++++++++++++++++++"
-        )
-
-        reformatted_start_date = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        reformatted_end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        startEndDateTime = f"{reformatted_start_date},{reformatted_end_date}"
-        log.debug(startEndDateTime)
-
-        response = httpx.get(
-            self.url,
-            params={
-                **self.query_params,
-                "startEndDateTime": startEndDateTime,
-                "page": page_number,
-                "countryCode": country_code,
-            },
-        )
-        return response.json()
 
 
 class ChunkProgression(Enum):
@@ -83,51 +47,31 @@ class EventsChunk:
         }
 
 
-def exception_helper(data: dict[str, dict]) -> dict[str, int]:
-    try:
-        page_info = data.get("page")
-        pages_number = page_info.get("totalPages")  # type: ignore
-        elements_number = page_info.get("totalElements")  # type: ignore
-
-        log.debug(str(pages_number) + " " + str(elements_number))
-        if pages_number is None:
-            raise InvalidResponseStructureError(
-                f"Pages information not found in response: {page_info}"
-            )
-
-        if elements_number is None:
-            raise InvalidResponseStructureError(
-                f"Total elements information not found in response: {page_info}"
-            )
-
-        return {"pages_number": pages_number, "elements_number": elements_number}
-
-    except AttributeError:
-        try:
-            error_response = data.get("fault", {})
-            detail = error_response.get("detail", {})
-            error_message = detail.get("errorcode")
-            match error_message:
-                case None:
-                    raise InvalidResponseStructureError(
-                        f"Unexpected Error, "
-                        f"fault string not found in response: {error_response}"
-                    )
-                case "oauth.v2.InvalidApiKey":
-                    raise InvalidTokenError()
-                case "policies.ratelimit.SpikeArrestViolation":
-                    raise RateLimitViolation()
-                case _:
-                    log.debug("edge case catch")
-                    raise UnexpectedFaultResponseError(
-                        f"Unexpected response fault message: {error_message}"
-                    )
-        except AttributeError:
-            raise InvalidResponseStructureError(f"Invalid JSON structure: {data}")
+class ArtistProgression(Enum):
+    in_progress = "in_progress"
+    done = "done"
+    idle = "idle"
 
 
-class PageIterator:
-    def __init__(self, client: ApiClient, predictor: TimestampPredictor) -> None:
+@dataclass
+class ArtistRequestEntity:
+    id_: int
+    keyword: str
+    progression: ArtistProgression = ArtistProgression.idle
+
+
+class PageIterator(ABC):
+    @abstractmethod
+    def __aiter__(self) -> "PageIterator":
+        pass
+
+    @abstractmethod
+    async def __anext__(self) -> dict[str, dict]:
+        pass
+
+
+class EventIterator(PageIterator):
+    def __init__(self, client: ApiClientEvents, predictor: TimestampPredictor) -> None:
         self.client = client
         self.predictor = predictor
         self.chunks: list[EventsChunk] = []
@@ -271,7 +215,7 @@ class PageIterator:
             ]
         )
 
-    def __aiter__(self) -> "PageIterator":
+    def __aiter__(self) -> "EventIterator":
         return self
 
     async def __anext__(self) -> dict[str, dict]:
@@ -305,5 +249,38 @@ class PageIterator:
             else:
                 current_chunk.progression = ChunkProgression.no_idle
                 raise WrongChunkException
+        else:
+            raise StopAsyncIteration
+
+
+class ArtistIterator(PageIterator):
+    def __init__(self, client: ApiClientArtists, artists: dict[int, str]):
+        self.client = client
+        self.artists: list[ArtistRequestEntity] = [
+            ArtistRequestEntity(id_, name) for id_, name in artists.items()
+        ]
+
+    def __aiter__(self) -> "ArtistIterator":
+        return self
+
+    async def _get_next_keyword(self) -> ArtistRequestEntity | None:
+        for artist in self.artists:
+            if (
+                artist.progression != ArtistProgression.done
+                and artist.progression != ArtistProgression.in_progress
+            ):
+                return artist
+        return None
+
+    async def __anext__(self) -> dict[str, dict]:
+        current_keyword = await self._get_next_keyword()
+        if current_keyword:
+            current_keyword.progression = ArtistProgression.in_progress
+            data = await self.client.make_request(keyword=current_keyword.keyword)
+
+            exception_helper(data)
+            current_keyword.progression = ArtistProgression.done
+            return data
+
         else:
             raise StopAsyncIteration

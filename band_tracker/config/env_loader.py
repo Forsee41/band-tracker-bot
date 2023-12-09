@@ -11,6 +11,7 @@ class EventsApiEnvVars(NamedTuple):
     CONCERTS_API_TOKEN: str
     CONCERTS_API_SECRET: str
     CONCERTS_API_URL: str
+    CONCERTS_API_TOKENS: list[str]
 
 
 class DBEnvVars(NamedTuple):
@@ -26,11 +27,14 @@ class MQEnvVars(NamedTuple):
     MQ_EXCHANGE: str
 
 
-def _load_vars(names: list[str]) -> dict[str, str]:
+def _load_vars(names: list[str]) -> dict[str, str] | dict[str, list[str]]:
     result = {}
     for var_name in names:
         try:
-            env_value = os.environ[var_name]
+            if var_name == "CONCERTS_API_TOKENS":
+                env_value = os.environ[var_name].split(",")
+            else:
+                env_value = os.environ[var_name]
         except KeyError:
             raise EnvironmentError(f"{var_name} env var is not found")
         result[var_name] = env_value
@@ -55,7 +59,12 @@ def tg_bot_env_vars() -> TgBotEnvVars:
 
 
 def events_api_env_vars() -> EventsApiEnvVars:
-    env_var_names = ["CONCERTS_API_TOKEN", "CONCERTS_API_SECRET", "CONCERTS_API_URL"]
+    env_var_names = [
+        "CONCERTS_API_TOKEN",
+        "CONCERTS_API_SECRET",
+        "CONCERTS_API_URL",
+        "CONCERTS_API_TOKENS",
+    ]
     env_var_dict = _load_vars(env_var_names)
 
     return EventsApiEnvVars(**env_var_dict)

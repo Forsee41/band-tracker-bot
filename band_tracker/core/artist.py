@@ -13,6 +13,7 @@ class ArtistSocials:
     instagram: str | None
     youtube: str | None
     spotify: str | None
+    wiki: str | None
 
 
 @dataclass
@@ -23,6 +24,7 @@ class Artist:
     tickets_link: str | None
     image: str | None
     thumbnail: str | None
+    description: str | None
     genres: list[str] = field(default_factory=list)
     event_ids: list[str] = field(default_factory=list)
 

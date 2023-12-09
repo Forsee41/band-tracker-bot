@@ -1,11 +1,15 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Callable, Coroutine
 
 from band_tracker.db.dal_update import UpdateDAL
+from band_tracker.updater.ApiClient import ApiClientArtists, ApiClientEvents
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
+    AllTokensViolation,
+    EmptyResponseException,
     InvalidResponseStructureError,
     InvalidTokenError,
     PredictorError,
@@ -14,29 +18,40 @@ from band_tracker.updater.errors import (
     UpdateError,
     WrongChunkException,
 )
-from band_tracker.updater.page_iterator import ApiClient, PageIterator
+from band_tracker.updater.page_iterator import (
+    ArtistIterator,
+    EventIterator,
+    PageIterator,
+)
 from band_tracker.updater.timestamp_predictor import TimestampPredictor
 
 log = logging.getLogger(__name__)
+lock = asyncio.Lock()
 
 
 class ClientFactory:
-    def __init__(self, base_url: str, token: str) -> None:
+    def __init__(self, base_url: str, tokens: list[str]) -> None:
         self.base_url = base_url
-        self.token = token
+        self.tokens = tokens
         self.params: dict = {
-            "apikey": self.token,
+            "apikey": self.tokens[0],
             "segmentId": "KZFzniwnSyZfZ7v7nJ",
             "size": 200,
         }
 
-    def get_events_client(self) -> ApiClient:
+    def get_events_client(self) -> ApiClientEvents:
         url = "".join((self.base_url, "events"))
-        return ApiClient(url=url, query_params=self.params)
+        return ApiClientEvents(url=url, query_params=self.params, tokens=self.tokens)
 
-    def get_artists_client(self) -> ApiClient:
+    def get_artists_client(self) -> ApiClientArtists:
         url = "".join((self.base_url, "attractions"))
-        return ApiClient(url=url, query_params=self.params)
+        return ApiClientArtists(url=url, query_params=self.params, tokens=self.tokens)
+
+
+class ArtistProgression(Enum):
+    in_progress = "in_progress"
+    done = "done"
+    idle = "idle"
 
 
 class Updater:
@@ -44,10 +59,10 @@ class Updater:
         self,
         client_factory: ClientFactory,
         dal: UpdateDAL,
-        predictor: TimestampPredictor,
+        predictor: TimestampPredictor = None,
         max_fails: int = 5,
         chunk_size: int = 4,
-        ratelimit_violation_sleep_time: int = 1,  # seconds
+        ratelimit_violation_sleep_time: int = 5,  # seconds
     ) -> None:
         self.client_factory = client_factory
         self.chunk_size = chunk_size
@@ -73,6 +88,8 @@ class Updater:
             raise exception
         elif isinstance(exception, QuotaViolation):
             raise exception
+        elif isinstance(exception, AllTokensViolation):
+            raise exception
         elif isinstance(exception, PredictorError):
             raise exception
         elif isinstance(exception, InvalidResponseStructureError):
@@ -80,6 +97,8 @@ class Updater:
         elif isinstance(exception, RateLimitViolation):
             target_list.append(exception)
             await asyncio.sleep(self.ratelimit_violation_sleep_time)
+        elif isinstance(exception, EmptyResponseException):
+            pass
         elif isinstance(exception, Exception):
             target_list.append(exception)
 
@@ -88,14 +107,14 @@ class Updater:
                 "Reached the limit of allowed exceptions", exceptions=target_list
             )
 
-    async def _update(
+    async def _update_events_worker(
         self,
         get_elements: Callable[[dict[str, dict]], list],
-        client: ApiClient,
+        client: ApiClientEvents,
         update_dal: Callable,
     ) -> None:
         await self.predictor.update_params()
-        page_iterator = PageIterator(client=client, predictor=self.predictor)
+        page_iterator = EventIterator(client=client, predictor=self.predictor)
         exceptions: list[Exception] = []
         while (chunk := self._get_pages_chunk(page_iterator)) is not None:
             log.debug("coroutines spawn")
@@ -129,18 +148,54 @@ class Updater:
             if seconds_to_wait > 0:
                 await asyncio.sleep(seconds_to_wait)
 
+    async def _update_artists_worker(
+        self,
+        get_elements: Callable[[dict[str, dict]], list],
+        client: ApiClientArtists,
+        update_dal: Callable,
+        artists: dict[int, str],
+    ) -> None:
+        page_iterator = ArtistIterator(client, artists)
+        exceptions: list[Exception] = []
+
+        while (chunk := self._get_pages_chunk(page_iterator)) is not None:
+            log.debug("coroutines spawn")
+
+            pages = await asyncio.gather(*chunk, return_exceptions=True)
+
+            if not any(pages):
+                return
+            for page in pages:
+                if isinstance(page, QuotaViolation):
+                    client.change_token_flag = True
+                if isinstance(page, Exception):
+                    await self._process_exceptions(
+                        exception=page, target_list=exceptions
+                    )
+
+                else:
+                    log.info("Successful response. Start parsing")
+                    try:
+                        updates = get_elements(page)
+                        for update in updates:
+                            # log.debug("UPDATE " + str(update))
+                            await update.set_description()
+                            await update_dal(update)
+                    except EmptyResponseException:
+                        pass
+
     async def update_events(self) -> None:
         log.info("Update Events")
 
         update_dal = self.dal.update_event
         client = self.client_factory.get_events_client()
 
-        await self._update(get_all_events, client, update_dal)
+        await self._update_events_worker(get_all_events, client, update_dal)
 
-    async def update_artists(self) -> None:
+    async def update_artists(self, artists: dict[int, str]) -> None:
         log.info("Update Artists")
 
         update_dal = self.dal.update_artist
         client = self.client_factory.get_artists_client()
 
-        await self._update(get_all_artists, client, update_dal)
+        await self._update_artists_worker(get_all_artists, client, update_dal, artists)

@@ -11,6 +11,12 @@ class InvalidResponseStructureError(Exception):
         super().__init__(self.message)
 
 
+class DescriptionFetchError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 class InvalidTokenError(Exception):
     """Invalid API token was given"""
 
@@ -19,6 +25,10 @@ class UnexpectedFaultResponseError(Exception):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(self.message)
+
+
+class AllTokensViolation(Exception):
+    """All tokens have been violated"""
 
 
 class QuotaViolation(Exception):
@@ -31,7 +41,7 @@ class RateLimitViolation(Exception):
     """Rate limit exceeded"""
 
 
-class DeserializationError(Exception):
+class EmptyResponseException(Exception):
     def __init__(self, error_str: str, api: EventSource) -> None:
         self.api = api
         super().__init__(error_str)

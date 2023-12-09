@@ -9,3 +9,4 @@ pydantic==2.0.2
 aio-pika==9.2.3
 sympy==1.12
 iso3166==2.1.1
+beautifulsoup4==4.12.2

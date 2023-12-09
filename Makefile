@@ -52,6 +52,19 @@ down:
 up:
 	docker compose -f docker-compose-dev.yaml up -d &> /dev/null
 
+up_artistsDb:
+	docker compose -f docker-compose-artistsDb.yaml up -d &> /dev/null
+
+dump_artistsDb:
+	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w artists_db | awk '{print $$1}'))
+	if [ -z "$(CONTAINER_ID)" ]; then \
+		echo "No container found."; \
+	else \
+		docker exec -t $(CONTAINER_ID) pg_dump -U artists_postgres -d artists_postgres > db.sql; \
+		mv db.sql $(CURDIR)/artistsDb_dump.sql; \
+		echo "Database dump created"; \
+	fi
+
 dump:
 	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w db | awk '{print $$1}'))
 	if [ -z "$(CONTAINER_ID)" ]; then \
