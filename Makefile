@@ -97,3 +97,6 @@ debug:
 		sleep 1.5; \
 	fi
 	python -m pytest -vv --asyncio-mode=auto -m debug
+
+rm_git-lock:
+	rm -f .git/index.lock
