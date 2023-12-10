@@ -3,13 +3,13 @@ from uuid import UUID
 
 import pytest
 
-from band_tracker.core.user import User
+from band_tracker.core.user import RawUser
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.event_update import EventUpdate
 
-UserFixture = Callable[[int, str], User]
+UserFixture = Callable[[int, str], RawUser]
 
 
 async def test_returns_required_events(
@@ -28,7 +28,7 @@ async def test_returns_required_events(
     clara_artist_id = uuids[1]
     added_user = user(1, "user1")
     await bot_dal.add_user(added_user)
-    await bot_dal.add_follow(user_tg_id=added_user.id, artist_id=clara_artist_id)
+    await bot_dal.add_follow(user_tg_id=added_user.tg_id, artist_id=clara_artist_id)
     events = ["concert", "fest", "eurovision"]
     for event in events:
         update_event = get_event_update(event)
@@ -56,7 +56,7 @@ async def test_pagination(
     clara_artist_id = uuids[1]
     added_user = user(1, "user1")
     await bot_dal.add_user(added_user)
-    await bot_dal.add_follow(user_tg_id=added_user.id, artist_id=clara_artist_id)
+    await bot_dal.add_follow(user_tg_id=added_user.tg_id, artist_id=clara_artist_id)
     events = ["concert", "fest", "eurovision"]
     for event in events:
         update_event = get_event_update(event)
