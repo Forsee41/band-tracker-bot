@@ -129,7 +129,7 @@ class MessageDB(Base):
         server_default=alchemy_text("gen_random_uuid()"),
     )
     user_id: Mapped[int] = mapped_column(
-        Integer,
+        UUID_PG(as_uuid=True),
         ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
         unique=True,
