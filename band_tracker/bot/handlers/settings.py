@@ -34,7 +34,7 @@ async def show_settings(update: Update, context: CallbackContext) -> None:
     tg_user = update.effective_user
     assert tg_user
     user = await get_user(tg_user=tg_user, dal=dal)
-    markup = await _generate_markup(dal=dal, user_tg_id=user.id)
+    markup = await _generate_markup(dal=dal, user_tg_id=user.tg_id)
 
     assert update.effective_chat
     assert update.effective_chat.id

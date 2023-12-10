@@ -131,7 +131,7 @@ async def follow(update: Update, context: CallbackContext) -> None:
     user = await get_user(dal=dal, tg_user=update.effective_user)
 
     try:
-        await dal.add_follow(user_tg_id=user.id, artist_id=artist_id)
+        await dal.add_follow(user_tg_id=user.tg_id, artist_id=artist_id)
     except ArtistNotFound:
         log.warning("Can't create a follow, artist is not present in db")
         return
@@ -158,7 +158,7 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
 
     assert update.effective_user
     user = await get_user(dal=dal, tg_user=update.effective_user)
-    await dal.unfollow(user_tg_id=user.id, artist_id=artist_id)
+    await dal.unfollow(user_tg_id=user.tg_id, artist_id=artist_id)
     await _change_markup(
         update=update,
         context=context,

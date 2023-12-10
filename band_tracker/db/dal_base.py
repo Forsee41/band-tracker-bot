@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from band_tracker.core.artist import Artist, ArtistSocials
 from band_tracker.core.event import Event, EventSales
 from band_tracker.core.follow import Follow
-from band_tracker.core.user import User
+from band_tracker.core.user import RawUser, User
 from band_tracker.core.user_settings import UserSettings
 from band_tracker.db.models import ArtistDB, EventDB, FollowDB, UserDB, UserSettingsDB
 from band_tracker.db.session import AsyncSessionmaker
@@ -97,10 +97,10 @@ class BaseDAL:
         )
         return artist
 
-    def _core_to_db_user(self, user: User) -> UserDB:
+    def _raw_to_db_user(self, user: RawUser) -> UserDB:
         db_settings = self._core_to_db_user_settings(user.settings)
         db_user = UserDB(
-            tg_id=user.id,
+            tg_id=user.tg_id,
             name=user.name,
             join_date=user.join_date,
             settings=db_settings,
@@ -115,7 +115,8 @@ class BaseDAL:
             if follow_db.active
         }
         user = User(
-            id=user_db.tg_id,
+            id=user_db.id,
+            tg_id=user_db.tg_id,
             name=user_db.name,
             join_date=user_db.join_date,
             settings=settings,
