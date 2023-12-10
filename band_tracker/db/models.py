@@ -137,7 +137,7 @@ class MessageDB(Base):
     )
     tg_message_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     message_type: Mapped[MessageType] = mapped_column(
-        EnumDB(MessageType), nullable=False
+        EnumDB(MessageType), nullable=False, index=True
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.now()
