@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from band_tracker.core.artist import Artist
-from band_tracker.core.enums import AdminNotificationLevel, Range
+from band_tracker.core.enums import AdminNotificationLevel, MessageType, Range
 from band_tracker.core.event import Event
 from band_tracker.core.user import User
 from band_tracker.db.dal_base import BaseDAL
@@ -19,6 +19,7 @@ from band_tracker.db.models import (
     EventArtistDB,
     EventDB,
     FollowDB,
+    MessageDB,
     UserDB,
 )
 
@@ -82,6 +83,44 @@ class BotDAL(BaseDAL):
             query_results = scalars.all()
 
         return [self._build_core_event(event) for event in query_results]
+
+    async def register_message(
+        self, message_type: MessageType, user_id: UUID, message_tg_id: int
+    ) -> UUID:
+        message = MessageDB(
+            message_type=message_type, user_id=user_id, message_id=message_tg_id
+        )
+        async with self.sessionmaker.session() as session:
+            session.add(message)
+            await session.flush()
+            message_id = message.id
+            await session.commit()
+        return message_id
+
+    async def delete_user_interfaces(self, user_id: UUID) -> list[int]:
+        """
+        Marks all active interfaces for a user as inactive and returns their tg ids.
+        """
+        stmt = (
+            select(MessageDB)
+            .join(UserDB, UserDB.id == MessageDB.user_id)
+            .where(UserDB.id == user_id)
+            .where(MessageDB.active)
+            .where(
+                MessageDB.message_type.not_in(
+                    [MessageType.NOTIFICATION, MessageType.TEST]
+                )
+            )
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            messages: list[MessageDB] = scalars.all()
+            message_ids = [message.tg_message_id for message in messages]
+            for message in messages:
+                message.active = False
+            session.add_all(messages)
+            await session.commit()
+        return message_ids
 
     async def get_user_events_amount(self, user_tg_id: int) -> int:
         stmt = (
