@@ -15,6 +15,7 @@ from band_tracker.core.user import RawUser
 from band_tracker.core.user_settings import UserSettings
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
+from band_tracker.db.dal_message import MessageDAL
 from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.event_update import EventUpdate
 from band_tracker.db.models import (
@@ -246,6 +247,12 @@ def sessionmaker(db_creds: dict) -> AsyncSessionmaker:
 @pytest.fixture(scope="class")
 def update_dal(sessionmaker: AsyncSessionmaker) -> UpdateDAL:
     dal = UpdateDAL(sessionmaker)
+    return dal
+
+
+@pytest.fixture(scope="class")
+def message_dal(sessionmaker: AsyncSessionmaker) -> MessageDAL:
+    dal = MessageDAL(sessionmaker)
     return dal
 
 
