@@ -132,7 +132,6 @@ class MessageDB(Base):
         UUID_PG(as_uuid=True),
         ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
         index=True,
     )
     tg_message_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)

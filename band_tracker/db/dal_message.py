@@ -15,7 +15,7 @@ class MessageDAL(BaseDAL):
         self, message_type: MessageType, user_id: UUID, message_tg_id: int
     ) -> UUID:
         message = MessageDB(
-            message_type=message_type, user_id=user_id, message_id=message_tg_id
+            message_type=message_type, user_id=user_id, tg_message_id=message_tg_id
         )
         async with self.sessionmaker.session() as session:
             session.add(message)
