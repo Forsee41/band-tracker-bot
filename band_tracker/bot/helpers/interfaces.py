@@ -28,11 +28,13 @@ class MessageManager:
         markup: InlineKeyboardMarkup | None,
         user: User,
         msg_type: MessageType,
+        delete_prev: bool = True,
     ) -> None:
-        old_ids = await self.dal.delete_user_messages(user_id=user.id)
-        await self.delete_messages(msg_ids=old_ids, chat_id=user.tg_id)
+        if delete_prev:
+            old_ids = await self.dal.delete_user_messages(user_id=user.id)
+            await self.delete_messages(msg_ids=old_ids, chat_id=user.tg_id)
         msg = await self.bot.send_message(
-            caption=text,
+            text=text,
             reply_markup=markup,
             chat_id=user.tg_id,
             parse_mode="HTML",
@@ -48,9 +50,11 @@ class MessageManager:
         user: User,
         image: str,
         msg_type: MessageType,
+        delete_prev: bool = True,
     ) -> None:
-        old_ids = await self.dal.delete_user_messages(user_id=user.id)
-        await self.delete_messages(msg_ids=old_ids, chat_id=user.tg_id)
+        if delete_prev:
+            old_ids = await self.dal.delete_user_messages(user_id=user.id)
+            await self.delete_messages(msg_ids=old_ids, chat_id=user.tg_id)
         msg = await self.bot.send_photo(
             caption=text,
             reply_markup=markup,

@@ -19,6 +19,7 @@ from band_tracker.bot.helpers.callback_data import (
 from band_tracker.bot.helpers.get_user import get_user
 from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.config.constants import EVENTS_PER_PAGE
+from band_tracker.core.artist import Artist
 from band_tracker.core.enums import MessageType
 from band_tracker.core.event import Event
 from band_tracker.core.user import User
@@ -125,13 +126,76 @@ async def _send_artist_events(
     context: ContextTypes.DEFAULT_TYPE,
     events: list[Event],
     user: User,
-    artist_id: UUID,
+    artist: Artist,
+    next_page: bool,
+    page: int,
+) -> None:
+    if len(events) >= 2:
+        await _send_artist_events_long(
+            context=context,
+            events=events,
+            user=user,
+            next_page=next_page,
+            page=page,
+            artist=artist,
+        )
+    elif len(events) == 1:
+        await _send_artist_events_short(
+            context=context,
+            event=events[0],
+            user=user,
+            next_page=next_page,
+            page=page,
+            artist=artist,
+        )
+
+
+async def _send_artist_events_short(
+    context: ContextTypes.DEFAULT_TYPE,
+    event: Event,
+    user: User,
+    next_page: bool,
+    artist: Artist,
+    page: int,
+) -> None:
+    msg: MessageManager = context.bot_data["msg"]
+    nav_markup = _artist_events_nav_markup(
+        event=event, next_page=next_page, page=page, artist_id=artist.id
+    )
+    text = f"----------- {artist.name} events -----------\nPage {page+1}\n\n"
+    text += _event_text(event)
+    await msg.send_text(
+        text=text,
+        user=user,
+        markup=nav_markup,
+        msg_type=MessageType.GLOBAL_EVENT_END,
+    )
+
+
+async def _send_artist_events_long(
+    context: ContextTypes.DEFAULT_TYPE,
+    events: list[Event],
+    user: User,
+    artist: Artist,
     next_page: bool,
     page: int,
 ) -> None:
     msg: MessageManager = context.bot_data["msg"]
+
+    # head
+    head_markup = _event_markup(event=events[0])
+    text = f"----------- {artist.name} events -----------\nPage {page+1}\n\n"
+    text += _event_text(events[0])
+    await msg.send_text(
+        text=text,
+        user=user,
+        markup=head_markup,
+        msg_type=MessageType.ARTIST_EVENT_START,
+    )
+
+    # body
     tasks: list[Awaitable] = []
-    for event in events[:-1]:
+    for event in events[1:-1]:
         event_text = _event_text(event)
         event_markup = _event_markup(event)
         tasks.append(
@@ -140,11 +204,14 @@ async def _send_artist_events(
                 text=event_text,
                 markup=event_markup,
                 msg_type=MessageType.ARTIST_EVENT,
+                delete_prev=False,
             )
         )
     await asyncio.gather(*tasks)
+
+    # nav
     nav_markup = _artist_events_nav_markup(
-        event=events[-1], artist_id=artist_id, next_page=next_page, page=page
+        event=events[-1], artist_id=artist.id, next_page=next_page, page=page
     )
     event_text = _event_text(events[-1])
     await msg.send_text(
@@ -152,6 +219,7 @@ async def _send_artist_events(
         user=user,
         markup=nav_markup,
         msg_type=MessageType.ARTIST_EVENT_END,
+        delete_prev=False,
     )
 
 
@@ -162,9 +230,58 @@ async def _send_all_events(
     next_page: bool,
     page: int,
 ) -> None:
+    if len(events) >= 2:
+        await _send_all_events_long(
+            context=context, events=events, user=user, next_page=next_page, page=page
+        )
+    elif len(events) == 1:
+        await _send_all_events_short(
+            context=context, event=events[0], user=user, next_page=next_page, page=page
+        )
+
+
+async def _send_all_events_short(
+    context: ContextTypes.DEFAULT_TYPE,
+    event: Event,
+    user: User,
+    next_page: bool,
+    page: int,
+) -> None:
     msg: MessageManager = context.bot_data["msg"]
+    nav_markup = _all_events_nav_markup(event=event, next_page=next_page, page=page)
+    text = f"----------- Tracked events -----------\nPage {page+1}\n\n"
+    text += _event_text(event)
+    await msg.send_text(
+        text=text,
+        user=user,
+        markup=nav_markup,
+        msg_type=MessageType.GLOBAL_EVENT_END,
+    )
+
+
+async def _send_all_events_long(
+    context: ContextTypes.DEFAULT_TYPE,
+    events: list[Event],
+    user: User,
+    next_page: bool,
+    page: int,
+) -> None:
+    msg: MessageManager = context.bot_data["msg"]
+
+    # head
+    head_markup = _event_markup(event=events[0])
+    text = f"----------- Tracked events -----------\nPage {page+1}\n\n"
+    text += _event_text(events[0])
+    await msg.send_text(
+        text=text,
+        user=user,
+        markup=head_markup,
+        msg_type=MessageType.GLOBAL_EVENT_START,
+    )
+
+    # middle
     tasks: list[Awaitable] = []
-    for event in events[:-1]:
+    for event in events[1:-1]:
         event_text = _event_text(event)
         event_markup = _event_markup(event)
         tasks.append(
@@ -173,9 +290,12 @@ async def _send_all_events(
                 text=event_text,
                 markup=event_markup,
                 msg_type=MessageType.GLOBAL_EVENT,
+                delete_prev=False,
             )
         )
     await asyncio.gather(*tasks)
+
+    # nav
     nav_markup = _all_events_nav_markup(
         event=events[-1], next_page=next_page, page=page
     )
@@ -185,6 +305,7 @@ async def _send_all_events(
         user=user,
         markup=nav_markup,
         msg_type=MessageType.GLOBAL_EVENT_END,
+        delete_prev=False,
     )
 
 
@@ -263,6 +384,7 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
     user = await get_user(tg_user=update.effective_user, dal=dal)
 
     total_events = await dal.get_artist_events_amount(artist_id)
+    artist = await dal.get_artist(artist_id)
     events = await dal.get_events_for_artist(artist_id=artist_id, page=page)
     if not events:
         log.warning(
@@ -276,7 +398,7 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
         context=context,
         events=events,
         user=user,
-        artist_id=artist_id,
+        artist=artist,
         next_page=next_page,
         page=page,
     )
