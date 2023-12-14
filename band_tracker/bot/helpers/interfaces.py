@@ -25,7 +25,7 @@ class MessageManager:
     async def send_text(
         self,
         text: str,
-        markup: InlineKeyboardMarkup,
+        markup: InlineKeyboardMarkup | None,
         user: User,
         msg_type: MessageType,
     ) -> None:
@@ -44,7 +44,7 @@ class MessageManager:
     async def send_image(
         self,
         text: str,
-        markup: InlineKeyboardMarkup,
+        markup: InlineKeyboardMarkup | None,
         user: User,
         image: str,
         msg_type: MessageType,
