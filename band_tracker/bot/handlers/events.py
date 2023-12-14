@@ -385,6 +385,9 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
 
     total_events = await dal.get_artist_events_amount(artist_id)
     artist = await dal.get_artist(artist_id)
+    if artist is None:
+        log.error(f"Artist events handler can't find an artist {artist_id}")
+        return
     events = await dal.get_events_for_artist(artist_id=artist_id, page=page)
     if not events:
         log.warning(
