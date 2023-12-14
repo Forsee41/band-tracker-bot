@@ -5,7 +5,10 @@ from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, 
 from telegram.ext import CallbackContext, CallbackQueryHandler, InvalidCallbackData
 
 from band_tracker.bot.helpers.callback_data import get_multiple_fields
+from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.config.constants import ARTISTS_PER_PAGE
+from band_tracker.core.enums import MessageType
 from band_tracker.core.event import Event
 from band_tracker.db.dal_bot import BotDAL
 
@@ -81,6 +84,7 @@ async def _event_artists_markup(
 
 async def artist_list(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
+    msg: MessageManager = context.bot_data["msg"]
 
     if not update.effective_chat:
         log.warning("Follows handler can't find an effective chat of an update")
@@ -88,6 +92,7 @@ async def artist_list(update: Update, context: CallbackContext) -> None:
     if not update.effective_user:
         log.warning("Follows handler can't find an effective user of an update")
         return
+    user = await get_user(tg_user=update.effective_user, dal=dal)
     query = update.callback_query
     try:
         event_id, page = _get_event_artitsts_callback_data(query)
@@ -109,11 +114,9 @@ async def artist_list(update: Update, context: CallbackContext) -> None:
 
     assert query
     await query.answer()
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"{event.title} artists",
-        reply_markup=markup,
+    text = f"{event.title} artists"
+    await msg.send_text(
+        text=text, markup=markup, user=user, msg_type=MessageType.EVENT_ARTISTS
     )
 
 
