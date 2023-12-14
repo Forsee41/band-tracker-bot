@@ -12,7 +12,9 @@ from telegram.ext import (
 
 from band_tracker.bot.helpers.callback_data import get_callback_data
 from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.config.constants import ARTISTS_PER_PAGE
+from band_tracker.core.enums import MessageType
 from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 
@@ -74,6 +76,7 @@ async def _follows_markup(user: User, page: int, dal: BotDAL) -> InlineKeyboardM
 
 async def follows_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     dal: BotDAL = context.bot_data["dal"]
+    msg: MessageManager = context.bot_data["msg"]
 
     if not update.effective_chat:
         log.warning("Follows handler can't find an effective chat of an update")
@@ -91,15 +94,14 @@ async def follows_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if query:
         await query.answer()
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Your Follows",
-        reply_markup=markup,
+    await msg.send_text(
+        text="Your Follows", markup=markup, user=user, msg_type=MessageType.FOLLOWS
     )
 
 
 async def follows_navigation(update: Update, context: CallbackContext) -> None:
     dal: BotDAL = context.bot_data["dal"]
+    msg: MessageManager = context.bot_data["msg"]
 
     if not update.effective_chat:
         log.warning("Follows handler can't find an effective chat of an update")
@@ -125,11 +127,8 @@ async def follows_navigation(update: Update, context: CallbackContext) -> None:
 
     assert query
     await query.answer()
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Your Follows",
-        reply_markup=markup,
+    await msg.send_text(
+        text="Your Follows", markup=markup, user=user, msg_type=MessageType.FOLLOWS
     )
 
 
