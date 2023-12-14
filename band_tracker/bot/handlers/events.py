@@ -3,13 +3,7 @@ import logging
 from typing import Awaitable
 from uuid import UUID
 
-from telegram import (
-    Bot,
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Update,
-)
+from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackContext,
     CallbackQueryHandler,
@@ -22,8 +16,12 @@ from band_tracker.bot.helpers.callback_data import (
     get_callback_data,
     get_multiple_fields,
 )
+from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.config.constants import EVENTS_PER_PAGE
+from band_tracker.core.enums import MessageType
 from band_tracker.core.event import Event
+from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
@@ -58,7 +56,7 @@ def _get_all_events_callback_data(query: CallbackQuery | None) -> int:
     return page_number
 
 
-def _event_markup(event: Event) -> InlineKeyboardMarkup:
+def _event_layout(event: Event) -> list[list[InlineKeyboardButton]]:
     layout = [
         [
             InlineKeyboardButton(text="Explore", callback_data=f"event {event.id}"),
@@ -67,11 +65,19 @@ def _event_markup(event: Event) -> InlineKeyboardMarkup:
             ),
         ],
     ]
+    return layout
+
+
+def _event_markup(event: Event) -> InlineKeyboardMarkup:
+    layout = _event_layout(event)
     return InlineKeyboardMarkup(layout)
 
 
-def _all_events_nav_markup(next_page: bool, page: int = 0) -> InlineKeyboardMarkup:
+def _all_events_nav_markup(
+    next_page: bool, event: Event, page: int = 0
+) -> InlineKeyboardMarkup:
     nav_row: list[InlineKeyboardButton] = []
+    event_layout = _event_layout(event)
     if page > 0:
         nav_row.append(
             InlineKeyboardButton(text="Prev", callback_data=f"eventsall {page-1}")
@@ -81,13 +87,15 @@ def _all_events_nav_markup(next_page: bool, page: int = 0) -> InlineKeyboardMark
             InlineKeyboardButton(text="Next", callback_data=f"eventsall {page+1}")
         )
     back_btn = InlineKeyboardButton(text="Back", callback_data="menu")
-    markup = InlineKeyboardMarkup([nav_row, [back_btn]])
+    event_layout.extend([nav_row, [back_btn]])
+    markup = InlineKeyboardMarkup(event_layout)
     return markup
 
 
 def _artist_events_nav_markup(
-    next_page: bool, artist_id: UUID, page: int = 0
+    next_page: bool, artist_id: UUID, event: Event, page: int = 0
 ) -> InlineKeyboardMarkup:
+    event_layout = _event_layout(event)
     nav_row: list[InlineKeyboardButton] = []
     if page > 0:
         nav_row.append(
@@ -103,7 +111,8 @@ def _artist_events_nav_markup(
         )
     back_callback_data = f"artist {artist_id}"
     back_btn = InlineKeyboardButton(text="Back", callback_data=back_callback_data)
-    markup = InlineKeyboardMarkup([nav_row, [back_btn]])
+    event_layout.extend([nav_row, [back_btn]])
+    markup = InlineKeyboardMarkup(event_layout)
     return markup
 
 
@@ -112,30 +121,70 @@ def _event_text(event: Event) -> str:
     return result
 
 
-async def _send_events(
-    update: Update,
+async def _send_artist_events(
     context: ContextTypes.DEFAULT_TYPE,
     events: list[Event],
-    nav_markup: InlineKeyboardMarkup,
+    user: User,
+    artist_id: UUID,
+    next_page: bool,
+    page: int,
 ) -> None:
-    bot: Bot = context.bot
-    if not update.effective_chat:
-        log.warning("Can't send events cause can't find an effective chat of an update")
-        return
+    msg: MessageManager = context.bot_data["msg"]
     tasks: list[Awaitable] = []
-    for event in events:
+    for event in events[:-1]:
         event_text = _event_text(event)
         event_markup = _event_markup(event)
         tasks.append(
-            bot.send_message(
-                chat_id=update.effective_chat.id,
+            msg.send_text(
+                user=user,
                 text=event_text,
-                reply_markup=event_markup,
+                markup=event_markup,
+                msg_type=MessageType.ARTIST_EVENT,
             )
         )
     await asyncio.gather(*tasks)
-    await bot.send_message(
-        chat_id=update.effective_chat.id, text="Navigation", reply_markup=nav_markup
+    nav_markup = _artist_events_nav_markup(
+        event=events[-1], artist_id=artist_id, next_page=next_page, page=page
+    )
+    event_text = _event_text(events[-1])
+    await msg.send_text(
+        text=event_text,
+        user=user,
+        markup=nav_markup,
+        msg_type=MessageType.ARTIST_EVENT_END,
+    )
+
+
+async def _send_all_events(
+    context: ContextTypes.DEFAULT_TYPE,
+    events: list[Event],
+    user: User,
+    next_page: bool,
+    page: int,
+) -> None:
+    msg: MessageManager = context.bot_data["msg"]
+    tasks: list[Awaitable] = []
+    for event in events[:-1]:
+        event_text = _event_text(event)
+        event_markup = _event_markup(event)
+        tasks.append(
+            msg.send_text(
+                user=user,
+                text=event_text,
+                markup=event_markup,
+                msg_type=MessageType.GLOBAL_EVENT,
+            )
+        )
+    await asyncio.gather(*tasks)
+    nav_markup = _all_events_nav_markup(
+        event=events[-1], next_page=next_page, page=page
+    )
+    event_text = _event_text(events[-1])
+    await msg.send_text(
+        text=event_text,
+        user=user,
+        markup=nav_markup,
+        msg_type=MessageType.GLOBAL_EVENT_END,
     )
 
 
@@ -149,18 +198,20 @@ async def all_events_command(update: Update, context: CallbackContext) -> None:
         log.warning("Follows handler can't find an effective user of an update")
         return
 
-    user_id = update.effective_user.id
-    events = await dal.get_events_for_user(user_id, events_per_page=EVENTS_PER_PAGE)
-    total_events = await dal.get_user_events_amount(user_id)
+    user = await get_user(tg_user=update.effective_user, dal=dal)
+    events = await dal.get_events_for_user(
+        user_tg_id=user.tg_id, events_per_page=EVENTS_PER_PAGE
+    )
+    total_events = await dal.get_user_events_amount(user.tg_id)
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > 0:
         next_page = True
-    nav_markup = _all_events_nav_markup(next_page=next_page, page=0)
-    await _send_events(
-        update=update,
+    await _send_all_events(
         context=context,
         events=events,
-        nav_markup=nav_markup,
+        user=user,
+        next_page=next_page,
+        page=0,
     )
 
 
@@ -173,23 +224,26 @@ async def all_events_btn(update: Update, context: CallbackContext) -> None:
     if not update.effective_user:
         log.warning("Follows handler can't find an effective user of an update")
         return
+    user = await get_user(tg_user=update.effective_user, dal=dal)
     query = update.callback_query
     page = _get_all_events_callback_data(query)
-    user_id = update.effective_user.id
     events = await dal.get_events_for_user(
-        user_id, events_per_page=EVENTS_PER_PAGE, page=page
+        user_tg_id=user.tg_id, events_per_page=EVENTS_PER_PAGE, page=page
     )
 
     assert query
     await query.answer()
-    total_events = await dal.get_user_events_amount(user_id)
+    total_events = await dal.get_user_events_amount(user.tg_id)
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > page:
         next_page = True
 
-    nav_markup = _all_events_nav_markup(next_page=next_page, page=page)
-    await _send_events(
-        update=update, context=context, events=events, nav_markup=nav_markup
+    await _send_all_events(
+        context=context,
+        events=events,
+        user=user,
+        next_page=next_page,
+        page=page,
     )
 
 
@@ -206,6 +260,7 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
     assert query
     await query.answer()
     artist_id, page = _get_artist_events_callback_data(query)
+    user = await get_user(tg_user=update.effective_user, dal=dal)
 
     total_events = await dal.get_artist_events_amount(artist_id)
     events = await dal.get_events_for_artist(artist_id=artist_id, page=page)
@@ -217,11 +272,13 @@ async def artist_events(update: Update, context: CallbackContext) -> None:
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > page:
         next_page = True
-    nav_markup = _artist_events_nav_markup(
-        next_page=next_page, artist_id=artist_id, page=page
-    )
-    await _send_events(
-        update=update, context=context, events=events, nav_markup=nav_markup
+    await _send_artist_events(
+        context=context,
+        events=events,
+        user=user,
+        artist_id=artist_id,
+        next_page=next_page,
+        page=page,
     )
 
 
