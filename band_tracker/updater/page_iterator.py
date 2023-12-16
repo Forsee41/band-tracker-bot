@@ -7,7 +7,7 @@ from enum import Enum
 
 from iso3166 import countries
 
-from band_tracker.updater.ApiClient import (
+from band_tracker.updater.api_client import (
     ApiClientArtists,
     ApiClientEvents,
     exception_helper,
@@ -55,7 +55,6 @@ class ArtistProgression(Enum):
 
 @dataclass
 class ArtistRequestEntity:
-    id_: int
     keyword: str
     progression: ArtistProgression = ArtistProgression.idle
 
@@ -254,10 +253,10 @@ class EventIterator(PageIterator):
 
 
 class ArtistIterator(PageIterator):
-    def __init__(self, client: ApiClientArtists, artists: dict[int, str]) -> None:
+    def __init__(self, client: ApiClientArtists, artists: list[str]) -> None:
         self.client = client
         self.artists: list[ArtistRequestEntity] = [
-            ArtistRequestEntity(id_, name) for id_, name in artists.items()
+            ArtistRequestEntity(name) for name in artists
         ]
 
     def __aiter__(self) -> "ArtistIterator":

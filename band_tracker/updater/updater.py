@@ -1,11 +1,10 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Callable, Coroutine
 
 from band_tracker.db.dal_update import UpdateDAL
-from band_tracker.updater.ApiClient import ApiClientArtists, ApiClientEvents
+from band_tracker.updater.api_client import ApiClientArtists, ApiClientEvents
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     AllTokensViolation,
@@ -46,12 +45,6 @@ class ClientFactory:
     def get_artists_client(self) -> ApiClientArtists:
         url = "".join((self.base_url, "attractions"))
         return ApiClientArtists(url=url, query_params=self.params, tokens=self.tokens)
-
-
-class ArtistProgression(Enum):
-    in_progress = "in_progress"
-    done = "done"
-    idle = "idle"
 
 
 class Updater:
@@ -156,7 +149,7 @@ class Updater:
         get_elements: Callable[[dict[str, dict]], list],
         client: ApiClientArtists,
         update_dal: Callable,
-        artists: dict[int, str],
+        artists: list[str],
     ) -> None:
         page_iterator = ArtistIterator(client, artists)
         exceptions: list[Exception] = []
@@ -171,7 +164,7 @@ class Updater:
             for page in pages:
                 if isinstance(page, QuotaViolation):
                     client.change_token_flag = True
-                if isinstance(page, Exception):
+                elif isinstance(page, Exception):
                     await self._process_exceptions(
                         exception=page, target_list=exceptions
                     )
@@ -195,7 +188,7 @@ class Updater:
 
         await self._update_events_worker(get_all_events, client, update_dal)
 
-    async def update_artists(self, artists: dict[int, str]) -> None:
+    async def update_artists(self, artists: list[str]) -> None:
         log.info("Update Artists")
 
         update_dal = self.dal.update_artist

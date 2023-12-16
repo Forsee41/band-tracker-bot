@@ -265,3 +265,15 @@ class AdminDB(Base):
         default=AdminNotificationLevel.ERROR,
     )
     name: Mapped[str] = mapped_column(String, primary_key=False, nullable=False)
+
+
+class ArtistNameDB(Base):
+    __tablename__ = "artist_names"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
+
+    name: Mapped[str] = mapped_column(String, nullable=False)

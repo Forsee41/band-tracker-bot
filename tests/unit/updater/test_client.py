@@ -11,7 +11,12 @@ from band_tracker.updater.deserializator import (
     get_artist,
     get_event,
 )
-from test_data.temp_const import ARTISTS, ARTISTS_SMALL, EVENTS, EVENTS_SMALL
+from tests.test_data.client_mock.temp_const import (
+    ARTISTS,
+    ARTISTS_SMALL,
+    EVENTS,
+    EVENTS_SMALL,
+)
 
 
 class TestClient:

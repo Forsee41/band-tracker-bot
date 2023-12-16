@@ -16,6 +16,7 @@ from band_tracker.db.models import (
     ArtistAliasDB,
     ArtistDB,
     ArtistGenreDB,
+    ArtistNameDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
     EventArtistDB,
@@ -393,3 +394,20 @@ class UpdateDAL(BaseDAL):
             raise
 
         return uuid, event_artist_uuids
+
+    async def get_all_artist_names(self) -> list[str]:
+        async with self.sessionmaker.session() as session:
+            query = select(ArtistNameDB.name)
+            result = await session.execute(query)
+            artist_names = [row[0] for row in result.fetchall()]
+
+        return artist_names
+
+    async def add_artist_name(self, name: str) -> None:
+        artist_name = ArtistNameDB(name=name)
+
+        async with self.sessionmaker.session() as session:
+            session.add(artist_name)
+            await session.flush()
+            await session.commit()
+        log.info(name.join(" was added."))

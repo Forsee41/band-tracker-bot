@@ -1,13 +1,13 @@
 import logging
 import re
 from typing import Any, TypeAlias
+from urllib.parse import urlparse, urlunparse
 
 import httpx
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, StrictStr, field_validator
 
 from band_tracker.core.enums import EventSource
-from band_tracker.updater.errors import DescriptionFetchError
 
 SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 
@@ -15,13 +15,21 @@ log = logging.getLogger(__name__)
 
 
 async def get_description(url: str) -> str | None:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
+    # to scip httpx redirection
+    parsed_url = urlparse(url)
+    if parsed_url.scheme == "http":
+        url = urlunparse(("https",) + parsed_url[1:])
 
-        if response.status_code != 200:
-            raise DescriptionFetchError(
-                f"Failed to fetch the page. Status code: {response.status_code}"
-            )
+    async with httpx.AsyncClient(timeout=5) as client:
+        for _ in range(5):
+            try:
+                response = await client.get(url)
+            except httpx.TimeoutException as e:
+                log.warning(e)
+                continue
+            except httpx.ConnectError as e:
+                log.error(e)
+                return None
 
         html = response.text
         soup = BeautifulSoup(html, "html.parser")
@@ -46,8 +54,9 @@ async def get_description(url: str) -> str | None:
         if not first_paragraph or isinstance(first_paragraph, int):
             return None
 
-        text = re.sub(r"\[\d+\]", "", first_paragraph.get_text())
-        return text.strip()
+        flatten_text = re.sub(r"\([^)]*\)", "", first_paragraph.get_text())
+        text_without_references = re.sub(r"\[\d+\]", "", flatten_text)
+        return text_without_references.strip()
 
 
 class ArtistUpdateSocials(BaseModel):

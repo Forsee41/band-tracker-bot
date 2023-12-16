@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from band_tracker.updater.ApiClient import ApiClientEvents
+from band_tracker.updater.api_client import ApiClientEvents
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
     InvalidTokenError,
@@ -28,7 +28,7 @@ def mock_response() -> Callable[[str], dict]:
     return lol
 
 
-@patch("band_tracker.updater.ApiClient.ApiClientEvents.make_request")
+@patch("band_tracker.updater.api_client.ApiClientEvents.make_request")
 class TestIterator:
     custom_request = ApiClientEvents("", {}, [])
 

@@ -12,6 +12,8 @@ class EventsApiEnvVars(NamedTuple):
     CONCERTS_API_SECRET: str
     CONCERTS_API_URL: str
     CONCERTS_API_TOKENS: list[str]
+    SEATGEEK_URL: str
+    SEATGEEK_TOKEN: str
 
 
 class DBEnvVars(NamedTuple):
@@ -68,6 +70,8 @@ def events_api_env_vars() -> EventsApiEnvVars:
         "CONCERTS_API_TOKEN",
         "CONCERTS_API_SECRET",
         "CONCERTS_API_URL",
+        "SEATGEEK_URL",
+        "SEATGEEK_TOKEN",
     ]
     env_var_dict = _load_vars(env_var_names)
     tokens = _load_tokens("CONCERTS_API_TOKENS")
