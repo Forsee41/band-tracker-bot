@@ -6,12 +6,13 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from band_tracker.updater.api_client import ApiClientEvents
 from band_tracker.updater.errors import (
     InvalidResponseStructureError,
     InvalidTokenError,
     RateLimitViolation,
 )
-from band_tracker.updater.page_iterator import ApiClient, PageIterator
+from band_tracker.updater.page_iterator import EventIterator
 from band_tracker.updater.timestamp_predictor import LinearPredictor, TimestampPredictor
 
 
@@ -27,11 +28,10 @@ def mock_response() -> Callable[[str], dict]:
     return lol
 
 
-@patch("band_tracker.updater.page_iterator.ApiClient.make_request")
+@patch("band_tracker.updater.api_client.ApiClientEvents.make_request")
 class TestIterator:
-    custom_request = ApiClient("", {})
+    custom_request = ApiClientEvents("", {}, [])
 
-    @pytest.mark.slow
     async def test_chunk_progression(
         self,
         mock_get: AsyncMock,
@@ -50,7 +50,7 @@ class TestIterator:
         mock_get.side_effect = mock_make_request
 
         predictor = get_timestamp_predictor(timedelta(days=365))
-        iterator = PageIterator(self.custom_request, predictor=predictor)
+        iterator = EventIterator(self.custom_request, predictor=predictor)
         initial_max_date = iterator.max_end_time
 
         async for i in iterator:
@@ -63,7 +63,6 @@ class TestIterator:
         assert iterator.max_end_time > initial_max_date
 
     @pytest.mark.slow
-    @pytest.mark.skip
     async def test_process_large_chunk(
         self,
         mock_get: AsyncMock,
@@ -86,7 +85,7 @@ class TestIterator:
         mock_get.side_effect = mock_make_request
 
         predictor = get_timestamp_predictor(timedelta(days=0))
-        iterator = PageIterator(self.custom_request, predictor=predictor)
+        iterator = EventIterator(self.custom_request, predictor=predictor)
         iterator.max_end_time += timedelta(days=731)
 
         async for i in iterator:
@@ -94,7 +93,6 @@ class TestIterator:
 
         assert len(iterator.chunks) == 2
 
-    @pytest.mark.slow
     async def test_structure_error(
         self,
         mock_get: AsyncMock,
@@ -118,14 +116,13 @@ class TestIterator:
         mock_get.side_effect = mock_make_request
         predictor = get_linear_predictor(-0.1, 1000)
 
-        iterator = PageIterator(self.custom_request, predictor=predictor)
+        iterator = EventIterator(self.custom_request, predictor=predictor)
 
         data = []
         with pytest.raises(InvalidResponseStructureError):
             async for i in iterator:
                 data.append(i)
 
-    @pytest.mark.slow
     async def test_token_error(
         self,
         mock_get: AsyncMock,
@@ -150,14 +147,13 @@ class TestIterator:
         mock_get.side_effect = mock_make_request
         predictor = get_linear_predictor(-0.1, 1000)
 
-        iterator = PageIterator(self.custom_request, predictor=predictor)
+        iterator = EventIterator(self.custom_request, predictor=predictor)
 
         data = []
         with pytest.raises(InvalidTokenError):
             async for i in iterator:
                 data.append(i)
 
-    @pytest.mark.slow
     async def test_rate_limit_error(
         self,
         mock_get: AsyncMock,
@@ -182,7 +178,7 @@ class TestIterator:
         mock_get.side_effect = mock_make_request
         predictor = get_linear_predictor(-0.1, 1000)
 
-        iterator = PageIterator(self.custom_request, predictor=predictor)
+        iterator = EventIterator(self.custom_request, predictor=predictor)
 
         data = []
         with pytest.raises(RateLimitViolation):

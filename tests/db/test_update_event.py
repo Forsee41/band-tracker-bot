@@ -35,7 +35,7 @@ class TestUpdateEventDAL:
         update_event.sales.sale_start = datetime(8045, 4, 5)
         update_event.sales.sale_end = datetime(8045, 4, 6)
 
-        update_event.image = None
+        update_event.main_image = None
 
         await update_dal.update_event(update_event)
 
@@ -87,7 +87,7 @@ class TestUpdateEventDAL:
         await update_dal._add_event(update_event)
 
         update_event.ticket_url = None
-        update_event.image = None
+        update_event.main_image = None
         await update_dal.update_event(update_event)
 
         result_event = await update_dal._get_event_by_tm_id("fest_tm_id")

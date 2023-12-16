@@ -16,6 +16,7 @@ from band_tracker.db.models import (
     ArtistAliasDB,
     ArtistDB,
     ArtistGenreDB,
+    ArtistNameDB,
     ArtistSocialsDB,
     ArtistTMDataDB,
     EventArtistDB,
@@ -56,6 +57,7 @@ class UpdateDAL(BaseDAL):
             artist_db.thumbnail = (
                 str(artist.thumbnail_image) if artist.thumbnail_image else None
             )
+            artist_db.description = artist.description
 
             socials = await artist_db.awaitable_attrs.socials
             socials.instagram = (
@@ -67,6 +69,7 @@ class UpdateDAL(BaseDAL):
             socials.spotify = (
                 str(artist.socials.spotify) if artist.socials.spotify else None
             )
+            socials.wiki = str(artist.socials.wiki) if artist.socials.wiki else None
 
             new_genres = await self._get_new_genres(
                 session=session, artist_id=artist_db.id, genres=artist.genres
@@ -91,7 +94,8 @@ class UpdateDAL(BaseDAL):
             return await self._add_event(event)
 
         ticket_url = str(event.ticket_url) if event.ticket_url else None
-        image = str(event.image) if event.image else None
+        image = str(event.main_image) if event.main_image else None
+        thumbnail = str(event.thumbnail_image) if event.thumbnail_image else None
 
         async with self.sessionmaker.session() as session:
             event_db = await self._event_by_tm_id(session=session, tm_id=event_tm_id)
@@ -105,6 +109,7 @@ class UpdateDAL(BaseDAL):
             event_db.ticket_url = ticket_url
             event_db.start_date = event.date
             event_db.image = image
+            event_db.thumbnail = thumbnail
 
             sales_result = await event_db.awaitable_attrs.sales
             sales = sales_result[0]
@@ -182,6 +187,7 @@ class UpdateDAL(BaseDAL):
             spotify=str(socials.spotify) if socials.spotify else None,
             youtube=str(socials.youtube) if socials.youtube else None,
             instagram=str(socials.instagram) if socials.instagram else None,
+            wiki=str(socials.wiki) if socials.wiki else None,
             artist_id=artist_id,
         )
         return socials_db
@@ -250,11 +256,14 @@ class UpdateDAL(BaseDAL):
         tickets_link = str(artist.tickets_link) if artist.tickets_link else None
         image = str(artist.main_image) if artist.main_image else None
         thumbnail = str(artist.thumbnail_image) if artist.thumbnail_image else None
+        description = artist.description
+
         artist_db = ArtistDB(
             name=artist.name,
             tickets_link=tickets_link,
             image=image,
             thumbnail=thumbnail,
+            description=description,
         )
         async with self.sessionmaker.session() as session:
             db_genres = await self._get_db_genres(session, artist.genres)
@@ -350,7 +359,8 @@ class UpdateDAL(BaseDAL):
         event_tm_id = event_tm_data["id"]
 
         ticket_url = str(event.ticket_url) if event.ticket_url else None
-        image = str(event.image) if event.image else None
+        image = str(event.main_image) if event.main_image else None
+        thumbnail = str(event.thumbnail_image) if event.thumbnail_image else None
 
         event_db = EventDB(
             title=event.title,
@@ -360,6 +370,7 @@ class UpdateDAL(BaseDAL):
             start_date=event.date,
             ticket_url=ticket_url,
             image=image,
+            thumbnail=thumbnail,
         )
         async with self.sessionmaker.session() as session:
             session.add(event_db)
@@ -383,3 +394,20 @@ class UpdateDAL(BaseDAL):
             raise
 
         return uuid, event_artist_uuids
+
+    async def get_all_artist_names(self) -> list[str]:
+        async with self.sessionmaker.session() as session:
+            query = select(ArtistNameDB.name)
+            result = await session.execute(query)
+            artist_names = [row[0] for row in result.fetchall()]
+
+        return artist_names
+
+    async def add_artist_name(self, name: str) -> None:
+        artist_name = ArtistNameDB(name=name)
+
+        async with self.sessionmaker.session() as session:
+            session.add(artist_name)
+            await session.flush()
+            await session.commit()
+        log.info(name.join(" was added."))

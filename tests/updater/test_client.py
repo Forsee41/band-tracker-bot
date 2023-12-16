@@ -11,7 +11,12 @@ from band_tracker.updater.deserializator import (
     get_artist,
     get_event,
 )
-from test_data.temp_const import ARTISTS, ARTISTS_SMALL, EVENTS, EVENTS_SMALL
+from tests.test_data.client_mock.temp_const import (
+    ARTISTS,
+    ARTISTS_SMALL,
+    EVENTS,
+    EVENTS_SMALL,
+)
 
 
 class TestClient:
@@ -28,6 +33,7 @@ class TestClient:
                         instagram="http://www.instagram.com/theorblive",
                         youtube="https://www.youtube.com"
                         "/channel/UCpoyFBLTLfbT2Z1D1AnlvLg",
+                        wiki="https://en.wikipedia.org/wiki/The_Orb",
                     ),
                     aliases=[],
                     tickets_link="https://www.ticketmaster.com"
@@ -42,6 +48,7 @@ class TestClient:
                     thumbnail_image="https://s1.ticketm.net/dam/"
                     "a/5a1/d9a78cdb-a7ce-4e40-861d-4ad1c"
                     "6b355a1_264701_RECOMENDATION_16_9.jpg",
+                    description=None,
                 ),
             ),
             (
@@ -51,7 +58,12 @@ class TestClient:
                     tickets_link="https://www.ticketmaster.com/"
                     "jeff-tain-watts-tickets/artist/844673",
                     socials=ArtistUpdateSocials(
-                        **{"spotify": None, "youtube": None, "instagram": None}
+                        **{
+                            "spotify": None,
+                            "youtube": None,
+                            "instagram": None,
+                            "wiki": None,
+                        }
                     ),
                     source_specific_data={
                         EventSource.ticketmaster_api: {"id": "K8vZ9171OI0"}
@@ -65,6 +77,7 @@ class TestClient:
                     "c/bea/03d47f66-d37b-4aca-"
                     "aa17-0135be64dbea_105801_RECOMENDATIO"
                     "N_16_9.jpg",
+                    description=None,
                 ),
             ),
         ],
@@ -86,8 +99,11 @@ class TestClient:
             venue_city="Noblesville",
             venue_country="United States Of America",
             artists=["K8vZ91719n0", "K8vZ917_bOf"],
-            image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
+            main_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-"
             "4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg",
+            thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-"
+            "4904-4dec-b1d6-539e44a521d1_1825531_RECOMEND"
+            "ATION_16_9.jpg",
             sales=EventUpdateSales(
                 sale_start=datetime(2022, 11, 4),
                 sale_end=datetime(2023, 7, 16),
@@ -106,6 +122,7 @@ class TestClient:
                     spotify=None,
                     instagram=None,
                     youtube=None,
+                    wiki=None,
                 ),
                 aliases=[],
                 tickets_link="https://www.ticketmaster.com/solina"
@@ -118,6 +135,7 @@ class TestClient:
                 "4f7e-a7aa-1932aab77518_105461_RETINA_PORTRAIT_3_2.jpg",
                 thumbnail_image="https://s1.ticketm.net/dam/c/518/83a05c63-479c-4f7e"
                 "-a7aa-1932aab77518_105461_RECOMENDATION_16_9.jpg",
+                description=None,
             ),
             ArtistUpdate(
                 name="Maze featuring Frankie Beverly",
@@ -125,6 +143,7 @@ class TestClient:
                     spotify=None,
                     instagram=None,
                     youtube=None,
+                    wiki=None,
                 ),
                 aliases=["frankie beverly and maze", "maze frankie beverly"],
                 tickets_link="https://www.ticketmaster.com/maze-f"
@@ -137,6 +156,7 @@ class TestClient:
                 "4406b8ab64cd_1600911_RETINA_PORTRAIT_3_2.jpg",
                 thumbnail_image="https://s1.ticketm.net/dam/a/4cd/f4b129cc-7197-4ff0-b"
                 "884-4406b8ab64cd_1600911_RECOMENDATION_16_9.jpg",
+                description=None,
             ),
         ]
         assert get_all_artists(ARTISTS_SMALL) == artists_list
@@ -156,8 +176,11 @@ class TestClient:
                 venue_city="Noblesville",
                 venue_country="United States Of America",
                 artists=["K8vZ91719n0", "K8vZ917_bOf"],
-                image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-"
+                main_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-"
                 "4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg",
+                thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-49"
+                "04-4dec-b1d6-539e44a521d1_1825531_R"
+                "ECOMENDATION_16_9.jpg",
                 sales=EventUpdateSales(
                     sale_start=datetime(2022, 11, 4),
                     sale_end=datetime(2023, 7, 16),
@@ -179,8 +202,11 @@ class TestClient:
                 venue_city="Milwaukee",
                 venue_country="United States Of America",
                 artists=["K8vZ917GSz7"],
-                image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f"
+                main_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f"
                 "-4afe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg",
+                thumbnail_image="https://s1.ticketm.net/dam/a/c90/67a18"
+                "d21-394f-4afe-84f9-15560d797c90_16529"
+                "11_RECOMENDATION_16_9.jpg",
                 sales=EventUpdateSales(
                     sale_start=datetime(2022, 11, 18),
                     sale_end=datetime(2023, 7, 9),

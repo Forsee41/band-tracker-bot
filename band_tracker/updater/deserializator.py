@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
 from band_tracker.db.event_update import EventUpdate, EventUpdateSales
-from band_tracker.updater.errors import DeserializationError
+from band_tracker.updater.errors import EmptyResponseException
 
 log = logging.getLogger(__name__)
 
@@ -27,13 +27,15 @@ def get_artist(raw_artist: dict) -> ArtistUpdate:
         external_links = raw_artist.get("externalLinks")
         if external_links is not None:
             links = {}
-            for i in {"instagram", "youtube", "spotify"}:
+            for i in {"instagram", "youtube", "spotify", "wiki"}:
                 if external_links.get(i) is not None:
                     links.update({i: external_links.get(i)[0]["url"]})
                 else:
                     links.update({i: None})
             return ArtistUpdateSocials(**links)
-        return ArtistUpdateSocials(spotify=None, youtube=None, instagram=None)
+        return ArtistUpdateSocials(
+            spotify=None, youtube=None, instagram=None, wiki=None
+        )
 
     def genres_helper() -> list:
         classifications = raw_artist.get("classifications")
@@ -173,7 +175,7 @@ def get_event(raw_event: dict) -> EventUpdate:
         else None,
         "artists": attraction_ids_helper(),
         "sales": sales_helper(),
-        "image": [
+        "main_image": [
             image.get("url")
             for image in raw_event.get("images", [])
             if "RETINA_PORTRAIT_3_2" in image.get("url")
@@ -182,6 +184,18 @@ def get_event(raw_event: dict) -> EventUpdate:
             image.get("url")
             for image in raw_event.get("images", [])
             if "RETINA_PORTRAIT_3_2" in image.get("url")
+        ]
+        is not None
+        else None,
+        "thumbnail_image": [
+            image.get("url")
+            for image in raw_event.get("images", [])
+            if "RECOMENDATION" in image.get("url")
+        ][0]
+        if [
+            image.get("url")
+            for image in raw_event.get("images", [])
+            if "RECOMENDATION" in image.get("url")
         ]
         is not None
         else None,
@@ -194,7 +208,7 @@ def get_all_artists(raw_dict: dict[str, dict]) -> list[ArtistUpdate]:
         json_data = JSONData.model_validate(raw_dict)
         artists = json_data.embedded["attractions"]
     except ValueError:
-        raise DeserializationError("invalid json", EventSource.ticketmaster_api)
+        raise EmptyResponseException("invalid json", EventSource.ticketmaster_api)
     output = []
     for i in artists:
         output.append(get_artist(i))
@@ -206,7 +220,7 @@ def get_all_events(raw_dict: dict[str, dict]) -> list[EventUpdate]:
         json_data = JSONData.model_validate(raw_dict)
         events = json_data.embedded["events"]
     except ValueError:
-        raise DeserializationError("invalid json", EventSource.ticketmaster_api)
+        raise EmptyResponseException("invalid json", EventSource.ticketmaster_api)
     output = []
     for i in events:
         output.append(get_event(i))

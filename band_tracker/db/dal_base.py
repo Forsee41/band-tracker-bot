@@ -73,6 +73,7 @@ class BaseDAL:
             venue_country=db_event.venue_country,
             ticket_url=db_event.ticket_url,
             image=db_event.image,
+            thumbnail=db_event.thumbnail,
         )
         return event
 
@@ -82,6 +83,7 @@ class BaseDAL:
             spotify=db_socials.spotify,
             instagram=db_socials.instagram,
             youtube=db_socials.youtube,
+            wiki=db_socials.wiki,
         )
         genres = db_artist.genres
         genre_names = [genre.name for genre in genres]
@@ -94,6 +96,7 @@ class BaseDAL:
             image=db_artist.image,
             thumbnail=db_artist.thumbnail,
             genres=genre_names,
+            description=db_artist.description,
         )
         return artist
 

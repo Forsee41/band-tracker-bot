@@ -19,8 +19,10 @@ def main() -> None:
     load_dotenv()
     events_env = events_api_env_vars()
     db_env = db_env_vars()
+    tokens = events_env.CONCERTS_API_TOKENS
+
     api_client_factory = ClientFactory(
-        base_url=events_env.CONCERTS_API_URL, token=events_env.CONCERTS_API_TOKEN
+        base_url=events_env.CONCERTS_API_URL, tokens=tokens
     )
     db_sessionmaker = AsyncSessionmaker(
         login=db_env.DB_LOGIN,

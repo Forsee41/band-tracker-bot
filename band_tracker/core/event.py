@@ -29,6 +29,7 @@ class Event:
     ticket_url: str | None
     artist_ids: list[UUID]
     image: str | None
+    thumbnail: str | None
     sales: EventSales
 
     @property

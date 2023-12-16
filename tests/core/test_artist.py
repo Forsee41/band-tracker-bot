@@ -7,7 +7,7 @@ from band_tracker.core.artist import Artist, ArtistSocials
 
 class TestArtist:
     def test_artist_constructor(self) -> None:
-        socials = ArtistSocials(instagram=None, spotify=None, youtube=None)
+        socials = ArtistSocials(instagram=None, spotify=None, youtube=None, wiki=None)
         artist = Artist(
             id=uuid4(),
             name="",
@@ -15,6 +15,7 @@ class TestArtist:
             socials=socials,
             image=None,
             thumbnail=None,
+            description=None,
         )
         assert artist
 
