@@ -24,39 +24,42 @@ async def get_description(url: str) -> str | None:
         for _ in range(5):
             try:
                 response = await client.get(url)
+                html = response.text
+                soup = BeautifulSoup(html, "html.parser")
+
+                content_div = soup.find("div", {"id": "mw-content-text"})
+                if not content_div:
+                    log.error("Could not find content div")
+                    return None
+
+                content_text = content_div.find(
+                    "div", {"class": "mw-parser-output"}  # type: ignore
+                )
+
+                if not content_text or isinstance(content_text, int):
+                    log.error("Could not find right div class")
+                    return None
+
+                find_params = {"class_": False, "id": False}
+                first_paragraph = content_text.find("p", **find_params)
+
+                log.debug(first_paragraph)
+                if not first_paragraph or isinstance(first_paragraph, int):
+                    return None
+
+                flatten_text = re.sub(r"\([^)]*\)", "", first_paragraph.get_text())
+                text_without_references = re.sub(r"\[\d+\]", "", flatten_text)
+                return text_without_references.strip()
+
             except httpx.TimeoutException as e:
                 log.warning(e)
                 continue
             except httpx.ConnectError as e:
                 log.error(e)
                 return None
-
-        html = response.text
-        soup = BeautifulSoup(html, "html.parser")
-
-        content_div = soup.find("div", {"id": "mw-content-text"})
-        if not content_div:
-            log.error("Could not find content div")
-            return None
-
-        content_text = content_div.find(
-            "div", {"class": "mw-parser-output"}  # type: ignore
-        )
-
-        if not content_text or isinstance(content_text, int):
-            log.error("Could not find right div class")
-            return None
-
-        find_params = {"class_": False, "id": False}
-        first_paragraph = content_text.find("p", **find_params)
-
-        log.debug(first_paragraph)
-        if not first_paragraph or isinstance(first_paragraph, int):
-            return None
-
-        flatten_text = re.sub(r"\([^)]*\)", "", first_paragraph.get_text())
-        text_without_references = re.sub(r"\[\d+\]", "", flatten_text)
-        return text_without_references.strip()
+        else:
+            log.error("TIMEOUT")
+            raise httpx.TimeoutException("Wiki Timeout")
 
 
 class ArtistUpdateSocials(BaseModel):
