@@ -1,0 +1,16 @@
+version: '3.0'
+services:
+  artists_db:
+    container_name: "artists_db"
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=artists_postgres
+      - POSTGRES_PASSWORD=artists_postgres
+      - POSTGRES_DB=artists_postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

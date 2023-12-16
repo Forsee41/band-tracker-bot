@@ -28,6 +28,7 @@ class ArtistDB(Base):
     tickets_link: Mapped[str | None] = mapped_column(String, nullable=True)
     image: Mapped[str | None] = mapped_column(String, nullable=True)
     thumbnail: Mapped[str | None] = mapped_column(String, nullable=True)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
 
     follows: Mapped[list["FollowDB"]] = relationship(back_populates="artist")
     aliases: Mapped[list["ArtistAliasDB"]] = relationship(back_populates="artist")
@@ -59,6 +60,7 @@ class EventDB(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     ticket_url: Mapped[str | None] = mapped_column(String, nullable=True)
     image: Mapped[str | None] = mapped_column(String, nullable=True)
+    thumbnail: Mapped[str | None] = mapped_column(String, nullable=True)
 
     tm_data: Mapped["EventTMDataDB"] = relationship(
         back_populates="event", cascade="all, delete-orphan"
@@ -105,6 +107,7 @@ class ArtistSocialsDB(Base):
     instagram: Mapped[str | None] = mapped_column(String, nullable=True)
     spotify: Mapped[str | None] = mapped_column(String, nullable=True)
     youtube: Mapped[str | None] = mapped_column(String, nullable=True)
+    wiki: Mapped[str | None] = mapped_column(String, nullable=True)
 
     artist: Mapped[ArtistDB] = relationship(back_populates="socials")
 
@@ -262,3 +265,15 @@ class AdminDB(Base):
         default=AdminNotificationLevel.ERROR,
     )
     name: Mapped[str] = mapped_column(String, primary_key=False, nullable=False)
+
+
+class ArtistNameDB(Base):
+    __tablename__ = "artist_names"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
+
+    name: Mapped[str] = mapped_column(String, nullable=False)

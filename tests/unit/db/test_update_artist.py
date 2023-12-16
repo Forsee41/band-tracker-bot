@@ -108,6 +108,30 @@ class TestUpdateArtistupdate_dal:
         result_aliases = [alias.alias for alias in result_db_artist.aliases]
         assert set(result_aliases) == set(artist_old_aliases)
 
+    async def test_description_updated(
+        self,
+        query_artist: Callable[[str], Coroutine[Any, Any, ArtistDB | None]],
+        update_dal: DAL,
+        get_artist_update: Callable[[str], ArtistUpdate],
+    ) -> None:
+        artist = get_artist_update("gosha")
+        artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
+        await artist.set_description()
+        await update_dal._add_artist(artist)
+        init_db_artist = await query_artist(artist_tm_id)
+        assert init_db_artist
+        init_description = init_db_artist.description
+
+        artist.socials.wiki = None
+        await artist.set_description()
+        await update_dal.update_artist(artist)
+        result_db_artist = await query_artist(artist_tm_id)
+        assert result_db_artist
+        result_description = result_db_artist.description
+
+        assert init_db_artist.name == result_db_artist.name
+        assert init_description != result_description
+
     async def test_genres_updated(
         self,
         update_dal: DAL,
