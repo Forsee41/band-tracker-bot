@@ -3,6 +3,11 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler
 
+from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.interfaces import MessageManager
+from band_tracker.core.enums import MessageType
+from band_tracker.db.dal_bot import BotDAL
+
 log = logging.getLogger(__name__)
 
 
@@ -48,18 +53,23 @@ async def _show_help_answer(update: Update, text: str) -> None:
 
 
 async def show_help(update: Update, context: CallbackContext) -> None:
+    msg: MessageManager = context.bot_data["msg"]
+    dal: BotDAL = context.bot_data["dal"]
     assert update.effective_chat
     assert update.effective_chat.id
+    assert update.effective_user
 
     query = update.callback_query
     if query:
         await query.answer()
 
+    user = await get_user(dal=dal, tg_user=update.effective_user)
     markup = _help_markup()
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
+    await msg.send_text(
         text="Q&A. Choose a question.",
-        reply_markup=markup,
+        markup=markup,
+        user=user,
+        msg_type=MessageType.HELP,
     )
 
 

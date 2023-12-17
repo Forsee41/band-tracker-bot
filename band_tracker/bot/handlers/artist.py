@@ -2,13 +2,7 @@ import logging
 from typing import Callable
 from uuid import UUID
 
-from telegram import (
-    Bot,
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Update,
-)
+from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackContext,
     CallbackQueryHandler,
@@ -18,7 +12,9 @@ from telegram.ext import (
 
 from band_tracker.bot.helpers.callback_data import get_callback_data
 from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.core.artist import Artist
+from band_tracker.core.enums import MessageType
 from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.errors import ArtistNotFound, UserNotFound
@@ -53,20 +49,7 @@ def _followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
     return markup
 
 
-async def _show_unfollowed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
-    markup = _unfollowed_markup(artist.id)
-
-    await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
-
-
-async def _show_followed_amp(bot: Bot, chat_id: int, artist: Artist) -> None:
-    markup = _followed_markup(artist.id)
-    await _send_result(bot=bot, chat_id=chat_id, artist=artist, markup=markup)
-
-
-async def _send_result(
-    bot: Bot, chat_id: int, artist: Artist, markup: InlineKeyboardMarkup
-) -> None:
+def _amp_text(artist: Artist) -> str:
     text_data = f"<b>{artist.name}</b>\n\n"
     if artist.genres:
         genres = " ".join(artist.genres)
@@ -78,14 +61,7 @@ async def _send_result(
         text_data += f'<a href="{artist.socials.youtube}">YouTube</a>\n'
     if artist.socials.spotify:
         text_data += f'<a href="{artist.socials.spotify}">Spotify</a>\n'
-
-    await bot.send_photo(
-        chat_id=chat_id,
-        photo=artist.image,  # type: ignore
-        caption=text_data,
-        reply_markup=markup,
-        parse_mode="HTML",
-    )
+    return text_data
 
 
 def _get_callback_artist_id(query: CallbackQuery | None) -> UUID:
@@ -131,7 +107,7 @@ async def follow(update: Update, context: CallbackContext) -> None:
     user = await get_user(dal=dal, tg_user=update.effective_user)
 
     try:
-        await dal.add_follow(user_tg_id=user.id, artist_id=artist_id)
+        await dal.add_follow(user_tg_id=user.tg_id, artist_id=artist_id)
     except ArtistNotFound:
         log.warning("Can't create a follow, artist is not present in db")
         return
@@ -158,7 +134,7 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
 
     assert update.effective_user
     user = await get_user(dal=dal, tg_user=update.effective_user)
-    await dal.unfollow(user_tg_id=user.id, artist_id=artist_id)
+    await dal.unfollow(user_tg_id=user.tg_id, artist_id=artist_id)
     await _change_markup(
         update=update,
         context=context,
@@ -217,6 +193,7 @@ async def artist_command(update: Update, context: CallbackContext) -> None:
 async def _show_artist(
     update: Update, context: CallbackContext, artist: Artist | None, user: User
 ) -> None:
+    msg: MessageManager = context.bot_data["msg"]
     if not update.effective_chat:
         log.warning("Artist handler can't find an effective chat of an update")
         return
@@ -230,10 +207,19 @@ async def _show_artist(
         return
 
     if artist.id in user.follows:
-        send_amp = _show_followed_amp
+        markup = _followed_markup(artist.id)
     else:
-        send_amp = _show_unfollowed_amp
-    await send_amp(bot=context.bot, chat_id=update.effective_chat.id, artist=artist)
+        markup = _unfollowed_markup(artist.id)
+    if artist.image is None:
+        log.warning(f"Artist {artist.id} does not have an image")
+        return
+    await msg.send_image(
+        text=_amp_text(artist),
+        markup=markup,
+        user=user,
+        image=artist.image,
+        msg_type=MessageType.AMP,
+    )
 
 
 handlers = [

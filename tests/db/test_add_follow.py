@@ -2,12 +2,12 @@ from typing import Callable
 
 import pytest
 
-from band_tracker.core.user import User
+from band_tracker.core.user import RawUser
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.dal_update import UpdateDAL as DAL
 
-UserFixture = Callable[[int, str], User]
+UserFixture = Callable[[int, str], RawUser]
 
 
 class TestAddFollowDAL:

@@ -8,7 +8,17 @@ from band_tracker.core.user_settings import UserSettings
 
 @dataclass
 class User:
-    id: int
+    id: UUID
+    tg_id: int
+    name: str
+    follows: dict[UUID, Follow]
+    join_date: datetime
+    settings: UserSettings
+
+
+@dataclass
+class RawUser:
+    tg_id: int
     name: str
     follows: dict[UUID, Follow]
     join_date: datetime

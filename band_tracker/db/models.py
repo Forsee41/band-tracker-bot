@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID as UUID_PG
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from band_tracker.core.enums import AdminNotificationLevel, Range
+from band_tracker.core.enums import AdminNotificationLevel, MessageType, Range
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -86,7 +86,7 @@ class UserDB(Base):
         primary_key=True,
         server_default=alchemy_text("gen_random_uuid()"),
     )
-    tg_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
+    tg_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     join_date: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.now()
@@ -121,6 +121,32 @@ class GenreDB(Base):
         server_default=alchemy_text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class MessageDB(Base):
+    __tablename__ = "message"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    tg_message_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
+    message_type: Mapped[MessageType] = mapped_column(
+        EnumDB(MessageType), nullable=False, index=True
+    )
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now()
+    )
+    active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, index=True
+    )
 
 
 class ArtistGenreDB(Base):
