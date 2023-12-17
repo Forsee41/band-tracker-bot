@@ -1,5 +1,6 @@
 from typing import Callable
 
+from band_tracker.config.constants import NO_DELETE
 from band_tracker.core.enums import MessageType
 from band_tracker.core.user import RawUser
 from band_tracker.db.dal_bot import BotDAL
@@ -20,7 +21,9 @@ async def test_clean_works(
     await message_dal.register_message(
         message_type=MessageType.AMP, user_id=added_user.id, message_tg_id=4
     )
-    result = await message_dal.delete_user_messages(user_id=added_user.id)
+    result = await message_dal.delete_user_messages(
+        user_id=added_user.id, no_delete=NO_DELETE
+    )
     assert len(result) == 2
     assert 3 in result
     assert 4 in result
@@ -38,7 +41,9 @@ async def test_notifications_not_deleted(
     await message_dal.register_message(
         message_type=MessageType.NOTIFICATION, user_id=added_user.id, message_tg_id=4
     )
-    result = await message_dal.delete_user_messages(user_id=added_user.id)
+    result = await message_dal.delete_user_messages(
+        user_id=added_user.id, no_delete=NO_DELETE
+    )
     assert len(result) == 1
     assert 3 in result
     assert 4 not in result
@@ -56,7 +61,9 @@ async def test_test_not_deleted(
     await message_dal.register_message(
         message_type=MessageType.TEST, user_id=added_user.id, message_tg_id=4
     )
-    result = await message_dal.delete_user_messages(user_id=added_user.id)
+    result = await message_dal.delete_user_messages(
+        user_id=added_user.id, no_delete=NO_DELETE
+    )
     assert len(result) == 1
     assert 3 in result
     assert 4 not in result
@@ -76,7 +83,9 @@ async def test_works_with_multiple_users(
     await message_dal.register_message(
         message_type=MessageType.AMP, user_id=added_user2.id, message_tg_id=4
     )
-    result = await message_dal.delete_user_messages(user_id=added_user1.id)
+    result = await message_dal.delete_user_messages(
+        user_id=added_user1.id, no_delete=NO_DELETE
+    )
     assert len(result) == 1
     assert 3 in result
     assert 4 not in result

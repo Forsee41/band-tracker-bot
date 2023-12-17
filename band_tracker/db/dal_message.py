@@ -24,7 +24,9 @@ class MessageDAL(BaseDAL):
             await session.commit()
         return message_id
 
-    async def delete_user_messages(self, user_id: UUID) -> list[int]:
+    async def delete_user_messages(
+        self, user_id: UUID, no_delete: list[MessageType]
+    ) -> list[int]:
         """
         Marks all active interfaces for a user as inactive and returns their tg ids.
         """
@@ -33,11 +35,7 @@ class MessageDAL(BaseDAL):
             .join(UserDB, UserDB.id == MessageDB.user_id)
             .where(UserDB.id == user_id)
             .where(MessageDB.active)
-            .where(
-                MessageDB.message_type.not_in(
-                    [MessageType.NOTIFICATION, MessageType.TEST]
-                )
-            )
+            .where(MessageDB.message_type.not_in(no_delete))
         )
         async with self.sessionmaker.session() as session:
             scalars = await session.scalars(stmt)

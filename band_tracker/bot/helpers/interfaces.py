@@ -9,9 +9,12 @@ from band_tracker.db.dal_message import MessageDAL
 
 
 class MessageManager:
-    def __init__(self, msg_dal: MessageDAL, bot: Bot) -> None:
+    def __init__(
+        self, msg_dal: MessageDAL, bot: Bot, no_delete: list[MessageType]
+    ) -> None:
         self.dal = msg_dal
         self.bot = bot
+        self._no_delete = no_delete
 
     async def delete_messages(self, msg_ids: list[int], chat_id: int) -> None:
         tasks: list[Awaitable] = []
@@ -31,7 +34,9 @@ class MessageManager:
         delete_prev: bool = True,
     ) -> None:
         if delete_prev:
-            old_ids = await self.dal.delete_user_messages(user_id=user.id)
+            old_ids = await self.dal.delete_user_messages(
+                user_id=user.id, no_delete=self._no_delete
+            )
             await self.delete_messages(msg_ids=old_ids, chat_id=user.tg_id)
         msg = await self.bot.send_message(
             text=text,
@@ -53,7 +58,9 @@ class MessageManager:
         delete_prev: bool = True,
     ) -> None:
         if delete_prev:
-            old_ids = await self.dal.delete_user_messages(user_id=user.id)
+            old_ids = await self.dal.delete_user_messages(
+                user_id=user.id, no_delete=self._no_delete
+            )
             await self.delete_messages(msg_ids=old_ids, chat_id=user.tg_id)
         msg = await self.bot.send_photo(
             caption=text,
