@@ -4,17 +4,18 @@ services:
     volumes:
       - .:/app
       - ./band_tracker:/app/data
-  db:
-    image: postgres
+  band_tracker_db:
+    container_name: "band_tracker_db"
+    image: postgres:14.1-alpine
     restart: always
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=root
-      - POSTGRES_DB=postgres
+      - POSTGRES_USER=${DB_LOGIN}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
-      - '5434:5432'
+      - "5432:5432"
 volumes:
   pgdata:
     name: "pgdata"
