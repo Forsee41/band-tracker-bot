@@ -17,9 +17,7 @@ fulltest: --test-db
 	python -m pytest -vv --asyncio-mode=auto
 
 .PHONY: prepare
-prepare: --db-down --db
-	@$(MAKE) migrations
-	@$(MAKE) load_dump
+prepare: --db-down --db migrations load_dump
 	@echo "Database is ready"
 
 .PHONY: dump
@@ -55,8 +53,7 @@ debug: --test-db
 	python -m pytest -vv --asyncio-mode=auto -m debug
 
 .PHONY: revision 
-revision: --db-down --db
-	$(MAKE) migrations
+revision: --db-down --db migrations
 	@echo "Database is ready for a new revision."
 	@echo "Use the following command to autogenerate a new revision:"
 	@echo
