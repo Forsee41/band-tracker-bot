@@ -1,7 +1,9 @@
 -include .env
 
+OBJS = band_tracker tests updater.py bot.py notifier.py
+
 .PHONY: check
-check: --flake8 --pyright --mypy --debug-marks
+check: check-flake8 check-pyright check-mypy check-debug-marks
 	@echo "All checks passed"
 
 .PHONY: test
@@ -74,18 +76,17 @@ rm_git-lock:
 migrations:
 	alembic upgrade head
 
---flake8:
-	flake8 band_tracker tests --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 band_tracker tests --count --max-complexity=10 --max-line-length=88 --statistics
+check-flake8:
+	flake8 $(OBJS) --count --select=E9,F63,F7,F82 --show-source --statistics
+	flake8 $(OBJS) --count --max-complexity=10 --max-line-length=88 --statistics
 
---pyright:
-	pyright band_tracker tests
+check-pyright:
+	pyright $(OBJS) 
 
---mypy:
-	mypy band_tracker tests
+check-mypy:
+	mypy $(OBJS) 
 
-
---debug-marks:
+check-debug-marks:
 	@if grep -r --include=\*.py "@pytest.mark.debug" tests; then \
 		echo "Debug mark found in tests. Debug marks are not allowed in prs."; \
 		echo "Use 'make debug' command to check which tests have debug mark."; \
