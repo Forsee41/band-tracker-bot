@@ -100,7 +100,6 @@ up:
 .PHONY: clean
 clean: --test-db-down --db-down --rabbit-down
 
-.PHONY: rabbit
 --rabbit:
 	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_rabbitmq))
 	@if [ -z "$(CONTAINER_ID)" ]; then \
@@ -109,7 +108,6 @@ clean: --test-db-down --db-down --rabbit-down
 		sleep 1.5; \
 	fi;
 
-.PHONY: rabbit-down
 --rabbit-down:
 	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_rabbitmq))
 	@if [ -z "$(CONTAINER_ID)" ]; then \
