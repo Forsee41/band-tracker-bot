@@ -20,7 +20,8 @@ services:
       - POSTGRES_DB=${TEST_DB_NAME}
     ports:
       - "5433:5432"
-  rabbitmq:
+  band_tracker_rabbitmq:
+    container_name: "band_tracker_rabbitmq"
     image: rabbitmq:3.12-alpine
     hostname: rabbitmq
     restart: always

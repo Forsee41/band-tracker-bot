@@ -1,5 +1,7 @@
 -include .env
 
+MAKEFLAGS += --no-print-directory
+
 OBJS = band_tracker tests updater.py bot.py notifier.py
 
 .PHONY: check
@@ -15,31 +17,10 @@ fulltest: --test-db
 	python -m pytest -vv --asyncio-mode=auto
 
 .PHONY: prepare
-prepare:
-	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=band_tracker_db))
-	@if [ -z "$(CONTAINER_ID)" ]; then \
-		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
-		echo "Waiting for containers to spawn"; \
-		sleep 1.5; \
-		$(MAKE) migrations; \
-		$(MAKE) load_dump; \
-	else \
-		echo "Shutting down containers"; \
-		docker compose -f docker-compose-dev.yaml down &> /dev/null; \
-		echo "Waiting for containers to spawn"; \
-		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
-		sleep 1.5; \
-		$(MAKE) migrations; \
-		$(MAKE) load_dump; \
-	fi 
-
-.PHONY: down
-down:
-	docker compose -f docker-compose-dev.yaml down &> /dev/null
-
-.PHONY: up
-up:
-	docker compose -f docker-compose-dev.yaml up -d &> /dev/null
+prepare: --db-down --db
+	@$(MAKE) migrations
+	@$(MAKE) load_dump
+	@echo "Database is ready"
 
 .PHONY: dump
 dump:
@@ -53,11 +34,12 @@ dump:
 	fi
 
 .PHONY: load_dump
-load_dump:
-	@PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME) -f dump.sql -a
+load_dump: --db
+	@echo "Loading dump..."
+	@PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME) -f dump.sql -a > /dev/null 2>&1
 
 .PHONY: psql
-psql:
+psql: --db
 	@PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME)
 
 .PHONY: bot
@@ -73,8 +55,7 @@ debug: --test-db
 	python -m pytest -vv --asyncio-mode=auto -m debug
 
 .PHONY: revision 
-revision: down up
-	@sleep 1.5
+revision: --db-down --db
 	$(MAKE) migrations
 	@echo "Database is ready for a new revision."
 	@echo "Use the following command to autogenerate a new revision:"
@@ -86,8 +67,9 @@ rm_git-lock:
 	rm -f .git/index.lock
 
 .PHONY: migrations 
-migrations:
-	alembic upgrade head
+migrations: --db
+	@echo "Applying migrations..."
+	@alembic upgrade head > /dev/null 2>&1
 
 .PHONY: check-flake8 
 check-flake8:
@@ -108,13 +90,63 @@ check-debug-marks:
 		echo "Debug mark found in tests. Debug marks are not allowed in prs."; \
 		echo "Use 'make debug' command to check which tests have debug mark."; \
 		exit 1; \
-	fi; \
+	fi;
+
+.PHONY: down
+down:
+	docker compose -f docker-compose-dev.yaml down &> /dev/null
+
+.PHONY: up
+up:
+	docker compose -f docker-compose-dev.yaml up -d &> /dev/null
+
+.PHONY: clean
+clean: --test-db-down --db-down --rabbit-down
+
+.PHONY: rabbit
+--rabbit:
+	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_rabbitmq))
+	@if [ -z "$(CONTAINER_ID)" ]; then \
+		echo "Spawning RabbitMQ..." \
+		docker compose -f docker-compose-dev.yaml up band_tracker_rabbitmq -d &> /dev/null; \
+		sleep 1.5; \
+	fi;
+
+.PHONY: rabbit-down
+--rabbit-down:
+	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_rabbitmq))
+	@if [ -z "$(CONTAINER_ID)" ]; then \
+		echo "Killing RabbitMQ..." \
+		docker compose -f docker-compose-dev.yaml up band_tracker_rabbitmq &> /dev/null; \
+		sleep 1.5; \
+	fi;
 
 --test-db:
-	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=band_tracker_test_db))
+	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_test_db))
 	@if [ -z "$(CONTAINER_ID)" ]; then \
-		echo "Waiting for containers to spawn"; \
-		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
+		echo "Spawning Test DB..."; \
+		docker compose -f docker-compose-dev.yaml up band_tracker_test_db -d &> /dev/null; \
 		sleep 1.5; \
-	fi; \
+	fi;
 
+--test-db-down:
+	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_test_db))
+	@if [ "$(CONTAINER_ID)" ]; then \
+		echo "Killing Test DB..."; \
+		docker compose -f docker-compose-dev.yaml down band_tracker_test_db &> /dev/null; \
+	fi;
+
+--db:
+	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_db))
+	@if [ -z "$(CONTAINER_ID)" ]; then \
+		echo "Spawning DB..."; \
+		docker compose -f docker-compose-dev.yaml up band_tracker_db -d &> /dev/null; \
+		sleep 1.5; \
+	fi;
+
+--db-down:
+	$(eval CONTAINER_ID=$(shell docker ps -q -f name=band_tracker_db))
+	@if [ "$(CONTAINER_ID)" ]; then \
+		echo "Killing DB..."; \
+		docker compose -f docker-compose-dev.yaml down band_tracker_db &> /dev/null; \
+	fi;
