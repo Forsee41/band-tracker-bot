@@ -17,7 +17,7 @@ fulltest: --test-db
 .PHONY: prepare
 prepare:
 	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=band_tracker_db))
-	if [ -z "$(CONTAINER_ID)" ]; then \
+	@if [ -z "$(CONTAINER_ID)" ]; then \
 		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
 		echo "Waiting for containers to spawn"; \
 		sleep 1.5; \
@@ -44,7 +44,7 @@ up:
 .PHONY: dump
 dump:
 	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w db | awk '{print $$1}'))
-	if [ -z "$(CONTAINER_ID)" ]; then \
+	@if [ -z "$(CONTAINER_ID)" ]; then \
 		echo "No container found."; \
 	else \
 		docker exec -t $(CONTAINER_ID) pg_dump -U postgres -d postgres > db.sql; \
@@ -54,15 +54,15 @@ dump:
 
 .PHONY: load_dump
 load_dump:
-	PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME) -f dump.sql -a
+	@PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME) -f dump.sql -a
 
 .PHONY: psql
 psql:
-	PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME)
+	@PGPASSWORD=$(DB_PASSWORD) psql -p $(DB_PORT) -U $(DB_LOGIN) -h $(DB_IP) -d $(DB_NAME)
 
 .PHONY: bot
 bot:
-	python bot.py 2>&1 | tee .log 
+	@python bot.py 2>&1 | tee .log 
 
 
 pre-commit: fulltest check
@@ -95,7 +95,7 @@ check-debug-marks:
 
 --test-db:
 	$(eval CONTAINER_ID=$(shell docker ps -a -q -f name=band_tracker_test_db))
-	if [ -z "$(CONTAINER_ID)" ]; then \
+	@if [ -z "$(CONTAINER_ID)" ]; then \
 		echo "Waiting for containers to spawn"; \
 		docker compose -f docker-compose-dev.yaml up -d &> /dev/null; \
 		sleep 1.5; \
