@@ -11,3 +11,4 @@ sympy==1.12
 iso3166==2.1.1
 beautifulsoup4==4.12.2
 types-beautifulsoup4==4.12.0.7
+async-property==0.2.2
