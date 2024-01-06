@@ -1,10 +1,9 @@
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler
+from telegram.ext import CallbackQueryHandler, CommandHandler
 
-from band_tracker.bot.helpers.get_user import get_user
-from band_tracker.bot.helpers.interfaces import MessageManager
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.core.enums import MessageType
 from band_tracker.db.dal_bot import BotDAL
 
@@ -31,13 +30,9 @@ async def _generate_markup(dal: BotDAL, user_tg_id: int) -> InlineKeyboardMarkup
     return markup
 
 
-async def show_settings(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-    msg: MessageManager = context.bot_data["msg"]
-    tg_user = update.effective_user
-    assert tg_user
-    user = await get_user(tg_user=tg_user, dal=dal)
-    markup = await _generate_markup(dal=dal, user_tg_id=user.tg_id)
+async def show_settings(update: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
+    markup = await _generate_markup(dal=ctx.dal, user_tg_id=user.tg_id)
 
     assert update.effective_chat
     assert update.effective_chat.id
@@ -46,7 +41,7 @@ async def show_settings(update: Update, context: CallbackContext) -> None:
     if query:
         await query.answer()
 
-    await msg.send_text(
+    await ctx.msg.send_text(
         text="Settings", markup=markup, user=user, msg_type=MessageType.SETTINGS
     )
 
