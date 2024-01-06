@@ -4,26 +4,17 @@ from typing import Awaitable
 from uuid import UUID
 
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CallbackContext,
-    CallbackQueryHandler,
-    CommandHandler,
-    ContextTypes,
-    InvalidCallbackData,
-)
+from telegram.ext import CallbackQueryHandler, CommandHandler, InvalidCallbackData
 
 from band_tracker.bot.helpers.callback_data import (
     get_callback_data,
     get_multiple_fields,
 )
-from band_tracker.bot.helpers.get_user import get_user
-from band_tracker.bot.helpers.interfaces import MessageManager
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.config.constants import EVENTS_PER_PAGE
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import MessageType
 from band_tracker.core.event import Event
-from band_tracker.core.user import User
-from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
 
@@ -123,27 +114,24 @@ def _event_text(event: Event) -> str:
 
 
 async def _send_artist_events(
-    context: ContextTypes.DEFAULT_TYPE,
+    ctx: BTContext,
     events: list[Event],
-    user: User,
     artist: Artist,
     next_page: bool,
     page: int,
 ) -> None:
     if len(events) >= 2:
         await _send_artist_events_long(
-            context=context,
+            ctx=ctx,
             events=events,
-            user=user,
             next_page=next_page,
             page=page,
             artist=artist,
         )
     elif len(events) == 1:
         await _send_artist_events_short(
-            context=context,
+            ctx=ctx,
             event=events[0],
-            user=user,
             next_page=next_page,
             page=page,
             artist=artist,
@@ -151,20 +139,19 @@ async def _send_artist_events(
 
 
 async def _send_artist_events_short(
-    context: ContextTypes.DEFAULT_TYPE,
+    ctx: BTContext,
     event: Event,
-    user: User,
     next_page: bool,
     artist: Artist,
     page: int,
 ) -> None:
-    msg: MessageManager = context.bot_data["msg"]
+    user = await ctx.user()
     nav_markup = _artist_events_nav_markup(
         event=event, next_page=next_page, page=page, artist_id=artist.id
     )
     text = f"----------- {artist.name} events -----------\nPage {page+1}\n\n"
     text += _event_text(event)
-    await msg.send_text(
+    await ctx.msg.send_text(
         text=text,
         user=user,
         markup=nav_markup,
@@ -173,20 +160,18 @@ async def _send_artist_events_short(
 
 
 async def _send_artist_events_long(
-    context: ContextTypes.DEFAULT_TYPE,
+    ctx: BTContext,
     events: list[Event],
-    user: User,
     artist: Artist,
     next_page: bool,
     page: int,
 ) -> None:
-    msg: MessageManager = context.bot_data["msg"]
-
+    user = await ctx.user()
     # head
     head_markup = _event_markup(event=events[0])
     text = f"----------- {artist.name} events -----------\nPage {page+1}\n\n"
     text += _event_text(events[0])
-    await msg.send_text(
+    await ctx.msg.send_text(
         text=text,
         user=user,
         markup=head_markup,
@@ -199,7 +184,7 @@ async def _send_artist_events_long(
         event_text = _event_text(event)
         event_markup = _event_markup(event)
         tasks.append(
-            msg.send_text(
+            ctx.msg.send_text(
                 user=user,
                 text=event_text,
                 markup=event_markup,
@@ -214,7 +199,7 @@ async def _send_artist_events_long(
         event=events[-1], artist_id=artist.id, next_page=next_page, page=page
     )
     event_text = _event_text(events[-1])
-    await msg.send_text(
+    await ctx.msg.send_text(
         text=event_text,
         user=user,
         markup=nav_markup,
@@ -224,34 +209,32 @@ async def _send_artist_events_long(
 
 
 async def _send_all_events(
-    context: ContextTypes.DEFAULT_TYPE,
+    ctx: BTContext,
     events: list[Event],
-    user: User,
     next_page: bool,
     page: int,
 ) -> None:
     if len(events) >= 2:
         await _send_all_events_long(
-            context=context, events=events, user=user, next_page=next_page, page=page
+            ctx=ctx, events=events, next_page=next_page, page=page
         )
     elif len(events) == 1:
         await _send_all_events_short(
-            context=context, event=events[0], user=user, next_page=next_page, page=page
+            ctx=ctx, event=events[0], next_page=next_page, page=page
         )
 
 
 async def _send_all_events_short(
-    context: ContextTypes.DEFAULT_TYPE,
+    ctx: BTContext,
     event: Event,
-    user: User,
     next_page: bool,
     page: int,
 ) -> None:
-    msg: MessageManager = context.bot_data["msg"]
+    user = await ctx.user()
     nav_markup = _all_events_nav_markup(event=event, next_page=next_page, page=page)
     text = f"----------- Tracked events -----------\nPage {page+1}\n\n"
     text += _event_text(event)
-    await msg.send_text(
+    await ctx.msg.send_text(
         text=text,
         user=user,
         markup=nav_markup,
@@ -260,19 +243,19 @@ async def _send_all_events_short(
 
 
 async def _send_all_events_long(
-    context: ContextTypes.DEFAULT_TYPE,
+    ctx: BTContext,
     events: list[Event],
-    user: User,
     next_page: bool,
     page: int,
 ) -> None:
-    msg: MessageManager = context.bot_data["msg"]
+    user = await ctx.user()
 
     # head
     head_markup = _event_markup(event=events[0])
     text = f"----------- Tracked events -----------\nPage {page+1}\n\n"
     text += _event_text(events[0])
-    await msg.send_text(
+
+    await ctx.msg.send_text(
         text=text,
         user=user,
         markup=head_markup,
@@ -285,7 +268,7 @@ async def _send_all_events_long(
         event_text = _event_text(event)
         event_markup = _event_markup(event)
         tasks.append(
-            msg.send_text(
+            ctx.msg.send_text(
                 user=user,
                 text=event_text,
                 markup=event_markup,
@@ -300,7 +283,7 @@ async def _send_all_events_long(
         event=events[-1], next_page=next_page, page=page
     )
     event_text = _event_text(events[-1])
-    await msg.send_text(
+    await ctx.msg.send_text(
         text=event_text,
         user=user,
         markup=nav_markup,
@@ -309,98 +292,74 @@ async def _send_all_events_long(
     )
 
 
-async def all_events_command(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-
-    if not update.effective_chat:
-        log.warning("Follows handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Follows handler can't find an effective user of an update")
-        return
-
-    user = await get_user(tg_user=update.effective_user, dal=dal)
-    events = await dal.get_events_for_user(
+async def all_events_command(_: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
+    events = await ctx.dal.get_events_for_user(
         user_tg_id=user.tg_id, events_per_page=EVENTS_PER_PAGE
     )
-    total_events = await dal.get_user_events_amount(user.tg_id)
+    total_events = await ctx.dal.get_user_events_amount(user.tg_id)
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > 0:
         next_page = True
     await _send_all_events(
-        context=context,
+        ctx=ctx,
         events=events,
-        user=user,
         next_page=next_page,
         page=0,
     )
 
 
-async def all_events_btn(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-
-    if not update.effective_chat:
-        log.warning("Follows handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Follows handler can't find an effective user of an update")
-        return
-    user = await get_user(tg_user=update.effective_user, dal=dal)
+async def all_events_btn(update: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
     query = update.callback_query
     page = _get_all_events_callback_data(query)
-    events = await dal.get_events_for_user(
+
+    events = await ctx.dal.get_events_for_user(
         user_tg_id=user.tg_id, events_per_page=EVENTS_PER_PAGE, page=page
     )
 
     assert query
     await query.answer()
-    total_events = await dal.get_user_events_amount(user.tg_id)
+    total_events = await ctx.dal.get_user_events_amount(user.tg_id)
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > page:
         next_page = True
 
     await _send_all_events(
-        context=context,
+        ctx=ctx,
         events=events,
-        user=user,
         next_page=next_page,
         page=page,
     )
 
 
-async def artist_events(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-
-    if not update.effective_chat:
-        log.warning("Follows handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Follows handler can't find an effective user of an update")
-        return
+async def artist_events(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
     assert query
     await query.answer()
-    artist_id, page = _get_artist_events_callback_data(query)
-    user = await get_user(tg_user=update.effective_user, dal=dal)
 
-    total_events = await dal.get_artist_events_amount(artist_id)
-    artist = await dal.get_artist(artist_id)
+    artist_id, page = _get_artist_events_callback_data(query)
+
+    total_events = await ctx.dal.get_artist_events_amount(artist_id)
+    artist = await ctx.dal.get_artist(artist_id)
     if artist is None:
         log.error(f"Artist events handler can't find an artist {artist_id}")
         return
-    events = await dal.get_events_for_artist(artist_id=artist_id, page=page)
+
+    events = await ctx.dal.get_events_for_artist(artist_id=artist_id, page=page)
     if not events:
         log.warning(
             "Trying to watch a page of artist events when there's not enough events"
         )
         return
+
     next_page = False
     if (total_events - 1) // EVENTS_PER_PAGE > page:
         next_page = True
+
     await _send_artist_events(
-        context=context,
+        ctx=ctx,
         events=events,
-        user=user,
         artist=artist,
         next_page=next_page,
         page=page,
