@@ -1,7 +1,5 @@
 import logging
 
-# missing type stubs
-from async_property import async_property  # type: ignore
 from telegram import Bot, Chat, Message, Update
 from telegram import User as TGUser
 from telegram.ext import Application, CallbackContext
