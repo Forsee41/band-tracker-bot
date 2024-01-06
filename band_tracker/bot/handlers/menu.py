@@ -1,20 +1,15 @@
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler
+from telegram.ext import CallbackQueryHandler, CommandHandler
 
-from band_tracker.bot.helpers.get_user import get_user
-from band_tracker.bot.helpers.interfaces import MessageManager
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.core.enums import MessageType
-from band_tracker.db.dal_bot import BotDAL
 
 log = logging.getLogger(__name__)
 
 
-async def send_menu(update: Update, context: CallbackContext) -> None:
-    msg: MessageManager = context.bot_data["msg"]
-    dal: BotDAL = context.bot_data["dal"]
-    assert update.effective_user
+async def send_menu(update: Update, ctx: BTContext) -> None:
     markup_layout = [
         [
             InlineKeyboardButton("Follows", callback_data="follows"),
@@ -30,16 +25,13 @@ async def send_menu(update: Update, context: CallbackContext) -> None:
         ],
     ]
     markup = InlineKeyboardMarkup(markup_layout)
-    user = await get_user(dal=dal, tg_user=update.effective_user)
-
-    assert update.effective_chat
-    assert update.effective_chat.id
+    user = await ctx.user()
 
     query = update.callback_query
     if query:
         await query.answer()
 
-    await msg.send_text(
+    await ctx.msg.send_text(
         text="Band Tracker Bot Menu",
         markup=markup,
         user=user,
