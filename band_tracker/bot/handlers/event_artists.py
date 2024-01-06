@@ -2,11 +2,10 @@ import logging
 from uuid import UUID
 
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackContext, CallbackQueryHandler, InvalidCallbackData
+from telegram.ext import CallbackQueryHandler, InvalidCallbackData
 
 from band_tracker.bot.helpers.callback_data import get_multiple_fields
-from band_tracker.bot.helpers.get_user import get_user
-from band_tracker.bot.helpers.interfaces import MessageManager
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.config.constants import ARTISTS_PER_PAGE
 from band_tracker.core.enums import MessageType
 from band_tracker.core.event import Event
@@ -82,40 +81,31 @@ async def _event_artists_markup(
     return markup
 
 
-async def artist_list(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-    msg: MessageManager = context.bot_data["msg"]
+async def artist_list(update: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
 
-    if not update.effective_chat:
-        log.warning("Follows handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Follows handler can't find an effective user of an update")
-        return
-    user = await get_user(tg_user=update.effective_user, dal=dal)
     query = update.callback_query
     try:
         event_id, page = _get_event_artitsts_callback_data(query)
     except InvalidCallbackData as e:
         log.warning(e.message)
         return
-    event = await dal.get_event(event_id)
+
+    event = await ctx.dal.get_event(event_id)
     if event is None:
         log.warning("Artist list handler trying to get an unexisting event")
         return
 
     try:
-        markup = await _event_artists_markup(event=event, page=page, dal=dal)
+        markup = await _event_artists_markup(event=event, page=page, dal=ctx.dal)
     except ValueError:
         log.error("User trying to display follows page he couldn't have")
         return
-    assert update.effective_chat
-    assert update.effective_chat.id
 
     assert query
     await query.answer()
     text = f"{event.title} artists"
-    await msg.send_text(
+    await ctx.msg.send_text(
         text=text, markup=markup, user=user, msg_type=MessageType.EVENT_ARTISTS
     )
 

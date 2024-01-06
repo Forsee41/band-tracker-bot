@@ -3,20 +3,13 @@ from typing import Callable
 from uuid import UUID
 
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CallbackContext,
-    CallbackQueryHandler,
-    CommandHandler,
-    InvalidCallbackData,
-)
+from telegram.ext import CallbackQueryHandler, CommandHandler, InvalidCallbackData
 
 from band_tracker.bot.helpers.callback_data import get_callback_data
-from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import MessageType
-from band_tracker.core.user import User
-from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.errors import ArtistNotFound, UserNotFound
 
 log = logging.getLogger(__name__)
@@ -75,27 +68,25 @@ def _get_callback_artist_id(query: CallbackQuery | None) -> UUID:
 
 async def _change_markup(
     update: Update,
-    context: CallbackContext,
+    ctx: BTContext,
     markup_generator: Callable[[UUID], InlineKeyboardMarkup],
     artist_id: UUID,
 ) -> None:
     query = update.callback_query
 
-    assert context.bot
     assert query
     assert query.message
 
     await query.answer()
     new_markup = markup_generator(artist_id)
-    await context.bot.edit_message_reply_markup(
+    await ctx.bot.edit_message_reply_markup(  # pyright: ignore
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
         reply_markup=new_markup,
     )
 
 
-async def follow(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
+async def follow(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
     try:
         artist_id = _get_callback_artist_id(query)
@@ -104,10 +95,10 @@ async def follow(update: Update, context: CallbackContext) -> None:
         return
 
     assert update.effective_user
-    user = await get_user(dal=dal, tg_user=update.effective_user)
+    user = await ctx.user()
 
     try:
-        await dal.add_follow(user_tg_id=user.tg_id, artist_id=artist_id)
+        await ctx.dal.add_follow(user_tg_id=user.tg_id, artist_id=artist_id)
     except ArtistNotFound:
         log.warning("Can't create a follow, artist is not present in db")
         return
@@ -117,14 +108,13 @@ async def follow(update: Update, context: CallbackContext) -> None:
 
     await _change_markup(
         update=update,
-        context=context,
+        ctx=ctx,
         markup_generator=_followed_markup,
         artist_id=artist_id,
     )
 
 
-async def unfollow(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
+async def unfollow(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
     try:
         artist_id = _get_callback_artist_id(query)
@@ -133,50 +123,39 @@ async def unfollow(update: Update, context: CallbackContext) -> None:
         return
 
     assert update.effective_user
-    user = await get_user(dal=dal, tg_user=update.effective_user)
-    await dal.unfollow(user_tg_id=user.tg_id, artist_id=artist_id)
+    user = await ctx.user()
+    await ctx.dal.unfollow(user_tg_id=user.tg_id, artist_id=artist_id)
     await _change_markup(
         update=update,
-        context=context,
+        ctx=ctx,
         markup_generator=_unfollowed_markup,
         artist_id=artist_id,
     )
 
 
-async def artist_button(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-    if not update.effective_chat:
-        log.warning("Artist handler can't find an effective chat of an update")
-        return
-    assert update.effective_user
-
-    user = await get_user(tg_user=update.effective_user, dal=dal)
+async def artist_button(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
     assert query
     await query.answer()
+
     try:
         artist_id = _get_callback_artist_id(query)
     except InvalidCallbackData as e:
         log.warning(e.message)
         return
 
-    artist = await dal.get_artist(artist_id)
-    await _show_artist(update=update, context=context, artist=artist, user=user)
+    artist = await ctx.dal.get_artist(artist_id)
+    await _show_artist(ctx=ctx, artist=artist)
 
 
-async def artist_command(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-    if not update.effective_chat:
-        log.warning("Artist handler can't find an effective chat of an update")
-        return
-    assert update.effective_user
-
-    user = await get_user(tg_user=update.effective_user, dal=dal)
-
-    args = context.args
+async def artist_command(_: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
+    args = ctx.args
     if not args:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+        await ctx.msg.send_text(
+            msg_type=MessageType.ARTIST_ERROR,
+            user=user,
+            markup=None,
             text="Please enter an artist name",
         )
         return
@@ -186,23 +165,20 @@ async def artist_command(update: Update, context: CallbackContext) -> None:
     if len(name) > 255:
         name = name[:255]
 
-    artist = await dal.get_artist_by_name(name)
-    await _show_artist(update=update, context=context, artist=artist, user=user)
+    artist = await ctx.dal.get_artist_by_name(name)
+    await _show_artist(ctx=ctx, artist=artist)
 
 
-async def _show_artist(
-    update: Update, context: CallbackContext, artist: Artist | None, user: User
-) -> None:
-    msg: MessageManager = context.bot_data["msg"]
-    if not update.effective_chat:
-        log.warning("Artist handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Artist handler can't find an effective user of an update")
-        return
+async def _show_artist(ctx: BTContext, artist: Artist | None) -> None:
+    user = await ctx.user()
+    msg: MessageManager = ctx.bot_data["msg"]
+
     if artist is None:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Can't find an artist"
+        await ctx.msg.send_text(
+            markup=None,
+            text="Can't find an artist",
+            user=user,
+            msg_type=MessageType.ARTIST_ERROR,
         )
         return
 
