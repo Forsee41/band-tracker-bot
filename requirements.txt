@@ -7,8 +7,6 @@ asyncpg==0.27.0
 psycopg2-binary==2.9.6
 pydantic==2.0.2
 aio-pika==9.2.3
-sympy==1.12
 iso3166==2.1.1
 beautifulsoup4==4.12.2
 types-beautifulsoup4==4.12.0.7
-async-property==0.2.2

@@ -4,9 +4,10 @@ import logging
 from async_property import async_property  # type: ignore
 from telegram import Bot, Chat, Message, Update
 from telegram import User as TGUser
-from telegram.ext import Application, CallbackContext, MessageHandler
+from telegram.ext import Application, CallbackContext
 
 from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 
@@ -15,13 +16,13 @@ log = logging.getLogger(__name__)
 
 class BTContext(CallbackContext[Bot, dict, dict, dict]):
     _update: Update
-    _user: User | None
-    _tg_user: TGUser | None
-    _chat: Chat | None
-    _message: Message | None
+    _user: User | None = None
+    _tg_user: TGUser | None = None
+    _chat: Chat | None = None
+    _message: Message | None = None
 
     dal: BotDAL
-    msg: MessageHandler
+    msg: MessageManager
 
     @property
     def tg_user(self) -> TGUser:
@@ -56,7 +57,6 @@ class BTContext(CallbackContext[Bot, dict, dict, dict]):
             self._message = message
         return self._message
 
-    @async_property
     async def user(self) -> User:
         if self._user is None:
             user = await get_user(tg_user=self.tg_user, dal=self.dal)

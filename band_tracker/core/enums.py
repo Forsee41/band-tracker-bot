@@ -39,6 +39,7 @@ class MessageType(Enum):
     EVENT_ARTISTS = auto()
     FOLLOWS = auto()
     ARTIST_EVENT = auto()
+    ARTIST_ERROR = auto()
     ARTIST_EVENT_START = auto()
     ARTIST_EVENT_END = auto()
     GLOBAL_EVENT = auto()
