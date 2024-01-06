@@ -1,7 +1,8 @@
 from typing import Callable
 
-from telegram.ext import Application, ApplicationBuilder
+from telegram.ext import Application, ApplicationBuilder, ContextTypes
 
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.bot.helpers.interfaces import MessageManager
 from band_tracker.config.constants import NO_DELETE
 from band_tracker.db.dal_bot import BotDAL
@@ -18,8 +19,8 @@ def build_app(
     Builds an application base and registers common handlers via provided handler
     registrator.
     """
-    builder = ApplicationBuilder()
-    builder = builder.token(token)
+    context = ContextTypes(context=BTContext)
+    builder = ApplicationBuilder().token(token).context_types(context)
     app = builder.build()
     handler_registrator(app)
     _inject_app_dependencies(bot_dal=bot_dal, msg_dal=msg_dal, app=app)
