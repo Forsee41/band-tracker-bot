@@ -11,10 +11,11 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import joinedload
 
-from band_tracker.core.user import User
+from band_tracker.core.user import RawUser
 from band_tracker.core.user_settings import UserSettings
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
+from band_tracker.db.dal_message import MessageDAL
 from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.event_update import EventUpdate
 from band_tracker.db.models import (
@@ -46,6 +47,7 @@ async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
         "user_settings",
         "artist_socials",
         "artist_alias",
+        "message",
     ]
     tables_str = ", ".join(table_names)
     command = f"TRUNCATE TABLE {tables_str};"
@@ -249,18 +251,24 @@ def update_dal(sessionmaker: AsyncSessionmaker) -> UpdateDAL:
 
 
 @pytest.fixture(scope="class")
+def message_dal(sessionmaker: AsyncSessionmaker) -> MessageDAL:
+    dal = MessageDAL(sessionmaker)
+    return dal
+
+
+@pytest.fixture(scope="class")
 def bot_dal(sessionmaker: AsyncSessionmaker) -> BotDAL:
     dal = BotDAL(sessionmaker)
     return dal
 
 
 @pytest.fixture(scope="session")
-def user() -> Callable[[int, str], User]:
-    def get_user(id: int, name: str) -> User:
+def user() -> Callable[[int, str], RawUser]:
+    def get_user(id: int, name: str) -> RawUser:
         join_date = datetime(year=2000, month=1, day=1)
         user_settings = UserSettings.default()
-        user = User(
-            id=id,
+        user = RawUser(
+            tg_id=id,
             name=name,
             join_date=join_date,
             settings=user_settings,

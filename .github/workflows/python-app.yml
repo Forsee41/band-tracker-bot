@@ -32,30 +32,23 @@ jobs:
 
       - name: Run Postgres
         run: |
-          docker run -d --name test_db -p 5433:5432 -e POSTGRES_USER='test_postgres' -e POSTGRES_PASSWORD='test_postgres' -e POSTGRES_DB='test_postgres' postgres:14.1-alpine
+          docker run -d --name band_tracker_test_db -p 5433:5432 -e POSTGRES_USER='test_postgres' -e POSTGRES_PASSWORD='test_postgres' -e POSTGRES_DB='test_postgres' postgres:14.1-alpine
 
       - name: Lint with flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 band_tracker tests --count --select=E9,F63,F7,F82 --show-source --statistics
-          # secondary checks
-          flake8 band_tracker tests --count --max-complexity=10 --max-line-length=88 --statistics
+          make check-flake8
 
       - name: Typecheck with pyright
         run: |
-          pyright band_tracker tests
+          make check-pyright
 
       - name: Typecheck with mypy
         run: |
-          mypy band_tracker tests
-
+          make check-mypy
+      #
       - name: Check for debug marks in tests
         run: |
-          if grep -r --include=\*.py "@pytest.mark.debug" tests; then
-            echo "Debug mark found in tests. Debug marks are not allowed in prs."
-            echo "Use 'make debug' command to check which tests have debug mark."
-            exit 1
-          fi
+          make check-debug-marks
 
       - name: Test with pytest
         env:

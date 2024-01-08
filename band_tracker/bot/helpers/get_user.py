@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Protocol
 
-from band_tracker.core.user import User
+from band_tracker.core.user import RawUser, User
 from band_tracker.core.user_settings import UserSettings
 from band_tracker.db.dal_bot import BotDAL
 
@@ -17,10 +17,10 @@ class TgUser(Protocol):
         ...
 
 
-def default_user(user_tg: TgUser) -> User:
+def default_user(user_tg: TgUser) -> RawUser:
     user_settings = UserSettings.default()
-    user = User(
-        id=int(user_tg.id),
+    user = RawUser(
+        tg_id=int(user_tg.id),
         name=user_tg.name,
         follows={},
         join_date=datetime.now(),
@@ -38,6 +38,6 @@ async def get_user(tg_user: TgUser, dal: BotDAL) -> User:
     if user:
         log.debug("get_user bot helper found a user right away")
         return user
-    user = default_user(tg_user)
-    await dal.add_user(user)
-    return user
+    raw_user = default_user(tg_user)
+    result = await dal.add_user(raw_user)
+    return result

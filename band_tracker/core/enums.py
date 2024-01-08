@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class Range(Enum):
@@ -24,3 +24,24 @@ class AdminNotificationLevel(Enum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+class MessageType(Enum):
+    TEST = auto()
+    NOTIFICATION = auto()
+    HELP = auto()
+    START = auto()
+    MENU = auto()
+    SETTINGS = auto()
+    AMP = auto()
+    FOLLOW_CONFIG = auto()
+    EMP = auto()
+    EVENT_ARTISTS = auto()
+    FOLLOWS = auto()
+    ARTIST_EVENT = auto()
+    ARTIST_ERROR = auto()
+    ARTIST_EVENT_START = auto()
+    ARTIST_EVENT_END = auto()
+    GLOBAL_EVENT = auto()
+    GLOBAL_EVENT_START = auto()
+    GLOBAL_EVENT_END = auto()

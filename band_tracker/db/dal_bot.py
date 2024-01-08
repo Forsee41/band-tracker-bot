@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from band_tracker.core.artist import Artist
 from band_tracker.core.enums import AdminNotificationLevel, Range
 from band_tracker.core.event import Event
-from band_tracker.core.user import User
+from band_tracker.core.user import RawUser, User
 from band_tracker.db.dal_base import BaseDAL
 from band_tracker.db.errors import ArtistNotFound, UserAlreadyExists, UserNotFound
 from band_tracker.db.models import (
@@ -253,14 +253,18 @@ class BotDAL(BaseDAL):
         artist = self._build_core_artist(db_artist=artist_db)
         return artist
 
-    async def add_user(self, user: User) -> None:
+    async def add_user(self, user: RawUser) -> User:
         async with self.sessionmaker.session() as session:
-            user_db = self._core_to_db_user(user)
+            user_db = self._raw_to_db_user(user)
             session.add(user_db)
             try:
-                await session.commit()
+                await session.flush()
             except IntegrityError:
                 raise UserAlreadyExists()
+            await user_db.awaitable_attrs.follows
+            await session.commit()
+            result = self._db_to_core_user(user_db)
+        return result
 
     async def get_user(self, tg_id: int) -> User | None:
         stmt = (

@@ -133,7 +133,7 @@ class Updater:
                 else:
                     log.info("Successful response. Start parsing")
 
-                    updates = get_elements(page)
+                    updates = get_elements(page)  # type: ignore
                     for update in updates:
                         # log.debug("UPDATE " + str(update))
                         await update_dal(update)
@@ -172,7 +172,7 @@ class Updater:
                 else:
                     log.info("Successful response. Start parsing")
                     try:
-                        updates = get_elements(page)
+                        updates = get_elements(page)  # type: ignore
                         for update in updates:
                             # log.debug("UPDATE " + str(update))
                             await update.set_description()

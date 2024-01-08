@@ -2,17 +2,12 @@ import logging
 from uuid import UUID
 
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CallbackContext,
-    CallbackQueryHandler,
-    CommandHandler,
-    ContextTypes,
-    InvalidCallbackData,
-)
+from telegram.ext import CallbackQueryHandler, CommandHandler, InvalidCallbackData
 
 from band_tracker.bot.helpers.callback_data import get_callback_data
-from band_tracker.bot.helpers.get_user import get_user
+from band_tracker.bot.helpers.context import BTContext
 from band_tracker.config.constants import ARTISTS_PER_PAGE
+from band_tracker.core.enums import MessageType
 from band_tracker.core.user import User
 from band_tracker.db.dal_bot import BotDAL
 
@@ -72,18 +67,9 @@ async def _follows_markup(user: User, page: int, dal: BotDAL) -> InlineKeyboardM
     return markup
 
 
-async def follows_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-
-    if not update.effective_chat:
-        log.warning("Follows handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Follows handler can't find an effective user of an update")
-        return
-
-    user = await get_user(tg_user=update.effective_user, dal=dal)
-    markup = await _follows_markup(user=user, page=0, dal=dal)
+async def follows_command(update: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
+    markup = await _follows_markup(user=user, page=0, dal=ctx.dal)
     assert update.effective_chat
     assert update.effective_chat.id
 
@@ -91,22 +77,12 @@ async def follows_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if query:
         await query.answer()
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Your Follows",
-        reply_markup=markup,
+    await ctx.msg.send_text(
+        text="Your Follows", markup=markup, user=user, msg_type=MessageType.FOLLOWS
     )
 
 
-async def follows_navigation(update: Update, context: CallbackContext) -> None:
-    dal: BotDAL = context.bot_data["dal"]
-
-    if not update.effective_chat:
-        log.warning("Follows handler can't find an effective chat of an update")
-        return
-    if not update.effective_user:
-        log.warning("Follows handler can't find an effective user of an update")
-        return
+async def follows_navigation(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
     try:
         page_number = _get_callback_follows_page(query)
@@ -114,9 +90,9 @@ async def follows_navigation(update: Update, context: CallbackContext) -> None:
         log.warning(e.message)
         return
 
-    user = await get_user(tg_user=update.effective_user, dal=dal)
+    user = await ctx.user()
     try:
-        markup = await _follows_markup(user=user, page=page_number, dal=dal)
+        markup = await _follows_markup(user=user, page=page_number, dal=ctx.dal)
     except ValueError:
         log.error("User trying to display follows page he couldn't have")
         return
@@ -125,11 +101,8 @@ async def follows_navigation(update: Update, context: CallbackContext) -> None:
 
     assert query
     await query.answer()
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Your Follows",
-        reply_markup=markup,
+    await ctx.msg.send_text(
+        text="Your Follows", markup=markup, user=user, msg_type=MessageType.FOLLOWS
     )
 
 

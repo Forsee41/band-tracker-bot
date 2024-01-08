@@ -1,24 +1,25 @@
 import logging
 
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler
 
-from band_tracker.db.dal_bot import BotDAL
+from band_tracker.bot.helpers.context import BTContext
+from band_tracker.core.enums import MessageType
 
 log = logging.getLogger(__name__)
 
 
-async def query_artists(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    dal: BotDAL = context.bot_data["dal"]
+async def query_artists(update: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
 
-    args = context.args
+    args = ctx.args
     assert args
     query = "".join(args)
 
     if len(query) > 255:
         query = query[:255]
 
-    result_artists = await dal.search_artist(query)
+    result_artists = await ctx.dal.search_artist(query)
     result_artist_names = [artist.name for artist in result_artists]
 
     if result_artist_names:
@@ -27,8 +28,11 @@ async def query_artists(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         result_str = "No artists found!"
 
     if update.effective_chat:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, text=result_str
+        await ctx.msg.send_text(
+            text=result_str,
+            markup=None,
+            user=user,
+            msg_type=MessageType.TEST,
         )
     else:
         log.warning("Test handler can't find an effective chat of an update")
