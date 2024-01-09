@@ -30,6 +30,7 @@ class Event:
     artist_ids: list[UUID]
     image: str | None
     thumbnail: str | None
+    last_update: datetime
     sales: EventSales
 
     @property

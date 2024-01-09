@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -110,6 +111,9 @@ class UpdateDAL(BaseDAL):
             event_db.start_date = event.date
             event_db.image = image
             event_db.thumbnail = thumbnail
+            event_db.last_update = datetime.strptime(
+                datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
+            )
 
             sales_result = await event_db.awaitable_attrs.sales
             sales = sales_result[0]
@@ -371,6 +375,9 @@ class UpdateDAL(BaseDAL):
             ticket_url=ticket_url,
             image=image,
             thumbnail=thumbnail,
+            last_update=datetime.strptime(
+                datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
+            ),
         )
         async with self.sessionmaker.session() as session:
             session.add(event_db)

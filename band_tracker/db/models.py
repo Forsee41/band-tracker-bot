@@ -61,6 +61,7 @@ class EventDB(Base):
     ticket_url: Mapped[str | None] = mapped_column(String, nullable=True)
     image: Mapped[str | None] = mapped_column(String, nullable=True)
     thumbnail: Mapped[str | None] = mapped_column(String, nullable=True)
+    last_update: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     tm_data: Mapped["EventTMDataDB"] = relationship(
         back_populates="event", cascade="all, delete-orphan"

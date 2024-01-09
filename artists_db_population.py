@@ -19,7 +19,7 @@ async def main() -> None:
     db_env = db_env_vars()
     load_log_config()
 
-    tokens = os.getenv("CONCERTS_API_TOKENS").split(",")
+    tokens = events_env.CONCERTS_API_TOKENS
 
     db_sessionmaker = AsyncSessionmaker(
         login=db_env.DB_LOGIN,

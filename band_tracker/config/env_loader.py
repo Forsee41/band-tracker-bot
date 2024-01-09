@@ -94,7 +94,7 @@ def db_env_vars() -> DBEnvVars:
 
 
 def get_log_level() -> int:
-    env_lvl = os.getenv("LOG_LEVEL", "INFO")
+    env_lvl = os.getenv("LOG_LEVEL")
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
@@ -103,4 +103,4 @@ def get_log_level() -> int:
         "CRITICAL": logging.CRITICAL,
     }
 
-    return levels[env_lvl] if env_lvl in levels else logging.INFO
+    return levels[env_lvl] if env_lvl in levels else logging.DEBUG

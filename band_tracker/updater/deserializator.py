@@ -16,6 +16,25 @@ class JSONData(BaseModel):
     page: dict[str, int]
 
 
+def image_helper(raw_entity: dict, thumbnail: bool = False) -> str | None:
+    if (
+        retina := [
+            image.get("url")
+            for image in raw_entity.get("images", [])
+            if "RETINA_PORTRAIT_3_2" in image.get("url")
+        ]
+    ) and not thumbnail:
+        return retina[0]
+    elif recommend := [
+        image.get("url")
+        for image in raw_entity.get("images", [])
+        if "RECOMENDATION" in image.get("url")
+    ]:
+        return recommend[0]
+    else:
+        return None
+
+
 def get_artist(raw_artist: dict) -> ArtistUpdate:
     log.debug("get_artist invoke")
 
@@ -64,30 +83,8 @@ def get_artist(raw_artist: dict) -> ArtistUpdate:
         "source_specific_data": {
             EventSource.ticketmaster_api: {"id": raw_artist.get("id")}
         },
-        "main_image": [
-            image.get("url")
-            for image in raw_artist.get("images", [])
-            if "RETINA_PORTRAIT_3_2" in image.get("url")
-        ][0]
-        if [
-            image.get("url")
-            for image in raw_artist.get("images", [])
-            if "RETINA_PORTRAIT_3_2" in image.get("url")
-        ]
-        is not None
-        else raw_artist.get("images", {})[0].get("url"),
-        "thumbnail_image": [
-            image.get("url")
-            for image in raw_artist.get("images", [])
-            if "RECOMENDATION" in image.get("url")
-        ][0]
-        if [
-            image.get("url")
-            for image in raw_artist.get("images", [])
-            if "RECOMENDATION" in image.get("url")
-        ]
-        is not None
-        else None,
+        "main_image": image_helper(raw_artist),
+        "thumbnail_image": image_helper(raw_artist, thumbnail=True),
         "genres": genres_helper(),
         "aliases": raw_artist.get("aliases", []),
     }
@@ -175,30 +172,8 @@ def get_event(raw_event: dict) -> EventUpdate:
         else None,
         "artists": attraction_ids_helper(),
         "sales": sales_helper(),
-        "main_image": [
-            image.get("url")
-            for image in raw_event.get("images", [])
-            if "RETINA_PORTRAIT_3_2" in image.get("url")
-        ][0]
-        if [
-            image.get("url")
-            for image in raw_event.get("images", [])
-            if "RETINA_PORTRAIT_3_2" in image.get("url")
-        ]
-        is not None
-        else None,
-        "thumbnail_image": [
-            image.get("url")
-            for image in raw_event.get("images", [])
-            if "RECOMENDATION" in image.get("url")
-        ][0]
-        if [
-            image.get("url")
-            for image in raw_event.get("images", [])
-            if "RECOMENDATION" in image.get("url")
-        ]
-        is not None
-        else None,
+        "main_image": image_helper(raw_event),
+        "thumbnail_image": image_helper(raw_event, thumbnail=True),
     }
     return EventUpdate.model_validate(modified_event)
 
