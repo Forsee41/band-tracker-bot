@@ -271,6 +271,7 @@ class UpdateDAL(BaseDAL):
         )
         async with self.sessionmaker.session() as session:
             db_genres = await self._get_db_genres(session, artist.genres)
+            log.debug("GENRES: " + str(db_genres))
             artist_db.genres.extend(db_genres)
             session.add(artist_db)
 
@@ -402,7 +403,7 @@ class UpdateDAL(BaseDAL):
 
         return uuid, event_artist_uuids
 
-    async def get_all_artist_names(self) -> list[str]:
+    async def get_external_artist_names(self) -> list[str]:
         async with self.sessionmaker.session() as session:
             query = select(ArtistNameDB.name)
             result = await session.execute(query)
@@ -410,7 +411,7 @@ class UpdateDAL(BaseDAL):
 
         return artist_names
 
-    async def add_artist_name(self, name: str) -> None:
+    async def add_external_artist_name(self, name: str) -> None:
         artist_name = ArtistNameDB(name=name)
 
         async with self.sessionmaker.session() as session:
@@ -418,3 +419,11 @@ class UpdateDAL(BaseDAL):
             await session.flush()
             await session.commit()
         log.info(name.join(" was added."))
+
+    async def get_tm_ids(self) -> list[str]:
+        async with self.sessionmaker.session() as session:
+            query = select(ArtistTMDataDB.id)
+            result = await session.execute(query)
+            artist_ids = [row[0] for row in result.fetchall()]
+
+        return artist_ids

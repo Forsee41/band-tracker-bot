@@ -32,6 +32,7 @@ def main() -> None:
     dal = UpdateDAL(db_sessionmaker)
     predictor_dal = PredictorDAL(db_sessionmaker)
     data_predictor = CurrentDataPredictor(predictor_dal)
+    # data_predictor = LinearPredictor(-0.1, 100, None)
     updater = Updater(
         client_factory=api_client_factory, dal=dal, predictor=data_predictor
     )

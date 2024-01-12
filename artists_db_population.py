@@ -66,8 +66,9 @@ async def main() -> None:
         client_factory=api_client_factory,
         dal=dal,
     )
-    artist_names: list[str] = await dal.get_all_artist_names()
-    await updater.update_artists(artist_names)
+    # artist_names: list[str] = await dal.get_external_artist_names()
+    # await updater.update_artists(artist_names)
+    await updater.update_current_artists()
     log.info("!!!!!!!!!!!!!!!! Artists population close !!!!!!!!!!!!!!!!")
 
 

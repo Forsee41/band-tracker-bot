@@ -1,10 +1,15 @@
 import asyncio
 import logging
+from asyncio import Semaphore
 from datetime import datetime, timedelta
 from typing import Callable, Coroutine
 
 from band_tracker.db.dal_update import UpdateDAL
-from band_tracker.updater.api_client import ApiClientArtists, ApiClientEvents
+from band_tracker.updater.api_client import (
+    ApiClientArtists,
+    ApiClientEvents,
+    exception_helper,
+)
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     AllTokensViolation,
@@ -88,6 +93,7 @@ class Updater:
             target_list.append(exception)
         elif isinstance(exception, RateLimitViolation):
             log.warning(RateLimitViolation)
+            log.debug("SLEEP TIME")
             await asyncio.sleep(self.ratelimit_violation_sleep_time)
         elif isinstance(exception, EmptyResponseException):
             pass
@@ -120,7 +126,7 @@ class Updater:
             start_time = datetime.now()
             pages = await asyncio.gather(*chunk, return_exceptions=True)
 
-            log.debug(pages)
+            # log.debug(pages)
             if not any(pages):
                 return
             for page in pages:
@@ -180,6 +186,43 @@ class Updater:
                             await update_dal(update)
                     except EmptyResponseException:
                         pass
+
+    async def update_current_artists(self) -> None:
+        exceptions: list[Exception] = []
+
+        tm_ids = await self.dal.get_tm_ids()
+        update_dal = self.dal.update_artist
+        client = self.client_factory.get_artists_client()
+
+        async def process_tm_id(tm_id: str) -> None:
+            async with semaphore:
+                successful = False
+                while not successful:
+                    try:
+                        page = await client.make_request(tm_id=tm_id)
+                        exception_helper(page)
+                        updates = get_all_artists(page)
+                        for update in updates:
+                            await update.set_description()
+                            await update_dal(update)
+                        successful = True
+                    except QuotaViolation:
+                        client.change_token_flag = True
+                    except EmptyResponseException:
+                        # scip invalid ids
+                        successful = True
+                    except Exception as e:
+                        try:
+                            await self._process_exceptions(
+                                exception=e, target_list=exceptions
+                            )
+                        except UpdateError:
+                            # scip problematic entities
+                            successful = True
+
+        semaphore = Semaphore(4)
+        tasks = [process_tm_id(tm_id) for tm_id in tm_ids]
+        await asyncio.gather(*tasks)
 
     async def update_events(self) -> None:
         log.info("Update Events")

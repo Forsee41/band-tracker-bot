@@ -15,15 +15,17 @@ log = logging.getLogger(__name__)
 
 
 async def get_description(url: str) -> str | None:
-    # to scip httpx redirection
+    # to skip httpx redirection
     parsed_url = urlparse(url)
     if parsed_url.scheme == "http":
         url = urlunparse(("https",) + parsed_url[1:])
 
-    async with httpx.AsyncClient(timeout=5) as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         for _ in range(5):
             try:
                 response = await client.get(url)
+                response.raise_for_status()  # Raise an exception for 4xx and 5xx status codes
+
                 html = response.text
                 soup = BeautifulSoup(html, "html.parser")
 
@@ -37,7 +39,7 @@ async def get_description(url: str) -> str | None:
                 )
 
                 if not content_text or isinstance(content_text, int):
-                    log.error("Could not find right div class")
+                    log.error("Could not find the right div class")
                     return None
 
                 find_params = {"class_": False, "id": False}
@@ -55,6 +57,12 @@ async def get_description(url: str) -> str | None:
                 log.warning(e)
                 continue
             except httpx.ConnectError as e:
+                log.error(e)
+                return None
+            except httpx.HTTPStatusError as e:
+                log.error(f"HTTP error: {e.response.status_code}")
+                return None
+            except Exception as e:
                 log.error(e)
                 return None
         else:
