@@ -24,7 +24,7 @@ async def get_description(url: str) -> str | None:
         for _ in range(5):
             try:
                 response = await client.get(url)
-                response.raise_for_status()  # Raise an exception for 4xx and 5xx status codes
+                response.raise_for_status()
 
                 html = response.text
                 soup = BeautifulSoup(html, "html.parser")
@@ -56,12 +56,6 @@ async def get_description(url: str) -> str | None:
             except httpx.TimeoutException as e:
                 log.warning(e)
                 continue
-            except httpx.ConnectError as e:
-                log.error(e)
-                return None
-            except httpx.HTTPStatusError as e:
-                log.error(f"HTTP error: {e.response.status_code}")
-                return None
             except Exception as e:
                 log.error(e)
                 return None
