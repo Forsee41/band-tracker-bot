@@ -37,7 +37,7 @@ class UpdateDAL(BaseDAL):
 
     async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
-        if await self._get_artist_by_tm_id(tm_id) is None:
+        if await self.get_artist_by_tm_id(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self._add_artist(artist)
             return artist_id
@@ -138,7 +138,7 @@ class UpdateDAL(BaseDAL):
 
         return uuid, artist_event_uuids
 
-    async def _get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
+    async def get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
         async with self.sessionmaker.session() as session:
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             if artist_db is None:

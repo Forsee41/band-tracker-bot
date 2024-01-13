@@ -15,7 +15,7 @@ class TestAddArtistDAL:
     ) -> None:
         artist = get_artist_update("gosha")
         await update_dal._add_artist(artist)
-        result_artist = await update_dal._get_artist_by_tm_id("gosha_tm_id")
+        result_artist = await update_dal.get_artist_by_tm_id("gosha_tm_id")
 
         assert result_artist
         assert result_artist.name == "gosha"
@@ -72,7 +72,7 @@ class TestAddArtistDAL:
         artist = get_artist_update("gosha")
         await update_dal._add_artist(artist)
 
-        result_artist = await update_dal._get_artist_by_tm_id("gosha_tm_id")
+        result_artist = await update_dal.get_artist_by_tm_id("gosha_tm_id")
 
         artist_tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         result_db_artist = await query_artist(artist_tm_id)

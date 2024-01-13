@@ -143,6 +143,7 @@ class Updater:
                     updates = get_elements(page)  # type: ignore
                     for update in updates:
                         # log.debug("UPDATE " + str(update))
+                        await self.add_absent_artists(update.artists)
                         await update_dal(update)
 
             exec_time: timedelta = datetime.now() - start_time
@@ -187,10 +188,23 @@ class Updater:
                     except EmptyResponseException:
                         pass
 
+    async def add_absent_artists(self, artist_ids: list[str]) -> None:
+        new_artists = [
+            artist
+            for artist in artist_ids
+            if not await self.dal.get_artist_by_tm_id(artist)
+        ]
+
+        if new_artists:
+            await self.update_artists_by_ids(new_artists)
+
     async def update_current_artists(self) -> None:
+        tm_ids = await self.dal.get_tm_ids()
+        await self.update_artists_by_ids(tm_ids)
+
+    async def update_artists_by_ids(self, tm_ids: list[str]) -> None:
         exceptions: list[Exception] = []
 
-        tm_ids = await self.dal.get_tm_ids()
         update_dal = self.dal.update_artist
         client = self.client_factory.get_artists_client()
 
@@ -232,7 +246,7 @@ class Updater:
 
         await self._update_events_worker(get_all_events, client, update_dal)
 
-    async def update_artists(self, artists: list[str]) -> None:
+    async def update_artists_by_keywords(self, artists: list[str]) -> None:
         log.info("Update Artists")
 
         update_dal = self.dal.update_artist
