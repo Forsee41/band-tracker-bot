@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Coroutine
 
 from band_tracker.db.dal_update import UpdateDAL
+from band_tracker.mq_publisher import MQPublisher
 from band_tracker.updater.api_client import ApiClientArtists, ApiClientEvents
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
@@ -52,6 +53,7 @@ class Updater:
         self,
         client_factory: ClientFactory,
         dal: UpdateDAL,
+        mq_publisher: MQPublisher,
         predictor: TimestampPredictor | None = None,
         max_fails: int = 5,
         chunk_size: int = 4,
@@ -63,6 +65,7 @@ class Updater:
         self.predictor = predictor
         self.dal = dal
         self.ratelimit_violation_sleep_time = ratelimit_violation_sleep_time
+        self.publisher = mq_publisher
 
     def _get_pages_chunk(self, iterator: PageIterator) -> list[Coroutine] | None:
         coroutines = [
