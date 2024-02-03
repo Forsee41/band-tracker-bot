@@ -48,6 +48,8 @@ async def clean_tables(sync_engine: Engine) -> AsyncGenerator:
         "artist_socials",
         "artist_alias",
         "message",
+        "event_user",
+        "notification",
     ]
     tables_str = ", ".join(table_names)
     command = f"TRUNCATE TABLE {tables_str};"
