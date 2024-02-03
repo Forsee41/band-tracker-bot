@@ -1,13 +1,9 @@
 import json
-from enum import Enum
 
 from aio_pika import DeliveryMode, Message, connect
 from aio_pika.abc import AbstractConnection
 
-
-class MessageType(Enum):
-    admin_notification = "admin_notification"
-    new_event_artist = "new_event_artist"
+from band_tracker.mq.messages import MQMessage
 
 
 class MQPublisher:
@@ -33,20 +29,19 @@ class MQPublisher:
 
     async def send_message(
         self,
-        data: dict,
-        type_: MessageType,
+        message: MQMessage,
         headers: dict = {},
         persistent: bool = True,
     ) -> None:
         persistence = (
             DeliveryMode.PERSISTENT if persistent else DeliveryMode.NOT_PERSISTENT
         )
-        msg_body = json.dumps(data)
-        message = Message(
+        msg_body = json.dumps(message.to_dict())
+        prepared_message = Message(
             bytes(msg_body, "utf-8"),
             content_type="application/json",
             headers=headers,
-            type=type_.value,
+            type=message.type_.value,
             delivery_mode=persistence,
         )
         async with self._connection:
@@ -54,4 +49,4 @@ class MQPublisher:
             exchange = await channel.declare_exchange(
                 self._exchange_name, auto_delete=False
             )
-            await exchange.publish(message, routing_key=self._key)
+            await exchange.publish(prepared_message, routing_key=self._key)
