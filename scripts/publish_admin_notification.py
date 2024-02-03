@@ -12,7 +12,7 @@ async def main() -> None:
     from dotenv import load_dotenv
 
     from band_tracker.config.env_loader import mq_env_vars
-    from band_tracker.mq_publisher import MessageType, MQPublisher
+    from band_tracker.mq_publisher import MQMessageType, MQPublisher
 
     load_dotenv()
     mq_env = mq_env_vars()
@@ -26,7 +26,7 @@ async def main() -> None:
     if not msg:
         msg = "Here's my message"
     await publisher.send_message(
-        data={"message": msg}, type_=MessageType.admin_notification
+        data={"message": msg}, type_=MQMessageType.admin_notification
     )
 
 

@@ -9,7 +9,7 @@ from band_tracker.config.log import load_log_config
 from band_tracker.db.dal_predictor import PredictorDAL
 from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.session import AsyncSessionmaker
-from band_tracker.mq_publisher import MQPublisher
+from band_tracker.mq.publisher import MQPublisher
 from band_tracker.updater.timestamp_predictor import CurrentDataPredictor
 from band_tracker.updater.updater import ClientFactory, Updater
 
