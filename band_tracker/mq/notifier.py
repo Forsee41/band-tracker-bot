@@ -5,7 +5,8 @@ from aio_pika import ExchangeType, connect
 from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
 from telegram import Bot
 
-from band_tracker.db.dal_bot import BotDAL
+from band_tracker.db.dal_notifier import NotifierDAL
+from band_tracker.mq.messages import AdminNotification, MQMessageType, NewEventArtist
 
 
 class Notifier:
@@ -13,7 +14,7 @@ class Notifier:
     mq_routing_key: str
     mq_connection: AbstractConnection
     mq_exchange_name: str
-    dal: BotDAL
+    dal: NotifierDAL
 
     @classmethod
     async def create(
@@ -22,7 +23,7 @@ class Notifier:
         mq_url: str,
         mq_routing_key: str,
         exchange_name: str,
-        dal: BotDAL,
+        dal: NotifierDAL,
     ) -> "Notifier":
         self: "Notifier" = cls()
         self.dal = dal
@@ -45,15 +46,24 @@ class Notifier:
             await queue.consume(self.on_message)
             await asyncio.Future()
 
-    async def notify_admins(self, text: str) -> None:
+    async def notify_admins(self, message: AdminNotification) -> None:
         admin_chats = await self.dal.get_admin_chats()
         for admin_chat_id in admin_chats:
-            await self.bot.sendMessage(chat_id=admin_chat_id, text=text)  # type: ignore
+            await self.bot.sendMessage(
+                chat_id=admin_chat_id, text=message.text
+            )  # type: ignore
+
+    async def send_event_notifications(self, message: NewEventArtist) -> None:
+        ...
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:
         async with message.process():
             msg_raw = message.body.decode()
             msg = json.loads(msg_raw)
             match message.type:
-                case "notification":
-                    await self.notify_admins(text=msg["message"])
+                case MQMessageType.admin_notification.value:
+                    await self.notify_admins(message=AdminNotification.from_dict(msg))
+                case MQMessageType.new_event_artist.value:
+                    await self.send_event_notifications(
+                        message=NewEventArtist.from_dict(msg)
+                    )

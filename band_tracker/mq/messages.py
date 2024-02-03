@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import TypedDict
 from uuid import UUID
 
 
@@ -44,5 +43,22 @@ class NewEventArtist(MQMessage):
             self.created_at = created_at
 
 
-class AdminNotification(TypedDict):
-    message: str
+class AdminNotification(MQMessage):
+    type_ = MQMessageType.admin_notification
+
+    def to_dict(self) -> dict:
+        return {
+            "text": self.text,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls: type, data: dict) -> "AdminNotification":
+        return cls(**data)
+
+    def __init__(self, text: str, created_at: datetime | None = None) -> None:
+        self.text = text
+        if created_at is None:
+            self.created_at = datetime.now()
+        else:
+            self.created_at = created_at
