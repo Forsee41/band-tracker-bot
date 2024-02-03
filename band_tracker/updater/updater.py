@@ -6,7 +6,7 @@ from uuid import UUID
 
 from band_tracker.db.dal_update import UpdateDAL
 from band_tracker.db.event_update import EventUpdate
-from band_tracker.mq.messages import NewEventArtist
+from band_tracker.mq.messages import EventUpdateFinished, NewEventArtist
 from band_tracker.mq.publisher import MQPublisher
 from band_tracker.updater.api_client import ApiClientArtists, ApiClientEvents
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
@@ -141,12 +141,16 @@ class Updater:
 
                     updates = get_elements(page)  # type: ignore
                     for update in updates:
-                        _, event_artist_uuids = await update_dal(update)
+                        event_uuid, event_artist_uuids = await update_dal(update)
                         for uuid in event_artist_uuids:
                             message = NewEventArtist(
                                 uuid=uuid, created_at=datetime.now()
                             )
                             await self.publisher.send_message(message=message)
+                        finished_message = EventUpdateFinished(
+                            uuid=event_uuid, created_at=datetime.now()
+                        )
+                        await self.publisher.send_message(message=finished_message)
 
             exec_time: timedelta = datetime.now() - start_time
             time_to_wait = timedelta(seconds=1) - exec_time

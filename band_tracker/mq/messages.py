@@ -7,6 +7,7 @@ from uuid import UUID
 class MQMessageType(Enum):
     admin_notification = "admin_notification"
     new_event_artist = "new_event_artist"
+    event_update_finished = "event_update_finished"
 
 
 class MQMessage(ABC):
@@ -33,6 +34,32 @@ class NewEventArtist(MQMessage):
 
     @classmethod
     def from_dict(cls: type, data: dict) -> "NewEventArtist":
+        return cls(**data)
+
+    def __init__(self, uuid: UUID, created_at: datetime | None = None) -> None:
+        self.uuid = uuid
+        if created_at is None:
+            self.created_at = datetime.now()
+        else:
+            self.created_at = created_at
+
+
+class EventUpdateFinished(MQMessage):
+    """
+    Message, sent when updater finished with cerain event.
+    Includes event UUID and datetime.
+    """
+
+    type_ = MQMessageType.event_update_finished
+
+    def to_dict(self) -> dict:
+        return {
+            "uuid": self.uuid,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls: type, data: dict) -> "EventUpdateFinished":
         return cls(**data)
 
     def __init__(self, uuid: UUID, created_at: datetime | None = None) -> None:

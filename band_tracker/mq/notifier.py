@@ -6,7 +6,12 @@ from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
 from telegram import Bot
 
 from band_tracker.db.dal_notifier import NotifierDAL
-from band_tracker.mq.messages import AdminNotification, MQMessageType, NewEventArtist
+from band_tracker.mq.messages import (
+    AdminNotification,
+    EventUpdateFinished,
+    MQMessageType,
+    NewEventArtist,
+)
 
 
 class Notifier:
@@ -53,7 +58,10 @@ class Notifier:
                 chat_id=admin_chat_id, text=message.text
             )  # type: ignore
 
-    async def send_event_notifications(self, message: NewEventArtist) -> None:
+    async def create_new_notifications(self, message: NewEventArtist) -> None:
+        ...
+
+    async def send_notifications(self, message: EventUpdateFinished) -> None:
         ...
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:
@@ -64,6 +72,10 @@ class Notifier:
                 case MQMessageType.admin_notification.value:
                     await self.notify_admins(message=AdminNotification.from_dict(msg))
                 case MQMessageType.new_event_artist.value:
-                    await self.send_event_notifications(
+                    await self.create_new_notifications(
                         message=NewEventArtist.from_dict(msg)
+                    )
+                case MQMessageType.event_update_finished.value:
+                    await self.send_notifications(
+                        message=EventUpdateFinished.from_dict(msg)
                     )
