@@ -3,8 +3,9 @@ import asyncio
 from dotenv import load_dotenv
 from telegram import Bot
 
+from band_tracker.config.constants import MQ_ROUTING_KEY
 from band_tracker.config.env_loader import db_env_vars, mq_env_vars, tg_bot_env_vars
-from band_tracker.db.dal_bot import BotDAL
+from band_tracker.db.dal_notifier import NotifierDAL
 from band_tracker.db.session import AsyncSessionmaker
 from band_tracker.mq.notifier import Notifier
 
@@ -21,12 +22,12 @@ async def main() -> None:
         port=db_env.DB_PORT,
         database=db_env.DB_NAME,
     )
-    dal = BotDAL(db_sessionmaker)
+    dal = NotifierDAL(db_sessionmaker)
     notifier = await Notifier.create(
         bot=bot,
         dal=dal,
         mq_url=mq_env.MQ_URI,
-        mq_routing_key="notification",
+        mq_routing_key=MQ_ROUTING_KEY,
         exchange_name=mq_env.MQ_EXCHANGE,
     )
     await notifier.consume()

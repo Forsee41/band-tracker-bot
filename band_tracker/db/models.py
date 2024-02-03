@@ -182,6 +182,9 @@ class EventUserDB(Base):
         ForeignKey("event.id", ondelete="CASCADE"),
         index=True,
     )
+    is_notified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
 
     __table_args__ = (
         UniqueConstraint("event_id", "user_id", name="unique_event_user"),
@@ -203,6 +206,9 @@ class NotificationDB(Base):
     artist_id: Mapped[UUID] = mapped_column(
         UUID_PG(as_uuid=True),
         ForeignKey("artist.id", ondelete="CASCADE"),
+    )
+    is_notified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
     )
 
     __table_args__ = (

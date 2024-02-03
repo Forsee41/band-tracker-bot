@@ -213,14 +213,6 @@ class BotDAL(BaseDAL):
             session.add(admin)
             await session.commit()
 
-    async def get_admin_chats(self) -> list[str]:
-        stmt = select(AdminDB)
-        async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            admins_db = scalars.all()
-            chats = [admin.chat_id for admin in admins_db]
-            return chats
-
     async def get_event(self, id: UUID) -> Event | None:
         stmt = (
             select(EventDB)
