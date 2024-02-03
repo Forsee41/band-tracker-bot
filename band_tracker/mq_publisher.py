@@ -6,7 +6,8 @@ from aio_pika.abc import AbstractConnection
 
 
 class MessageType(Enum):
-    notification = "notification"
+    admin_notification = "admin_notification"
+    new_event_artist = "new_event_artist"
 
 
 class MQPublisher:
@@ -26,7 +27,7 @@ class MQPublisher:
         self._connection = await self.connect()
         return self
 
-    async def connect(self) -> AbstractConnection:
+    async def _connect(self) -> AbstractConnection:
         connection = await connect(self._url)
         return connection
 

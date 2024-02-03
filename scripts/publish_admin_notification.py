@@ -25,7 +25,9 @@ async def main() -> None:
     msg = sys.argv[1] if len(sys.argv) > 1 else None
     if not msg:
         msg = "Here's my message"
-    await publisher.send_message(data={"message": msg}, type_=MessageType.notification)
+    await publisher.send_message(
+        data={"message": msg}, type_=MessageType.admin_notification
+    )
 
 
 if __name__ == "__main__":
