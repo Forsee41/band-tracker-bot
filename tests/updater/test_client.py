@@ -27,12 +27,16 @@ artists = [
             spotify="https://open.spotify.com/artist/5e4Dhzv426EvQe3aDb64jL",
             wiki="https://en.wikipedia.org/wiki/Shania_Twain",
         ),
-        tickets_link="https://www.livenation.com/artist/K8vZ91719n0/shania-twain-events",
+        tickets_link="https://www.livenation.com/"
+        "artist/K8vZ91719n0/shania-twain-events",
         source_specific_data={EventSource.ticketmaster_api: {"id": "K8vZ91719n0"}},
-        main_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RETINA_PORTRAIT_3_2.jpg",
-        thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a521d1_1825531_RECOMENDATION_16_9.jpg",
+        main_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e44a5"
+        "21d1_1825531_RETINA_PORTRAIT_3_2.jpg",
+        thumbnail_image="https://s1.ticketm.net/dam/a/1d1/47cc9b10-4904-4dec-b1d6-539e"
+        "44a521d1_1825531_RECOMENDATION_16_9.jpg",
         genres=["Country"],
         aliases=["shaina twain", "shania twain", "shinia twain"],
+        description=None,
     ),
     ArtistUpdate(
         name="BRELAND",
@@ -48,6 +52,7 @@ artists = [
         thumbnail_image="https://s1.ticketm.net/dam/a/e74/83efc299-69c1-4170-95a5-8f1a633b0e74_RECOMENDATION_16_9.jpg",
         genres=["Country", "Country Pop"],
         aliases=[],
+        description=None,
     ),
 ]
 
@@ -248,10 +253,13 @@ class TestClient:
                         source_specific_data={
                             EventSource.ticketmaster_api: {"id": "K8vZ917GSz7"}
                         },
-                        main_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg",
-                        thumbnail_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg",
+                        main_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe"
+                        "-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg",
+                        thumbnail_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        "fe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg",
                         genres=["Rock", "Pop"],
                         aliases=[],
+                        description=None,
                     )
                 ],
                 main_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f"

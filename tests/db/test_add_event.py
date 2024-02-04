@@ -33,6 +33,10 @@ class TestAddEventDAL:
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
                 },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
             )
         ]
 
@@ -133,6 +137,10 @@ class TestAddEventDAL:
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "unknown_tm_id"}
                 },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
             )
         ]
         await update_dal._add_event(update_event)

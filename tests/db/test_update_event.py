@@ -37,6 +37,10 @@ class TestUpdateEventDAL:
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
                 },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
             )
         ]
 
@@ -119,6 +123,10 @@ class TestUpdateEventDAL:
                 source_specific_data={
                     EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
                 },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
             )
         ]
 

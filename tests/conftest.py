@@ -140,11 +140,17 @@ def get_event_update() -> Callable[[str], EventUpdate]:
             "fest": ["anton_tm_id", "clara_tm_id"],
             "eurovision": ["anton_tm_id", "clara_tm_id", "gosha_tm_id"],
         }
-        artist_ids = event_name_to_ids.get(name)
+        artist_ids = event_name_to_ids.get(
+            name, ["anton_tm_id", "clara_tm_id", "gosha_tm_id"]
+        )
         artists = [
             ArtistUpdate(
                 name="",
                 source_specific_data={EventSource.ticketmaster_api: {"id": artist_id}},
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
             )
             for artist_id in artist_ids
         ]

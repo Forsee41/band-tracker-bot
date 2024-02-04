@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 from pydantic import BaseModel, Field, NonNegativeFloat, StrictStr, field_validator
 
@@ -66,9 +66,11 @@ class EventUpdate(BaseModel):
     def get_artist_ids(self) -> list[str]:
         artist_ids = []
         for artist in self.artists:
-            artist_ids.append(
-                artist.get_source_specific_data(EventSource.ticketmaster_api).get("id")
-            )
+            artist_id = artist.get_source_specific_data(
+                EventSource.ticketmaster_api
+            ).get("id")
+            if artist_id is not None:
+                artist_ids.append(cast(str, artist_id))
         return artist_ids
 
     def on_sale(self) -> bool:
