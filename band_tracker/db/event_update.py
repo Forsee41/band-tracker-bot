@@ -4,6 +4,7 @@ from typing import Any, TypeAlias
 from pydantic import BaseModel, Field, NonNegativeFloat, StrictStr, field_validator
 
 from band_tracker.core.enums import EventSource
+from band_tracker.db.artist_update import ArtistUpdate
 
 SourceSpecificEventData: TypeAlias = dict[EventSource, dict[str, Any]]
 
@@ -19,7 +20,7 @@ class EventUpdateSales(BaseModel):
 class EventUpdate(BaseModel):
     title: StrictStr
     date: datetime
-    artists: list[str] = Field([])
+    artists: list[ArtistUpdate] = Field([])
     venue: StrictStr | None = Field(None)
     venue_city: StrictStr | None = Field(None)
     venue_country: StrictStr | None = Field(None)
@@ -61,6 +62,14 @@ class EventUpdate(BaseModel):
             return self.source_specific_data[source]
         else:
             return {}
+
+    def get_artist_ids(self) -> list[str]:
+        artist_ids = []
+        for artist in self.artists:
+            artist_ids.append(
+                artist.get_source_specific_data(EventSource.ticketmaster_api).get("id")
+            )
+        return artist_ids
 
     def on_sale(self) -> bool:
         sale_start = self.sales.sale_start

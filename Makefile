@@ -22,7 +22,7 @@ prepare: --db-down --db migrations load_dump
 
 .PHONY: dump
 dump:
-	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w db | awk '{print $$1}'))
+	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w band_tracker_db | awk '{print $$1}'))
 	@if [ -z "$(CONTAINER_ID)" ]; then \
 		echo "No container found."; \
 	else \

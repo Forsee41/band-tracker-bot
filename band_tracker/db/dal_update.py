@@ -35,6 +35,10 @@ class UpdateDAL(BaseDAL):
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
 
+    async def update_artists(self, artists: list[ArtistUpdate]) -> None:
+        for artist in artists:
+            await self.update_artist(artist)
+
     async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
         if await self.get_artist_by_tm_id(tm_id) is None:
@@ -125,10 +129,13 @@ class UpdateDAL(BaseDAL):
             session.add(sales)
             await session.commit()
 
+        await self.update_artists(event.artists)
+
         try:
+            artist_ids = event.get_artist_ids()
             artist_event_uuids = await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
-                artist_tm_ids=event.artists,
+                artist_tm_ids=artist_ids,
             )
         except DALError:
             log.warning(
@@ -390,10 +397,13 @@ class UpdateDAL(BaseDAL):
             session.add(tm_data_db)
             session.add(sales)
             await session.commit()
+
+        await self.update_artists(event.artists)
         try:
+            artist_ids = event.get_artist_ids()
             event_artist_uuids = await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
-                artist_tm_ids=event.artists,
+                artist_tm_ids=artist_ids,
             )
         except DALError:
             log.warning(

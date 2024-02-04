@@ -1,9 +1,6 @@
 {
 	"title": "concert",
 	"date": "2024-04-23T00:00",
-	"artists": [
-		"anton_tm_id"
-	],
 	"venue": "The Dome Of Paris",
 	"venue_city": "Paris",
 	"venue_country": "France",

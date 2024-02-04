@@ -44,7 +44,7 @@ class Event:
 
     async def get_artists(self, dal: DAL) -> list[Optional["Artist"]]:
         result_artists = []
-        for i in self.artist_ids:
-            result_artists.append(await dal.get_artist(i))
+        for artist_id in self.artist_ids:
+            result_artists.append(await dal.get_artist(artist_id))
 
         return result_artists

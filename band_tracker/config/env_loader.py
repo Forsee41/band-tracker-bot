@@ -103,4 +103,4 @@ def get_log_level() -> int:
         "CRITICAL": logging.CRITICAL,
     }
 
-    return levels[env_lvl] if env_lvl in levels else logging.DEBUG
+    return levels[env_lvl] if env_lvl in levels else logging.INFO

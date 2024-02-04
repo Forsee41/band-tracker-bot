@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 class JSONData(BaseModel):
     embedded: dict[str, list] = Field(alias="_embedded")
-    page: dict[str, int]
+    # page: dict[str, int]
 
 
 def image_helper(raw_entity: dict, thumbnail: bool = False) -> str | None:
@@ -100,11 +100,18 @@ def get_event(raw_event: dict) -> EventUpdate:
         date = raw_event.get("dates", {}).get("start", {}).get("localDate")
         return datetime.strptime(date, format_string) if date else None
 
-    def attraction_ids_helper() -> list:
-        attractions = raw_event.get("_embedded", {}).get("attractions")
-        if attractions:
-            return [attraction.get("id") for attraction in attractions]
-        return []
+    def attractions_helper() -> list:
+        raw_artists = {"_embedded": raw_event.get("_embedded", {})}
+        processed_artists = []
+        try:
+            processed_artists = get_all_artists(raw_artists)
+        except KeyError:
+            log.info("no artists were found in the upcoming event")
+        """attractions = raw_event.get("_embedded", {}).get("attractions")
+                if attractions:
+                    return [attraction.get("id") for attraction in attractions]
+                return []"""
+        return processed_artists
 
     def sales_helper() -> EventUpdateSales:
         format_string = "%Y-%m-%d"
@@ -170,7 +177,7 @@ def get_event(raw_event: dict) -> EventUpdate:
         .get("name")
         if venues_helper()
         else None,
-        "artists": attraction_ids_helper(),
+        "artists": attractions_helper(),
         "sales": sales_helper(),
         "main_image": image_helper(raw_event),
         "thumbnail_image": image_helper(raw_event, thumbnail=True),

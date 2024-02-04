@@ -111,7 +111,8 @@ class Updater:
         self,
         get_elements: Callable[[dict[str, dict]], list],
         client: ApiClientEvents,
-        update_dal: Callable,
+        update_artist: Callable,
+        update_event: Callable,
     ) -> None:
         if not self.predictor:
             raise PredictorError("Predictor was not given to Updater constructor")
@@ -143,8 +144,7 @@ class Updater:
                     updates = get_elements(page)  # type: ignore
                     for update in updates:
                         # log.debug("UPDATE " + str(update))
-                        await self.add_absent_artists(update.artists)
-                        await update_dal(update)
+                        await update_event(update)
 
             exec_time: timedelta = datetime.now() - start_time
             time_to_wait = timedelta(seconds=1) - exec_time
@@ -241,10 +241,13 @@ class Updater:
     async def update_events(self) -> None:
         log.info("Update Events")
 
-        update_dal = self.dal.update_event
+        update_event = self.dal.update_event
+        update_artist = self.dal.update_artist
         client = self.client_factory.get_events_client()
 
-        await self._update_events_worker(get_all_events, client, update_dal)
+        await self._update_events_worker(
+            get_all_events, client, update_event, update_artist
+        )
 
     async def update_artists_by_keywords(self, artists: list[str]) -> None:
         log.info("Update Artists")
