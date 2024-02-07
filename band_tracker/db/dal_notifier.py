@@ -80,6 +80,9 @@ class NotifierDAL(BaseDAL):
             event_artists_db: list[EventArtistDB] = scalars.all()
             for event_artist in event_artists_db:
                 await self._create_event_artist_notifications(event_artist, session)
+                event_artist.is_notified = True
+                session.add(event_artist)
+                await session.commit()
 
     async def get_notifications(self) -> list[Notification]:
         return []
