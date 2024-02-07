@@ -245,7 +245,7 @@ class EventArtistDB(Base):
         UUID_PG(as_uuid=True),
         ForeignKey("event.id", ondelete="CASCADE"),
     )
-    notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     event: Mapped[EventDB] = relationship(back_populates="event_artist", viewonly=True)
     artist: Mapped[ArtistDB] = relationship(
