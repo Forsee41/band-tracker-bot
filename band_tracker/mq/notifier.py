@@ -1,5 +1,6 @@
 import asyncio
 import json
+from uuid import UUID
 
 from aio_pika import ExchangeType, connect
 from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
@@ -10,7 +11,6 @@ from band_tracker.mq.messages import (
     AdminNotification,
     EventUpdateFinished,
     MQMessageType,
-    NewEventArtist,
 )
 
 
@@ -58,11 +58,13 @@ class Notifier:
                 chat_id=admin_chat_id, text=message.text
             )  # type: ignore
 
-    async def create_new_notifications(self, message: NewEventArtist) -> None:
+    async def _send_notifications(self, event_id: UUID) -> None:
         ...
 
-    async def send_notifications(self, message: EventUpdateFinished) -> None:
-        ...
+    async def notify_for_event(self, message: EventUpdateFinished) -> None:
+        event_id = message.uuid
+        await self.dal.create_notifications(event_id)
+        await self._send_notifications(event_id)
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:
         async with message.process():
@@ -71,11 +73,7 @@ class Notifier:
             match message.type:
                 case MQMessageType.admin_notification.value:
                     await self.notify_admins(message=AdminNotification.from_dict(msg))
-                case MQMessageType.new_event_artist.value:
-                    await self.create_new_notifications(
-                        message=NewEventArtist.from_dict(msg)
-                    )
                 case MQMessageType.event_update_finished.value:
-                    await self.send_notifications(
+                    await self.notify_for_event(
                         message=EventUpdateFinished.from_dict(msg)
                     )

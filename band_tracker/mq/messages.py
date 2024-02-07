@@ -23,27 +23,6 @@ class MQMessage(ABC):
         """Returns message class instance from mq dict"""
 
 
-class NewEventArtist(MQMessage):
-    type_ = MQMessageType.new_event_artist
-
-    def to_dict(self) -> dict:
-        return {
-            "uuid": self.uuid,
-            "created_at": self.created_at,
-        }
-
-    @classmethod
-    def from_dict(cls: type, data: dict) -> "NewEventArtist":
-        return cls(**data)
-
-    def __init__(self, uuid: UUID, created_at: datetime | None = None) -> None:
-        self.uuid = uuid
-        if created_at is None:
-            self.created_at = datetime.now()
-        else:
-            self.created_at = created_at
-
-
 class EventUpdateFinished(MQMessage):
     """
     Message, sent when updater finished with cerain event.
@@ -51,6 +30,13 @@ class EventUpdateFinished(MQMessage):
     """
 
     type_ = MQMessageType.event_update_finished
+
+    def __init__(self, uuid: UUID, created_at: datetime | None = None) -> None:
+        self.uuid = uuid
+        if created_at is None:
+            self.created_at = datetime.now()
+        else:
+            self.created_at = created_at
 
     def to_dict(self) -> dict:
         return {
@@ -62,16 +48,16 @@ class EventUpdateFinished(MQMessage):
     def from_dict(cls: type, data: dict) -> "EventUpdateFinished":
         return cls(**data)
 
-    def __init__(self, uuid: UUID, created_at: datetime | None = None) -> None:
-        self.uuid = uuid
+
+class AdminNotification(MQMessage):
+    type_ = MQMessageType.admin_notification
+
+    def __init__(self, text: str, created_at: datetime | None = None) -> None:
+        self.text = text
         if created_at is None:
             self.created_at = datetime.now()
         else:
             self.created_at = created_at
-
-
-class AdminNotification(MQMessage):
-    type_ = MQMessageType.admin_notification
 
     def to_dict(self) -> dict:
         return {
@@ -82,10 +68,3 @@ class AdminNotification(MQMessage):
     @classmethod
     def from_dict(cls: type, data: dict) -> "AdminNotification":
         return cls(**data)
-
-    def __init__(self, text: str, created_at: datetime | None = None) -> None:
-        self.text = text
-        if created_at is None:
-            self.created_at = datetime.now()
-        else:
-            self.created_at = created_at
