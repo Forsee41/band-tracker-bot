@@ -185,6 +185,9 @@ class EventUserDB(Base):
     is_notified: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
+    notifications: Mapped[list["NotificationDB"]] = relationship(
+        back_populates="event_user"
+    )
 
     __table_args__ = (
         UniqueConstraint("event_id", "user_id", name="unique_event_user"),
@@ -210,6 +213,8 @@ class NotificationDB(Base):
     is_notified: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
+
+    event_user: Mapped[EventUserDB] = relationship(back_populates="notifications")
 
     __table_args__ = (
         UniqueConstraint("artist_id", "event_user_id", name="unique_notification"),

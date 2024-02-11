@@ -213,36 +213,9 @@ class BotDAL(BaseDAL):
             session.add(admin)
             await session.commit()
 
-    async def get_event(self, id: UUID) -> Event | None:
-        stmt = (
-            select(EventDB)
-            .where(EventDB.id == id)
-            .options(selectinload(EventDB.sales))
-            .options(selectinload(EventDB.artists))
-        )
-        async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            event_db = scalars.first()
-            if event_db is None:
-                return None
-
-            event = self._build_core_event(event_db)
-            return event
-
     async def get_artist(self, id: UUID) -> Artist | None:
-        stmt = (
-            select(ArtistDB)
-            .where(ArtistDB.id == id)
-            .options(joinedload(ArtistDB.genres))
-            .options(selectinload(ArtistDB.socials))
-        )
         async with self.sessionmaker.session() as session:
-            scalars = await session.scalars(stmt)
-            artist_db = scalars.first()
-            if artist_db is None:
-                return None
-
-        artist = self._build_core_artist(db_artist=artist_db)
+            artist = await self._get_artist(id, session)
         return artist
 
     async def add_user(self, user: RawUser) -> User:
