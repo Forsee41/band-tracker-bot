@@ -4,6 +4,7 @@ from collections.abc import Awaitable
 from telegram import Bot, InlineKeyboardMarkup
 
 from band_tracker.core.enums import MessageType
+from band_tracker.core.notification import Notification
 from band_tracker.core.user import User
 from band_tracker.db.dal_message import MessageDAL
 
@@ -74,3 +75,7 @@ class MessageManager:
             user_id=user.id,
             message_tg_id=msg.id,
         )
+
+    async def send_notification(self, notification: Notification) -> None:
+        # TODO
+        raise NotImplementedError
