@@ -177,5 +177,29 @@ class NotifierDAL(BaseDAL):
         return result
 
     async def confirm_notification(self, notification: Notification) -> None:
-        # TODO
-        raise NotImplementedError
+        event_user_query = (
+            select(EventUserDB)
+            .where(EventUserDB.event_id == notification.event.id)
+            .where(EventUserDB.user_id == notification.user.id)
+        )
+        new_artist_ids = [artist.id for artist in notification.target_artists]
+        notifications_query = (
+            select(NotificationDB)
+            .join(EventUserDB, NotificationDB.event_user_id == EventUserDB.id)
+            .where(NotificationDB.artist_id.in_(new_artist_ids))
+            .where(EventUserDB.user_id == notification.user.id)
+            .where(EventUserDB.event_id == notification.event.id)
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(event_user_query)
+            event_user = scalars.first()
+            if event_user is None:
+                raise DALError("Couldn't find an event user for notification")
+            event_user.is_notified = True
+            session.add(event_user)
+            scalars = await session.scalars(notifications_query)
+            notifications_db: list[NotificationDB] = scalars.all()
+            for notification_db in notifications_db:
+                notification_db.is_notified = True
+                session.add(notification_db)
+            await session.commit()
