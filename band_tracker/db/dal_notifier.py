@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from uuid import UUID
 
 from sqlalchemy import select
@@ -92,8 +93,10 @@ class NotifierDAL(BaseDAL):
     def _split_event_notifications_by_users(
         self, notifications: list[NotificationDB]
     ) -> dict[UUID, list[NotificationDB]]:
-        # TODO
-        raise NotImplementedError
+        result: dict[UUID, list[NotificationDB]] = defaultdict(list)
+        for notification in notifications:
+            result[notification.event_user.user_id].append(notification)
+        return result
 
     async def _populate_with_other_artists(
         self, notification: Notification, session: AsyncSession
