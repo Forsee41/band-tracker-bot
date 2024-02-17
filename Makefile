@@ -71,7 +71,7 @@ migrations: --db
 .PHONY: check-flake8 
 check-flake8:
 	flake8 $(OBJS) --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 $(OBJS) --count --max-complexity=10 --max-line-length=120 --statistics
+	flake8 $(OBJS) --count --max-complexity=10 --max-line-length=88 --statistics
 
 .PHONY: check-pyright 
 check-pyright:
