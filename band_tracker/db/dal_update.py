@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -34,9 +35,13 @@ class UpdateDAL(BaseDAL):
     def __init__(self, sessionmaker: AsyncSessionmaker) -> None:
         self.sessionmaker = sessionmaker
 
+    async def update_artists(self, artists: list[ArtistUpdate]) -> None:
+        for artist in artists:
+            await self.update_artist(artist)
+
     async def update_artist(self, artist: ArtistUpdate) -> UUID:
         tm_id = artist.source_specific_data[EventSource.ticketmaster_api]["id"]
-        if await self._get_artist_by_tm_id(tm_id) is None:
+        if await self.get_artist_by_tm_id(tm_id) is None:
             log.debug(f"Artist with tm id {tm_id} is not present, adding a new one")
             artist_id = await self._add_artist(artist)
             return artist_id
@@ -110,6 +115,9 @@ class UpdateDAL(BaseDAL):
             event_db.start_date = event.date
             event_db.image = image
             event_db.thumbnail = thumbnail
+            event_db.last_update = datetime.strptime(
+                datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
+            )
 
             sales_result = await event_db.awaitable_attrs.sales
             sales = sales_result[0]
@@ -121,10 +129,13 @@ class UpdateDAL(BaseDAL):
             session.add(sales)
             await session.commit()
 
+        await self.update_artists(event.artists)
+
         try:
+            artist_ids = event.get_artist_ids()
             artist_event_uuids = await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
-                artist_tm_ids=event.artists,
+                artist_tm_ids=artist_ids,
             )
         except DALError:
             log.warning(
@@ -134,7 +145,7 @@ class UpdateDAL(BaseDAL):
 
         return uuid, artist_event_uuids
 
-    async def _get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
+    async def get_artist_by_tm_id(self, tm_id: str) -> Artist | None:
         async with self.sessionmaker.session() as session:
             artist_db = await self._artist_by_tm_id(session=session, tm_id=tm_id)
             if artist_db is None:
@@ -267,6 +278,7 @@ class UpdateDAL(BaseDAL):
         )
         async with self.sessionmaker.session() as session:
             db_genres = await self._get_db_genres(session, artist.genres)
+            log.debug("GENRES: " + str(db_genres))
             artist_db.genres.extend(db_genres)
             session.add(artist_db)
 
@@ -371,6 +383,9 @@ class UpdateDAL(BaseDAL):
             ticket_url=ticket_url,
             image=image,
             thumbnail=thumbnail,
+            last_update=datetime.strptime(
+                datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
+            ),
         )
         async with self.sessionmaker.session() as session:
             session.add(event_db)
@@ -382,10 +397,13 @@ class UpdateDAL(BaseDAL):
             session.add(tm_data_db)
             session.add(sales)
             await session.commit()
+
+        await self.update_artists(event.artists)
         try:
+            artist_ids = event.get_artist_ids()
             event_artist_uuids = await self._link_event_to_artists(
                 event_tm_id=event_tm_id,
-                artist_tm_ids=event.artists,
+                artist_tm_ids=artist_ids,
             )
         except DALError:
             log.warning(
@@ -395,7 +413,7 @@ class UpdateDAL(BaseDAL):
 
         return uuid, event_artist_uuids
 
-    async def get_all_artist_names(self) -> list[str]:
+    async def get_external_artist_names(self) -> list[str]:
         async with self.sessionmaker.session() as session:
             query = select(ArtistNameDB.name)
             result = await session.execute(query)
@@ -403,7 +421,7 @@ class UpdateDAL(BaseDAL):
 
         return artist_names
 
-    async def add_artist_name(self, name: str) -> None:
+    async def add_external_artist_name(self, name: str) -> None:
         artist_name = ArtistNameDB(name=name)
 
         async with self.sessionmaker.session() as session:
@@ -411,3 +429,11 @@ class UpdateDAL(BaseDAL):
             await session.flush()
             await session.commit()
         log.info(name.join(" was added."))
+
+    async def get_tm_ids(self) -> list[str]:
+        async with self.sessionmaker.session() as session:
+            query = select(ArtistTMDataDB.id)
+            result = await session.execute(query)
+            artist_ids = [row[0] for row in result.fetchall()]
+
+        return artist_ids

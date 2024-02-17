@@ -1,10 +1,15 @@
 import asyncio
 import logging
+from asyncio import Semaphore
 from datetime import datetime, timedelta
 from typing import Callable, Coroutine
 
 from band_tracker.db.dal_update import UpdateDAL
-from band_tracker.updater.api_client import ApiClientArtists, ApiClientEvents
+from band_tracker.updater.api_client import (
+    ApiClientArtists,
+    ApiClientEvents,
+    exception_helper,
+)
 from band_tracker.updater.deserializator import get_all_artists, get_all_events
 from band_tracker.updater.errors import (
     AllTokensViolation,
@@ -79,23 +84,25 @@ class Updater:
 
         if isinstance(exception, InvalidTokenError):
             raise exception
-        elif isinstance(exception, QuotaViolation):
-            raise exception
         elif isinstance(exception, AllTokensViolation):
             raise exception
         elif isinstance(exception, PredictorError):
             raise exception
         elif isinstance(exception, InvalidResponseStructureError):
+            log.warning(exception)
             target_list.append(exception)
         elif isinstance(exception, RateLimitViolation):
-            target_list.append(exception)
+            log.warning(RateLimitViolation)
+            log.debug("SLEEP TIME")
             await asyncio.sleep(self.ratelimit_violation_sleep_time)
         elif isinstance(exception, EmptyResponseException):
             pass
         elif isinstance(exception, Exception):
+            log.warning(exception)
             target_list.append(exception)
 
         if len(target_list) >= self.max_fails:
+            log.warning("Reached the limit of allowed exceptions")
             raise UpdateError(
                 "Reached the limit of allowed exceptions", exceptions=target_list
             )
@@ -104,7 +111,8 @@ class Updater:
         self,
         get_elements: Callable[[dict[str, dict]], list],
         client: ApiClientEvents,
-        update_dal: Callable,
+        update_artist: Callable,
+        update_event: Callable,
     ) -> None:
         if not self.predictor:
             raise PredictorError("Predictor was not given to Updater constructor")
@@ -112,14 +120,14 @@ class Updater:
         await self.predictor.update_params()
         page_iterator = EventIterator(client=client, predictor=self.predictor)
         exceptions: list[Exception] = []
+
         while (chunk := self._get_pages_chunk(page_iterator)) is not None:
             log.debug("coroutines spawn")
 
             start_time = datetime.now()
-
             pages = await asyncio.gather(*chunk, return_exceptions=True)
 
-            log.debug(pages)
+            # log.debug(pages)
             if not any(pages):
                 return
             for page in pages:
@@ -136,7 +144,7 @@ class Updater:
                     updates = get_elements(page)  # type: ignore
                     for update in updates:
                         # log.debug("UPDATE " + str(update))
-                        await update_dal(update)
+                        await update_event(update)
 
             exec_time: timedelta = datetime.now() - start_time
             time_to_wait = timedelta(seconds=1) - exec_time
@@ -180,15 +188,68 @@ class Updater:
                     except EmptyResponseException:
                         pass
 
+    async def add_absent_artists(self, artist_ids: list[str]) -> None:
+        new_artists = [
+            artist
+            for artist in artist_ids
+            if not await self.dal.get_artist_by_tm_id(artist)
+        ]
+
+        if new_artists:
+            await self.update_artists_by_ids(new_artists)
+
+    async def update_current_artists(self) -> None:
+        tm_ids = await self.dal.get_tm_ids()
+        await self.update_artists_by_ids(tm_ids)
+
+    async def update_artists_by_ids(self, tm_ids: list[str]) -> None:
+        exceptions: list[Exception] = []
+
+        update_dal = self.dal.update_artist
+        client = self.client_factory.get_artists_client()
+
+        async def process_tm_id(tm_id: str) -> None:
+            async with semaphore:
+                successful = False
+                while not successful:
+                    try:
+                        page = await client.make_request(tm_id=tm_id)
+                        exception_helper(page)
+                        updates = get_all_artists(page)
+                        for update in updates:
+                            await update.set_description()
+                            await update_dal(update)
+                        successful = True
+                    except QuotaViolation:
+                        client.change_token_flag = True
+                    except EmptyResponseException:
+                        # scip invalid ids
+                        successful = True
+                    except Exception as e:
+                        try:
+                            await self._process_exceptions(
+                                exception=e, target_list=exceptions
+                            )
+                        except UpdateError:
+                            # scip problematic entities
+                            successful = True
+
+        semaphore = Semaphore(4)
+        tasks = [process_tm_id(tm_id) for tm_id in tm_ids]
+        await asyncio.gather(*tasks)
+
     async def update_events(self) -> None:
         log.info("Update Events")
 
-        update_dal = self.dal.update_event
+        update_event = self.dal.update_event
+        update_artist = self.dal.update_artist
         client = self.client_factory.get_events_client()
 
-        await self._update_events_worker(get_all_events, client, update_dal)
+        await self._update_events_worker(
+            get_all_events, client, update_event, update_artist
+        )
 
-    async def update_artists(self, artists: list[str]) -> None:
+    async def update_artists_by_keywords(self, artists: list[str]) -> None:
         log.info("Update Artists")
 
         update_dal = self.dal.update_artist

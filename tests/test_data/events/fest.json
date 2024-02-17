@@ -1,10 +1,6 @@
 {
 	"title": "fest",
 	"date": "2025-04-23T00:00",
-	"artists": [
-		"anton_tm_id",
-		"clara_tm_id"
-	],
 	"venue": "Grant Park",
 	"venue_city": "Chicago",
 	"venue_country": "USA",

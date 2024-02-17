@@ -94,7 +94,7 @@ def db_env_vars() -> DBEnvVars:
 
 
 def get_log_level() -> int:
-    env_lvl = os.getenv("LOG_LEVEL", "INFO")
+    env_lvl = os.getenv("LOG_LEVEL")
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,

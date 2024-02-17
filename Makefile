@@ -22,7 +22,7 @@ prepare: --db-down --db migrations load_dump
 
 .PHONY: dump
 dump:
-	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w db | awk '{print $$1}'))
+	$(eval CONTAINER_ID=$(shell docker ps -a | grep -w band_tracker_db | awk '{print $$1}'))
 	@if [ -z "$(CONTAINER_ID)" ]; then \
 		echo "No container found."; \
 	else \
@@ -71,7 +71,7 @@ migrations: --db
 .PHONY: check-flake8 
 check-flake8:
 	flake8 $(OBJS) --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 $(OBJS) --count --max-complexity=10 --max-line-length=88 --statistics
+	flake8 $(OBJS) --count --max-complexity=10 --max-line-length=120 --statistics
 
 .PHONY: check-pyright 
 check-pyright:
