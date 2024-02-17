@@ -19,7 +19,7 @@ async def main() -> None:
     db_env = db_env_vars()
     load_log_config()
 
-    tokens = os.getenv("CONCERTS_API_TOKENS").split(",")
+    tokens = events_env.CONCERTS_API_TOKENS
 
     db_sessionmaker = AsyncSessionmaker(
         login=db_env.DB_LOGIN,
@@ -29,36 +29,6 @@ async def main() -> None:
         database=db_env.DB_NAME,
     )
     dal = UpdateDAL(db_sessionmaker)
-
-    """num_coroutines = 4
-    if num_coroutines > len(tokens):
-        log.warning(
-            "The number of tokens should be at least equal to the number of coroutines"
-        )
-
-    number_of_artists = 10000
-    chunk_size = ceil((end_index - start_index) / num_coroutines)
-
-    tokens_blocks = [
-        tokens[i: i + len(tokens) // num_coroutines]
-        for i in range(0, len(tokens), len(tokens) // num_coroutines)
-    ]
-
-    tasks = []
-    for i, start in enumerate(range(start_index, end_index, chunk_size + 1)):
-        end = min(start + chunk_size, end_index)
-        api_client_factory = ClientFactory(
-            base_url=events_env.CONCERTS_API_URL, tokens=tokens_blocks[i]
-        )
-        updater = Updater(
-            client_factory=api_client_factory,
-            dal=dal,
-        )
-        chunk_processer = ArtistDbPopulation(start, end, updater)
-        task = asyncio.create_task(chunk_processer.process_subrange())
-        tasks.append(task)
-    await asyncio.gather(*tasks)"""
-
     api_client_factory = ClientFactory(
         base_url=events_env.CONCERTS_API_URL, tokens=tokens
     )
@@ -66,8 +36,8 @@ async def main() -> None:
         client_factory=api_client_factory,
         dal=dal,
     )
-    artist_names: list[str] = await dal.get_all_artist_names()
-    await updater.update_artists(artist_names)
+    artist_names: list[str] = await dal.get_external_artist_names()
+    await updater.update_artists_by_keywords(artist_names)
     log.info("!!!!!!!!!!!!!!!! Artists population close !!!!!!!!!!!!!!!!")
 
 

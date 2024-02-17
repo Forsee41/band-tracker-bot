@@ -22,7 +22,8 @@ async def main() -> None:
     db_env = db_env_vars()
     mq_env = mq_env_vars()
     tokens = events_env.CONCERTS_API_TOKENS
-
+    load_log_config()
+    log = logging.getLogger(__name__)
     api_client_factory = ClientFactory(
         base_url=events_env.CONCERTS_API_URL, tokens=tokens
     )
@@ -39,6 +40,7 @@ async def main() -> None:
     dal = UpdateDAL(db_sessionmaker)
     predictor_dal = PredictorDAL(db_sessionmaker)
     data_predictor = CurrentDataPredictor(predictor_dal)
+    # data_predictor = LinearPredictor(-0.1, 100, None)
     updater = Updater(
         client_factory=api_client_factory,
         dal=dal,

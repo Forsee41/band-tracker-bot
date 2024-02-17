@@ -98,7 +98,7 @@ class ApiClientEvents(ApiClient):
     ) -> dict[str, dict]:
         if self.change_token_flag:
             await self._change_token()
-            self.change_token_flag = True
+            self.change_token_flag = False
 
         log.debug(
             "+++++++++++++++++++++++++++  SEND REQUEST  +++++++++++++++++++++++++++"
@@ -131,10 +131,10 @@ class ApiClientEvents(ApiClient):
 
 
 class ApiClientArtists(ApiClient):
-    async def make_request(self, keyword: str) -> dict[str, dict]:
+    async def make_request(self, keyword: str = "", tm_id: str = "") -> dict[str, dict]:
         if self.change_token_flag:
             await self._change_token()
-            self.change_token_flag = True
+            self.change_token_flag = False
 
         log.debug(
             "+++++++++++++++++++++++++++  SEND REQUEST  +++++++++++++++++++++++++++"
@@ -146,6 +146,7 @@ class ApiClientArtists(ApiClient):
                     params={
                         **self.query_params,
                         "keyword": keyword,
+                        "id": tm_id,
                     },
                     timeout=self.timeout,
                 )

@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 import pytest
 
+from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.dal_update import UpdateDAL as DAL
@@ -30,7 +31,18 @@ class TestUpdateEventDAL:
 
         await update_dal._add_event(update_event)
 
-        update_event.artists += ["gosha_tm_id"]
+        update_event.artists += [
+            ArtistUpdate(
+                name="",
+                source_specific_data={
+                    EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
+                },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
+            )
+        ]
 
         update_event.sales.sale_start = datetime(8045, 4, 5)
         update_event.sales.sale_end = datetime(8045, 4, 6)
@@ -48,11 +60,7 @@ class TestUpdateEventDAL:
         assert result_event.artist_ids
 
         result_artists = await result_event.get_artists(bot_dal)
-        assert set([i.name for i in result_artists if i is not None]) == {
-            "anton",
-            "clara",
-            "gosha",
-        }
+        assert len(result_artists) == 3
 
     async def test_add_new_event(
         self,
@@ -109,7 +117,18 @@ class TestUpdateEventDAL:
         update_event = get_event_update("fest")
         await update_dal._add_event(update_event)
 
-        update_event.artists += ["gosha_tm_id"]
+        update_event.artists += [
+            ArtistUpdate(
+                name="",
+                source_specific_data={
+                    EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
+                },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
+            )
+        ]
 
         linked_artist_event_id = await update_dal._link_event_to_artists(
             "fest_tm_id",

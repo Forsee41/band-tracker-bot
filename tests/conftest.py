@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import joinedload
 
+from band_tracker.core.enums import EventSource
 from band_tracker.core.user import RawUser
 from band_tracker.core.user_settings import UserSettings
 from band_tracker.db.artist_update import ArtistUpdate
@@ -135,6 +136,28 @@ def get_event_update() -> Callable[[str], EventUpdate]:
         with open(f"{events_file_dir}/{name}.json", "r") as f:
             event_dict = json.load(f)
         update = EventUpdate(**event_dict)
+
+        event_name_to_ids = {
+            "concert": ["anton_tm_id"],
+            "fest": ["anton_tm_id", "clara_tm_id"],
+            "eurovision": ["anton_tm_id", "clara_tm_id", "gosha_tm_id"],
+        }
+        artist_ids = event_name_to_ids.get(
+            name, ["anton_tm_id", "clara_tm_id", "gosha_tm_id"]
+        )
+        artists = [
+            ArtistUpdate(
+                name="",
+                source_specific_data={EventSource.ticketmaster_api: {"id": artist_id}},
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
+            )
+            for artist_id in artist_ids
+        ]
+        update.artists.extend(artists)
+
         return update
 
     return generate_update

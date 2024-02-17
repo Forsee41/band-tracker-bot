@@ -3,6 +3,7 @@ from typing import Any, Callable, Coroutine
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate
 from band_tracker.db.dal_bot import BotDAL
 from band_tracker.db.dal_update import UpdateDAL as DAL
@@ -26,7 +27,18 @@ class TestAddEventDAL:
         _, ids = await update_dal._add_event(update_event)
         assert len(ids) == 2
 
-        update_event.artists += ["gosha_tm_id"]
+        update_event.artists += [
+            ArtistUpdate(
+                name="",
+                source_specific_data={
+                    EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
+                },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
+            )
+        ]
 
         linked_artist_event_id = await update_dal._link_event_to_artists(
             "fest_tm_id",
@@ -116,17 +128,27 @@ class TestAddEventDAL:
         artists = ["gosha", "anton", "clara"]
         for i in artists:
             artist = get_artist_update(i)
-
             await update_dal._add_artist(artist)
 
         update_event = get_event_update("eurovision")
-        update_event.artists += ["unknown_tm_id"]
+        update_event.artists += [
+            ArtistUpdate(
+                name="",
+                source_specific_data={
+                    EventSource.ticketmaster_api: {"id": "unknown_tm_id"}
+                },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
+            )
+        ]
         await update_dal._add_event(update_event)
         result_event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
         assert result_event
-
+        assert result_event.artist_ids
         result_artists = await result_event.get_artists(bot_dal)
-        assert set([i.name for i in result_artists if i is not None]) == set(artists)
+        assert len(result_artists) == 4
 
 
 if __name__ == "__main__":

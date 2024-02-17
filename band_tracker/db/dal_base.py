@@ -116,6 +116,7 @@ class BaseDAL:
             ticket_url=db_event.ticket_url,
             image=db_event.image,
             thumbnail=db_event.thumbnail,
+            last_update=db_event.last_update,
         )
         return event
 

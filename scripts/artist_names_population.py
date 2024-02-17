@@ -50,7 +50,7 @@ async def main() -> None:
         if performers:
             for artist in performers:
                 name = artist.get("name")
-                await dal.add_artist_name(name)
+                await dal.add_external_artist_name(name)
         else:
             log.info(
                 "script stopped working due to empty performers list in the responded page"
