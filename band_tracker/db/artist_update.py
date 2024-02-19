@@ -14,7 +14,7 @@ SourceSpecificArtistData: TypeAlias = dict[EventSource, dict[str, Any]]
 log = logging.getLogger(__name__)
 
 
-async def get_description(url: str) -> str | None:
+async def get_description(url: str, key_words: set[str]) -> str | None:
     # to skip httpx redirection
     parsed_url = urlparse(url)
     if parsed_url.scheme == "http":
@@ -50,9 +50,19 @@ async def get_description(url: str) -> str | None:
                     return None
 
                 flatten_text = re.sub(r"\([^)]*\)", "", first_paragraph.get_text())
-                text_without_references = re.sub(r"\[\d+\]", "", flatten_text)
-                return text_without_references.strip()
+                text_without_references = re.sub(r"\[\d+\]", "", flatten_text).strip()
 
+                # excluding potentially irrelevant content as part of troubleshooting
+                if any(
+                    key_word in text_without_references.lower()
+                    for key_word in key_words
+                ):
+                    return text_without_references
+                else:
+                    log.warning(
+                        "description text does not contain any artist reference"
+                    )
+                    return None
             except httpx.TimeoutException as e:
                 log.warning(e)
                 continue
@@ -116,6 +126,9 @@ class ArtistUpdate(BaseModel):
     async def set_description(self) -> None:
         wiki = self.socials.wiki
         if wiki:
-            self.description = await get_description(wiki)
+            key_words = set([self.name] + self.aliases)
+            self.description = await get_description(
+                wiki, {i.lower() for i in key_words}
+            )
         else:
             self.description = None

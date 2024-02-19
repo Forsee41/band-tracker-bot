@@ -111,7 +111,6 @@ class Updater:
         self,
         get_elements: Callable[[dict[str, dict]], list],
         client: ApiClientEvents,
-        update_artist: Callable,
         update_event: Callable,
     ) -> None:
         if not self.predictor:
@@ -242,12 +241,9 @@ class Updater:
         log.info("Update Events")
 
         update_event = self.dal.update_event
-        update_artist = self.dal.update_artist
         client = self.client_factory.get_events_client()
 
-        await self._update_events_worker(
-            get_all_events, client, update_event, update_artist
-        )
+        await self._update_events_worker(get_all_events, client, update_event)
 
     async def update_artists_by_keywords(self, artists: list[str]) -> None:
         log.info("Update Artists")
