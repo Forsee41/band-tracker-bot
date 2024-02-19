@@ -91,7 +91,6 @@ class TestUpdateEventDAL:
             await update_dal._add_artist(artist)
 
         update_event = get_event_update("fest")
-
         await update_dal._add_event(update_event)
 
         update_event.ticket_url = None
@@ -152,6 +151,35 @@ class TestUpdateEventDAL:
             ["anton_tm_id", "clara_tm_id", "gosha_tm_id"],
         )
         assert linked_artist == []
+
+    async def test_add_artists_from_updated_event(
+        self,
+        update_dal: DAL,
+        get_event_update: Callable[[str], EventUpdate],
+        get_artist_update: Callable[[str], ArtistUpdate],
+        query_artist: Callable[[str], Coroutine[Any, Any, ArtistDB | None]],
+    ) -> None:
+        update_event = get_event_update("fest")
+        await update_dal._add_event(update_event)
+
+        initArtist = await update_dal.get_artist_by_tm_id("anton_tm_id")
+        assert initArtist
+
+        update_event.artists += [
+            ArtistUpdate(
+                name="",
+                source_specific_data={
+                    EventSource.ticketmaster_api: {"id": "gosha_tm_id"}
+                },
+                tickets_link=None,
+                main_image=None,
+                thumbnail_image=None,
+                description=None,
+            )
+        ]
+        await update_dal.update_event(update_event)
+        newArtist = await update_dal.get_artist_by_tm_id("gosha_tm_id")
+        assert newArtist
 
 
 if __name__ == "__main__":
