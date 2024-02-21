@@ -1,12 +1,4 @@
 {
-  "_embedded": {
-    "attractions": []
-  },
-  "_links": {
-    "self": {
-      "href": ""
-    }
-  },
   "page": {
     "totalElements": 1001,
     "totalPages": 1,
