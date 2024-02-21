@@ -52,7 +52,7 @@ async def get_description(url: str, key_words: set[str]) -> str | None:
                 flatten_text = re.sub(r"\([^)]*\)", "", first_paragraph.get_text())
                 text_without_references = re.sub(r"\[\d+\]", "", flatten_text).strip()
 
-                # excluding potentially irrelevant content as part of troubleshooting
+                # excluding potentially irrelevant content to avoid data noise
                 if any(
                     key_word in text_without_references.lower()
                     for key_word in key_words
