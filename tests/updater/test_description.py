@@ -9,10 +9,9 @@ from band_tracker.db.artist_update import get_description
 
 
 def get_text(name: str = "normal", out: bool = False) -> str:
+    suffix: str = "_in.html"
     if out:
-        suffix: str = "_out"
-    else:
-        suffix: str = "_in.html"
+        suffix = "_out"
 
     file_path = "tests/test_data/description_mock"
     with open(f"{file_path}/{name}{suffix}", "r") as f:
@@ -31,7 +30,7 @@ class TestDescription:
     async def test_get_description(
         self, mock_get: AsyncMock, get_html: Callable[[str], str]
     ) -> None:
-        async def mock_make_request(url="") -> Response:
+        async def mock_make_request(url: str = "") -> Response:
             await asyncio.sleep(0.1)
             html_raw = get_html(f"{url}")
             assert html_raw
