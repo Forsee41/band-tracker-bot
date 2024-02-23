@@ -31,7 +31,7 @@ async def get_description(url: str, key_words: set[str]) -> str | None:
 
                 content_div = soup.find("div", {"id": "mw-content-text"})
                 if not content_div:
-                    log.error("Could not find content div")
+                    log.warning("Could not find content div")
                     return None
 
                 content_text = content_div.find(
@@ -39,7 +39,7 @@ async def get_description(url: str, key_words: set[str]) -> str | None:
                 )
 
                 if not content_text or isinstance(content_text, int):
-                    log.error("Could not find the right div class")
+                    log.warning("Could not find the right div class")
                     return None
 
                 find_params = {"class_": False, "id": False}
