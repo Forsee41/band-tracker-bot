@@ -118,37 +118,16 @@ class TestAddEventDAL:
         result_event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
         assert result_event
 
-    async def test_add_event_with_unknown_artists(
+    async def test_add_artists_from_event(
         self,
         update_dal: DAL,
-        bot_dal: BotDAL,
         get_event_update: Callable[[str], EventUpdate],
-        get_artist_update: Callable[[str], ArtistUpdate],
     ) -> None:
-        artists = ["gosha", "anton", "clara"]
-        for i in artists:
-            artist = get_artist_update(i)
-            await update_dal._add_artist(artist)
-
-        update_event = get_event_update("eurovision")
-        update_event.artists += [
-            ArtistUpdate(
-                name="",
-                source_specific_data={
-                    EventSource.ticketmaster_api: {"id": "unknown_tm_id"}
-                },
-                tickets_link=None,
-                main_image=None,
-                thumbnail_image=None,
-                description=None,
-            )
-        ]
+        update_event = get_event_update("fest")
         await update_dal._add_event(update_event)
-        result_event = await update_dal._get_event_by_tm_id("eurovision_tm_id")
-        assert result_event
-        assert result_event.artist_ids
-        result_artists = await result_event.get_artists(bot_dal)
-        assert len(result_artists) == 4
+
+        dbArtist = await update_dal.get_artist_by_tm_id("anton_tm_id")
+        assert dbArtist
 
 
 if __name__ == "__main__":

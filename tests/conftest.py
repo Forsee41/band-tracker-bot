@@ -301,3 +301,15 @@ def user() -> Callable[[int, str], RawUser]:
         return user
 
     return get_user
+
+
+@pytest.fixture()
+def mock_response() -> Callable[[str], dict]:
+    def get_response(name: str = "invalid_structure_error") -> dict:
+        file_path = "tests/test_data/iterator_mock"
+        with open(f"{file_path}/{name}.json", "r") as f:
+            response_dict = json.load(f)
+
+        return response_dict
+
+    return get_response

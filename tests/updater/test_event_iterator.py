@@ -1,5 +1,4 @@
 import asyncio
-import json
 from datetime import datetime, timedelta
 from typing import Callable
 from unittest.mock import AsyncMock, patch
@@ -11,31 +10,20 @@ from band_tracker.updater.errors import (
     InvalidResponseStructureError,
     InvalidTokenError,
     RateLimitViolation,
+    UnexpectedFaultResponseError,
 )
 from band_tracker.updater.page_iterator import EventIterator
 from band_tracker.updater.timestamp_predictor import LinearPredictor, TimestampPredictor
 
 
-@pytest.fixture()
-def mock_response() -> Callable[[str], dict]:
-    def lol(name: str = "invalid_structure_error") -> dict:
-        file_path = "tests/test_data/iterator_mock"
-        with open(f"{file_path}/{name}.json", "r") as f:
-            response_dict = json.load(f)
-
-        return response_dict
-
-    return lol
-
-
 @patch("band_tracker.updater.api_client.ApiClientEvents.make_request")
-class TestIterator:
+class TestEventIterator:
     custom_request = ApiClientEvents("", {}, [])
 
     @pytest.mark.slow
     async def test_chunk_progression(
         self,
-        mock_get: AsyncMock,
+        mock_request: AsyncMock,
         mock_response: Callable[[str], dict],
         get_timestamp_predictor: Callable[[timedelta], TimestampPredictor],
     ) -> None:
@@ -48,7 +36,7 @@ class TestIterator:
             await asyncio.sleep(0.1)
             return mock_response(f"page{page_number + 1}")
 
-        mock_get.side_effect = mock_make_request
+        mock_request.side_effect = mock_make_request
 
         predictor = get_timestamp_predictor(timedelta(days=365))
         iterator = EventIterator(self.custom_request, predictor=predictor)
@@ -186,5 +174,37 @@ class TestIterator:
 
         data = []
         with pytest.raises(RateLimitViolation):
+            async for i in iterator:
+                data.append(i)
+
+    @pytest.mark.slow
+    async def test_unexpected_error(
+        self,
+        mock_get: AsyncMock,
+        mock_response: Callable[[str], dict],
+        get_linear_predictor: Callable[[float, float], LinearPredictor],
+    ) -> None:
+        async def mock_make_request(
+            start_date: datetime,
+            end_date: datetime,
+            page_number: int = 0,
+            country_code: str = "",
+        ) -> dict:
+            await asyncio.sleep(0.1)
+
+            if page_number == 3:
+                """simulation of unexpected error"""
+
+                return mock_response("unexpected_error")
+
+            return mock_response(f"page{page_number + 1}")
+
+        mock_get.side_effect = mock_make_request
+        predictor = get_linear_predictor(-0.1, 1000)
+
+        iterator = EventIterator(self.custom_request, predictor=predictor)
+
+        data = []
+        with pytest.raises(UnexpectedFaultResponseError):
             async for i in iterator:
                 data.append(i)
