@@ -278,7 +278,7 @@ class UpdateDAL(BaseDAL):
         )
         async with self.sessionmaker.session() as session:
             db_genres = await self._get_db_genres(session, artist.genres)
-            log.debug("GENRES: " + str(db_genres))
+
             artist_db.genres.extend(db_genres)
             session.add(artist_db)
 

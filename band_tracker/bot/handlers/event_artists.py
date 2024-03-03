@@ -38,18 +38,22 @@ async def _event_artists_markup(
 ) -> InlineKeyboardMarkup:
     button_list: list[list[InlineKeyboardButton]] = []
     artist_list = event.artist_ids
+
     artist_list.sort(key=lambda id: id)
+
     if len(artist_list) // ARTISTS_PER_PAGE < page:
         raise ValueError("Not enough follows to fill selected page")
 
-    # substracting 1 from length cause you need at least 1 extra for the next page to
+    # subtracting 1 from length cause you need at least 1 extra for the next page to
     # contain something
     artists_amount = len(artist_list)
     total_pages = max(0, ((artists_amount - 1) // ARTISTS_PER_PAGE) + 1)
     next_page_exists = total_pages >= (page + 2)
+
     log.debug(
         f"artists: {len(artist_list)}, {page=}, {next_page_exists=}, {total_pages=}"
     )
+
     if next_page_exists:
         start_index = ARTISTS_PER_PAGE * page
         target_artists = artist_list[start_index : start_index + ARTISTS_PER_PAGE]
@@ -68,10 +72,12 @@ async def _event_artists_markup(
                 text="Previous", callback_data=f"eventartists {page - 1}"
             )
         )
+
     if next_page_exists:
         nav_row.append(
             InlineKeyboardButton(text="Next", callback_data=f"eventartists {page + 1}")
         )
+
     button_list.append(nav_row)
     button_list.append(
         [InlineKeyboardButton(text="Back", callback_data=f"event {event.id}")]

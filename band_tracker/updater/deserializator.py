@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from band_tracker.core.enums import EventSource
 from band_tracker.db.artist_update import ArtistUpdate, ArtistUpdateSocials
@@ -107,10 +107,8 @@ def get_event(raw_event: dict) -> EventUpdate:
             processed_artists = get_all_artists(raw_artists)
         except KeyError:
             log.info("no artists were found in the upcoming event")
-        """attractions = raw_event.get("_embedded", {}).get("attractions")
-                if attractions:
-                    return [attraction.get("id") for attraction in attractions]
-                return []"""
+        except ValidationError:
+            log.debug("Pass ValidationError")
         return processed_artists
 
     def sales_helper() -> EventUpdateSales:
@@ -182,6 +180,7 @@ def get_event(raw_event: dict) -> EventUpdate:
         "main_image": image_helper(raw_event),
         "thumbnail_image": image_helper(raw_event, thumbnail=True),
     }
+    log.debug("Event name: " + modified_event.get("title", "None"))
     return EventUpdate.model_validate(modified_event)
 
 

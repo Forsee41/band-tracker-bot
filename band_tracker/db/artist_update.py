@@ -15,6 +15,8 @@ log = logging.getLogger(__name__)
 
 
 async def get_description(url: str, key_words: set[str]) -> str | None:
+    log.info("getting description for the artist")
+
     # to skip httpx redirection
     parsed_url = urlparse(url)
     if parsed_url.scheme == "http":

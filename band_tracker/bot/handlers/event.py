@@ -71,7 +71,7 @@ async def event_main_page(update: Update, ctx: BTContext) -> None:
 
     event = await ctx.dal.get_event(event_id)
     if not event:
-        log.warning("Event handler is trying to get an unexisting event")
+        log.warning("Event handler is trying to get an unexciting event")
         return
     if not event.image:
         log.warning(f"Event {event.id} does not have an image")
