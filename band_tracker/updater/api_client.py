@@ -108,7 +108,7 @@ class ApiClientEvents(ApiClient):
         reformatted_end_date = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         startEndDateTime = f"{reformatted_start_date},{reformatted_end_date}"
-        log.debug(startEndDateTime)
+        log.debug("startEndDateTime: " + startEndDateTime)
 
         for _ in range(self.retries):
             try:

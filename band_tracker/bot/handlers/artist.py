@@ -44,6 +44,8 @@ def _followed_markup(artist_id: UUID) -> InlineKeyboardMarkup:
 
 def _amp_text(artist: Artist) -> str:
     text_data = f"<b>{artist.name}</b>\n\n"
+    if artist.description:
+        text_data += f"{artist.description}\n\n"
     if artist.genres:
         genres = " ".join(artist.genres)
         genres_str = f"Genres: {genres}\n"

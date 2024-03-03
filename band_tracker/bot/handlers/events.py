@@ -1,6 +1,4 @@
-import asyncio
 import logging
-from typing import Awaitable
 from uuid import UUID
 
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -11,8 +9,7 @@ from band_tracker.bot.helpers.callback_data import (
     get_multiple_fields,
 )
 from band_tracker.bot.helpers.context import BTContext
-from band_tracker.config.constants import EVENTS_PER_PAGE
-from band_tracker.core.artist import Artist
+from band_tracker.config.constants import EVENTS_PER_PAGE, FRAME, INDENTATION
 from band_tracker.core.enums import MessageType
 from band_tracker.core.event import Event
 
@@ -52,9 +49,7 @@ def _event_layout(event: Event) -> list[list[InlineKeyboardButton]]:
     layout = [
         [
             InlineKeyboardButton(text="Explore", callback_data=f"event {event.id}"),
-            InlineKeyboardButton(
-                text="Buy Tickets", callback_data=f"tickets {event.id}"
-            ),
+            InlineKeyboardButton(text="Buy Tickets", url=event.ticket_url),
         ],
     ]
     return layout
@@ -65,142 +60,105 @@ def _event_markup(event: Event) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(layout)
 
 
-def _all_events_nav_markup(
-    next_page: bool, event: Event, page: int = 0
-) -> InlineKeyboardMarkup:
-    nav_row: list[InlineKeyboardButton] = []
-    event_layout = _event_layout(event)
-    if page > 0:
-        nav_row.append(
-            InlineKeyboardButton(text="Prev", callback_data=f"eventsall {page-1}")
-        )
-    if next_page:
-        nav_row.append(
-            InlineKeyboardButton(text="Next", callback_data=f"eventsall {page+1}")
-        )
-    back_btn = InlineKeyboardButton(text="Back", callback_data="menu")
-    event_layout.extend([nav_row, [back_btn]])
-    markup = InlineKeyboardMarkup(event_layout)
-    return markup
-
-
-def _artist_events_nav_markup(
-    next_page: bool, artist_id: UUID, event: Event, page: int = 0
-) -> InlineKeyboardMarkup:
-    event_layout = _event_layout(event)
-    nav_row: list[InlineKeyboardButton] = []
-    if page > 0:
-        nav_row.append(
-            InlineKeyboardButton(
-                text="Prev", callback_data=f"eventsar {artist_id} {page-1}"
-            )
-        )
-    if next_page:
-        nav_row.append(
-            InlineKeyboardButton(
-                text="Next", callback_data=f"eventsar {artist_id} {page+1}"
-            )
-        )
-    back_callback_data = f"artist {artist_id}"
-    back_btn = InlineKeyboardButton(text="Back", callback_data=back_callback_data)
-    event_layout.extend([nav_row, [back_btn]])
-    markup = InlineKeyboardMarkup(event_layout)
-    return markup
-
-
 def _event_text(event: Event) -> str:
-    result = f"{event.title}\n\n{event.date.strftime('%Y %B %d')}"
+    city = event.venue_city
+    country = event.venue_country
+    on_sale = event.on_sale
+
+    result = f"{INDENTATION}\n{event.title}\n\n"
+    result += f"Location: <b>{city}</b>, <b>{country}</b>\n"
+    result += f"Date: <b>{event.date.strftime('%Y %B %d')}</b>\n\n"
+    if on_sale:
+        result += f"❗️ <b>ON SALE</b> ❗️"
+
     return result
 
 
-async def _send_artist_events(
+async def send_artist_events(update: Update, ctx: BTContext) -> None:
+    query = update.callback_query
+
+    assert query
+    await query.answer()
+
+    total_events = ctx.user_data.get("current_events")
+    total_pages = (len(total_events) + EVENTS_PER_PAGE - 1) // EVENTS_PER_PAGE
+
+    _, page = _get_artist_events_callback_data(query)
+
+    next_page = False
+    if (len(total_events) - 1) // EVENTS_PER_PAGE > page:
+        next_page = True
+
+    events = total_events[page * EVENTS_PER_PAGE : (page + 1) * EVENTS_PER_PAGE]
+
+    await _send_events(
+        ctx=ctx, next_page=next_page, events=events, page=page, total_pages=total_pages
+    )
+
+
+async def _send_events(
     ctx: BTContext,
     events: list[Event],
-    artist: Artist,
     next_page: bool,
     page: int,
-) -> None:
-    if len(events) >= 2:
-        await _send_artist_events_long(
-            ctx=ctx,
-            events=events,
-            next_page=next_page,
-            page=page,
-            artist=artist,
-        )
-    elif len(events) == 1:
-        await _send_artist_events_short(
-            ctx=ctx,
-            event=events[0],
-            next_page=next_page,
-            page=page,
-            artist=artist,
-        )
-
-
-async def _send_artist_events_short(
-    ctx: BTContext,
-    event: Event,
-    next_page: bool,
-    artist: Artist,
-    page: int,
+    total_pages: int,
+    all_events: bool = False,
 ) -> None:
     user = await ctx.user()
-    nav_markup = _artist_events_nav_markup(
-        event=event, next_page=next_page, page=page, artist_id=artist.id
-    )
-    text = f"----------- {artist.name} events -----------\nPage {page+1}\n\n"
-    text += _event_text(event)
+
+    if all_events:
+        left_button = InlineKeyboardButton(
+            text="«", callback_data=f"eventsallnav {page - 1}"
+        )
+        right_button = InlineKeyboardButton(
+            text="»", callback_data=f"eventsallnav {page + 1}"
+        )
+        back_button = InlineKeyboardButton(text="Back", callback_data="menu")
+    else:
+        artist = ctx.user_data.get("current_artist")
+        left_button = InlineKeyboardButton(
+            text="«", callback_data=f"eventsnav {artist.id} {page - 1}"
+        )
+        right_button = InlineKeyboardButton(
+            text="»", callback_data=f"eventsnav {artist.id} {page + 1}"
+        )
+        back_button = InlineKeyboardButton(
+            text="Back", callback_data=f"artist {artist.id}"
+        )
+
+    first_event = events[0]
+    first_event_text = _event_text(first_event)
+    first_event_markup = _event_markup(first_event)
     await ctx.msg.send_text(
-        text=text,
         user=user,
-        markup=nav_markup,
-        msg_type=MessageType.GLOBAL_EVENT_END,
+        text=first_event_text,
+        markup=first_event_markup,
+        msg_type=MessageType.ARTIST_EVENT,
+        delete_prev=True,
     )
-
-
-async def _send_artist_events_long(
-    ctx: BTContext,
-    events: list[Event],
-    artist: Artist,
-    next_page: bool,
-    page: int,
-) -> None:
-    user = await ctx.user()
-    # head
-    head_markup = _event_markup(event=events[0])
-    text = f"----------- {artist.name} events -----------\nPage {page+1}\n\n"
-    text += _event_text(events[0])
-    await ctx.msg.send_text(
-        text=text,
-        user=user,
-        markup=head_markup,
-        msg_type=MessageType.ARTIST_EVENT_START,
-    )
-
-    # body
-    tasks: list[Awaitable] = []
-    for event in events[1:-1]:
+    for event in events[1:]:
         event_text = _event_text(event)
         event_markup = _event_markup(event)
-        tasks.append(
-            ctx.msg.send_text(
-                user=user,
-                text=event_text,
-                markup=event_markup,
-                msg_type=MessageType.ARTIST_EVENT,
-                delete_prev=False,
-            )
+        await ctx.msg.send_text(
+            user=user,
+            text=event_text,
+            markup=event_markup,
+            msg_type=MessageType.ARTIST_EVENT,
+            delete_prev=False,
         )
-    await asyncio.gather(*tasks)
 
     # nav
-    nav_markup = _artist_events_nav_markup(
-        event=events[-1], artist_id=artist.id, next_page=next_page, page=page
-    )
-    event_text = _event_text(events[-1])
+    nav_row: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav_row.append(left_button)
+    if next_page:
+        nav_row.append(right_button)
+
+    nav_markup = InlineKeyboardMarkup([nav_row, [back_button]])
+    nav_bar_text = f"{FRAME}\n\nPage <b>{page + 1}</b> of {total_pages}\n\n"
+
     await ctx.msg.send_text(
-        text=event_text,
+        text=nav_bar_text,
         user=user,
         markup=nav_markup,
         msg_type=MessageType.ARTIST_EVENT_END,
@@ -208,166 +166,94 @@ async def _send_artist_events_long(
     )
 
 
-async def _send_all_events(
-    ctx: BTContext,
-    events: list[Event],
-    next_page: bool,
-    page: int,
-) -> None:
-    if len(events) >= 2:
-        await _send_all_events_long(
-            ctx=ctx, events=events, next_page=next_page, page=page
+async def all_events_gateway(update: Update, ctx: BTContext) -> None:
+    user = await ctx.user()
+    total_events = await ctx.dal.get_all_events_for_user(user.tg_id)
+    if not total_events:
+        text = f"----------- there is no upcoming events for you yet :(\n\n"
+        event_layout = [[InlineKeyboardButton(text="Back", callback_data="menu")]]
+        markup = InlineKeyboardMarkup(event_layout)
+
+        await ctx.msg.send_text(
+            text=text,
+            user=user,
+            markup=markup,
+            msg_type=MessageType.GLOBAL_EVENT_END,  # TODO: another mgs_type
         )
-    elif len(events) == 1:
-        await _send_all_events_short(
-            ctx=ctx, event=events[0], next_page=next_page, page=page
-        )
+        return
+
+    ctx.user_data["current_events"] = total_events
+
+    await send_all_events(update, ctx)
 
 
-async def _send_all_events_short(
-    ctx: BTContext,
-    event: Event,
-    next_page: bool,
-    page: int,
-) -> None:
-    user = await ctx.user()
-    nav_markup = _all_events_nav_markup(event=event, next_page=next_page, page=page)
-    text = f"----------- Tracked events -----------\nPage {page+1}\n\n"
-    text += _event_text(event)
-    await ctx.msg.send_text(
-        text=text,
-        user=user,
-        markup=nav_markup,
-        msg_type=MessageType.GLOBAL_EVENT_END,
-    )
-
-
-async def _send_all_events_long(
-    ctx: BTContext,
-    events: list[Event],
-    next_page: bool,
-    page: int,
-) -> None:
-    user = await ctx.user()
-
-    # head
-    head_markup = _event_markup(event=events[0])
-    text = f"----------- Tracked events -----------\nPage {page+1}\n\n"
-    text += _event_text(events[0])
-
-    await ctx.msg.send_text(
-        text=text,
-        user=user,
-        markup=head_markup,
-        msg_type=MessageType.GLOBAL_EVENT_START,
-    )
-
-    # middle
-    tasks: list[Awaitable] = []
-    for event in events[1:-1]:
-        event_text = _event_text(event)
-        event_markup = _event_markup(event)
-        tasks.append(
-            ctx.msg.send_text(
-                user=user,
-                text=event_text,
-                markup=event_markup,
-                msg_type=MessageType.GLOBAL_EVENT,
-                delete_prev=False,
-            )
-        )
-    await asyncio.gather(*tasks)
-
-    # nav
-    nav_markup = _all_events_nav_markup(
-        event=events[-1], next_page=next_page, page=page
-    )
-    event_text = _event_text(events[-1])
-    await ctx.msg.send_text(
-        text=event_text,
-        user=user,
-        markup=nav_markup,
-        msg_type=MessageType.GLOBAL_EVENT_END,
-        delete_prev=False,
-    )
-
-
-async def all_events_command(_: Update, ctx: BTContext) -> None:
-    user = await ctx.user()
-    events = await ctx.dal.get_events_for_user(
-        user_tg_id=user.tg_id, events_per_page=EVENTS_PER_PAGE
-    )
-    total_events = await ctx.dal.get_user_events_amount(user.tg_id)
-    next_page = False
-    if (total_events - 1) // EVENTS_PER_PAGE > 0:
-        next_page = True
-    await _send_all_events(
-        ctx=ctx,
-        events=events,
-        next_page=next_page,
-        page=0,
-    )
-
-
-async def all_events_btn(update: Update, ctx: BTContext) -> None:
-    user = await ctx.user()
+async def send_all_events(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
-    page = _get_all_events_callback_data(query)
 
-    events = await ctx.dal.get_events_for_user(
-        user_tg_id=user.tg_id, events_per_page=EVENTS_PER_PAGE, page=page
-    )
+    if query:
+        await query.answer()
+        page = _get_all_events_callback_data(query)
+    else:
+        page = 0
 
-    assert query
-    await query.answer()
-    total_events = await ctx.dal.get_user_events_amount(user.tg_id)
+    total_events = ctx.user_data.get("current_events")
+    total_pages = (len(total_events) + EVENTS_PER_PAGE - 1) // EVENTS_PER_PAGE
+
     next_page = False
-    if (total_events - 1) // EVENTS_PER_PAGE > page:
+    if (len(total_events) - 1) // EVENTS_PER_PAGE > page:
         next_page = True
 
-    await _send_all_events(
+    events = total_events[page * EVENTS_PER_PAGE : (page + 1) * EVENTS_PER_PAGE]
+
+    await _send_events(
         ctx=ctx,
-        events=events,
         next_page=next_page,
+        events=events,
         page=page,
+        total_pages=total_pages,
+        all_events=True,
     )
 
 
-async def artist_events(update: Update, ctx: BTContext) -> None:
+async def artist_events_gateway(update: Update, ctx: BTContext) -> None:
     query = update.callback_query
     assert query
     await query.answer()
 
-    artist_id, page = _get_artist_events_callback_data(query)
+    artist_id, _ = _get_artist_events_callback_data(query)
 
-    total_events = await ctx.dal.get_artist_events_amount(artist_id)
+    total_events = await ctx.dal.get_all_events_for_artist(artist_id)
     artist = await ctx.dal.get_artist(artist_id)
+    if not total_events:
+        text = f"----------- {artist.name} has no upcoming events\n\n"
+        user = await ctx.user()
+        event_layout = [
+            [InlineKeyboardButton(text="Back", callback_data=f"artist {artist.id}")]
+        ]
+        markup = InlineKeyboardMarkup(event_layout)
+
+        await ctx.msg.send_text(
+            text=text,
+            user=user,
+            markup=markup,
+            msg_type=MessageType.GLOBAL_EVENT_END,  # TODO: another mgs_type
+        )
+        return
+
     if artist is None:
         log.error(f"Artist events handler can't find an artist {artist_id}")
         return
 
-    events = await ctx.dal.get_events_for_artist(artist_id=artist_id, page=page)
-    if not events:
-        log.warning(
-            "Trying to watch a page of artist events when there's not enough events"
-        )
-        return
+    ctx.user_data["current_events"] = total_events
+    ctx.user_data["current_artist"] = artist
 
-    next_page = False
-    if (total_events - 1) // EVENTS_PER_PAGE > page:
-        next_page = True
-
-    await _send_artist_events(
-        ctx=ctx,
-        events=events,
-        artist=artist,
-        next_page=next_page,
-        page=page,
-    )
+    await send_artist_events(update, ctx)
 
 
 handlers = [
-    CommandHandler("events", all_events_command),
-    CallbackQueryHandler(callback=artist_events, pattern="^eventsar .*$"),
-    CallbackQueryHandler(callback=all_events_btn, pattern="^eventsall .*$"),
+    CommandHandler("events", all_events_gateway),
+    CallbackQueryHandler(callback=artist_events_gateway, pattern="^eventsar .*$"),
+    CallbackQueryHandler(callback=send_artist_events, pattern="^eventsnav .*$"),
+    CallbackQueryHandler(callback=all_events_gateway, pattern="^eventsall .*$"),
+    CallbackQueryHandler(callback=send_all_events, pattern="^eventsallnav .*$"),
 ]

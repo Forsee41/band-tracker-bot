@@ -84,18 +84,28 @@ class BotDAL(BaseDAL):
         return [self._build_core_event(event) for event in query_results]
 
     async def get_user_events_amount(self, user_tg_id: int) -> int:
+        events = await self.get_all_events_for_user(user_tg_id)
+        return len(events)
+
+    async def get_all_events_for_user(self, user_tg_id: int) -> list[Event]:
+        # TODO: Tests??
         stmt = (
-            select(func.count())
-            .select_from(EventDB)
+            select(EventDB)
             .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
             .join(FollowDB, FollowDB.artist_id == EventArtistDB.artist_id)
             .join(UserDB, UserDB.id == FollowDB.user_id)
             .where(UserDB.tg_id == user_tg_id)
             .where(FollowDB.active)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+            .order_by(EventDB.start_date)
         )
+
         async with self.sessionmaker.session() as session:
-            result = await session.scalar(stmt)
-        return result
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+
+        return [self._build_core_event(event) for event in query_results]
 
     async def get_events_for_artist(
         self, artist_id: UUID, page: int, events_per_page: int = 5
@@ -117,15 +127,25 @@ class BotDAL(BaseDAL):
         return [self._build_core_event(event) for event in query_results]
 
     async def get_artist_events_amount(self, artist_id: UUID) -> int:
+        events = await self.get_all_events_for_artist(artist_id)
+        return len(events)
+
+    async def get_all_events_for_artist(self, artist_id: UUID) -> list[Event]:
+        # TODO: Tests??
         stmt = (
-            select(func.count())
-            .select_from(EventDB)
+            select(EventDB)
             .join(EventArtistDB, EventDB.id == EventArtistDB.event_id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
             .where(EventArtistDB.artist_id == artist_id)
+            .order_by(EventDB.start_date)
         )
+
         async with self.sessionmaker.session() as session:
-            result = await session.scalar(stmt)
-        return result
+            scalars = await session.scalars(stmt)
+            query_results = scalars.all()
+
+        return [self._build_core_event(event) for event in query_results]
 
     async def get_artist_names(self, ids: list[UUID]) -> dict[UUID, str]:
         stmt = select(ArtistDB).filter(ArtistDB.id.in_(ids))
