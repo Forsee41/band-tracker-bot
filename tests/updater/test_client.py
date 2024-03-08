@@ -43,13 +43,16 @@ artists = [
         socials=ArtistUpdateSocials(
             instagram="https://www.instagram.com/breland/?hl=en",
             youtube=None,
-            spotify="https://open.spotify.com/artist/0C86lmpnwiyLDUiyo4d0P1?si=rZ0xqBgXRcCK-hEBAoE4mg",
+            spotify="https://open.spotify.com/artist/"
+            "0C86lmpnwiyLDUiyo4d0P1?si=rZ0xqBgXRcCK-hEBAoE4mg",
             wiki=None,
         ),
         tickets_link="https://www.livenation.com/artist/K8vZ917_bOf/breland-events",
         source_specific_data={EventSource.ticketmaster_api: {"id": "K8vZ917_bOf"}},
-        main_image="https://s1.ticketm.net/dam/a/e74/83efc299-69c1-4170-95a5-8f1a633b0e74_RETINA_PORTRAIT_3_2.jpg",
-        thumbnail_image="https://s1.ticketm.net/dam/a/e74/83efc299-69c1-4170-95a5-8f1a633b0e74_RECOMENDATION_16_9.jpg",
+        main_image="https://s1.ticketm.net/dam/a/e74/"
+        "83efc299-69c1-4170-95a5-8f1a633b0e74_RETINA_PORTRAIT_3_2.jpg",
+        thumbnail_image="https://s1.ticketm.net/dam/a/e74/"
+        "83efc299-69c1-4170-95a5-8f1a633b0e74_RECOMENDATION_16_9.jpg",
         genres=["Country", "Country Pop"],
         aliases=[],
         description=None,
@@ -245,17 +248,21 @@ class TestClient:
                         name="Imagine Dragons",
                         socials=ArtistUpdateSocials(
                             instagram="http://instagram.com/imaginedragons/",
-                            youtube="https://www.youtube.com/channel/UCT9zcQNlyht7fRlcjmflRSA",
-                            spotify="https://open.spotify.com/artist/53XhwfbYqKCa1cC15pYq2q",
+                            youtube="https://www.youtube.com/"
+                            "channel/UCT9zcQNlyht7fRlcjmflRSA",
+                            spotify="https://open.spotify.com/"
+                            "artist/53XhwfbYqKCa1cC15pYq2q",
                             wiki="https://en.wikipedia.org/wiki/Imagine_Dragons",
                         ),
-                        tickets_link="https://www.ticketmaster.com/imagine-dragons-tickets/artist/1435919",
+                        tickets_link="https://www.ticketmaster.com/"
+                        "imagine-dragons-tickets/artist/1435919",
                         source_specific_data={
                             EventSource.ticketmaster_api: {"id": "K8vZ917GSz7"}
                         },
                         main_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4afe"
                         "-84f9-15560d797c90_1652911_RETINA_PORTRAIT_3_2.jpg",
-                        thumbnail_image="https://s1.ticketm.net/dam/a/c90/67a18d21-394f-4a"
+                        thumbnail_image="https://s1.ticketm.net/"
+                        "dam/a/c90/67a18d21-394f-4a"
                         "fe-84f9-15560d797c90_1652911_RECOMENDATION_16_9.jpg",
                         genres=["Rock", "Pop"],
                         aliases=[],

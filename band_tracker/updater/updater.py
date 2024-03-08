@@ -2,9 +2,13 @@ import asyncio
 import logging
 from asyncio import Semaphore
 from datetime import datetime, timedelta
-from typing import Callable, Coroutine
+from typing import Awaitable, Callable, Coroutine
+from uuid import UUID
 
 from band_tracker.db.dal_update import UpdateDAL
+from band_tracker.db.event_update import EventUpdate
+from band_tracker.mq.messages import EventUpdateFinished
+from band_tracker.mq.publisher import MQPublisher
 from band_tracker.updater.api_client import (
     ApiClientArtists,
     ApiClientEvents,
@@ -57,6 +61,7 @@ class Updater:
         self,
         client_factory: ClientFactory,
         dal: UpdateDAL,
+        mq_publisher: MQPublisher,
         predictor: TimestampPredictor | None = None,
         max_fails: int = 5,
         chunk_size: int = 4,
@@ -68,6 +73,7 @@ class Updater:
         self.predictor = predictor
         self.dal = dal
         self.ratelimit_violation_sleep_time = ratelimit_violation_sleep_time
+        self.publisher = mq_publisher
 
     def _get_pages_chunk(self, iterator: PageIterator) -> list[Coroutine] | None:
         coroutines = [
@@ -111,7 +117,7 @@ class Updater:
         self,
         get_elements: Callable[[dict[str, dict]], list],
         client: ApiClientEvents,
-        update_event: Callable,
+        update_event: Callable[[EventUpdate], Awaitable[tuple[UUID, list[UUID]]]],
     ) -> None:
         if not self.predictor:
             raise PredictorError("Predictor was not given to Updater constructor")
@@ -142,8 +148,11 @@ class Updater:
 
                     updates = get_elements(page)  # type: ignore
                     for update in updates:
-                        # log.debug("UPDATE " + str(update))
-                        await update_event(update)
+                        event_uuid, _ = await update_event(update)
+                        finished_message = EventUpdateFinished(
+                            uuid=event_uuid, created_at=datetime.now()
+                        )
+                        await self.publisher.send_message(message=finished_message)
 
             exec_time: timedelta = datetime.now() - start_time
             time_to_wait = timedelta(seconds=1) - exec_time

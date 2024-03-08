@@ -39,6 +39,48 @@ class BaseDAL:
         artist = scalars.first()
         return artist
 
+    async def _get_artist(self, id: UUID, session: AsyncSession) -> Artist | None:
+        stmt = (
+            select(ArtistDB)
+            .where(ArtistDB.id == id)
+            .options(selectinload(ArtistDB.genres))
+            .options(selectinload(ArtistDB.socials))
+        )
+        scalars = await session.scalars(stmt)
+        artist_db = scalars.first()
+        if artist_db is None:
+            return None
+
+        artist = self._build_core_artist(db_artist=artist_db)
+        return artist
+
+    async def get_user_by_uuid(self, id: UUID) -> User | None:
+        stmt = select(UserDB).where(UserDB.id == id)
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            user_db = scalars.first()
+            if user_db is None:
+                return None
+
+            user = self._db_to_core_user(user_db)
+            return user
+
+    async def get_event(self, id: UUID) -> Event | None:
+        stmt = (
+            select(EventDB)
+            .where(EventDB.id == id)
+            .options(selectinload(EventDB.sales))
+            .options(selectinload(EventDB.artists))
+        )
+        async with self.sessionmaker.session() as session:
+            scalars = await session.scalars(stmt)
+            event_db = scalars.first()
+            if event_db is None:
+                return None
+
+            event = self._build_core_event(event_db)
+            return event
+
     async def _user_by_tg_id(
         self,
         session: AsyncSession,

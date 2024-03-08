@@ -1,11 +1,13 @@
 import asyncio
 from collections.abc import Awaitable
 
-from telegram import Bot, InlineKeyboardMarkup
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
 from band_tracker.core.enums import MessageType
+from band_tracker.core.notification import Notification
 from band_tracker.core.user import User
 from band_tracker.db.dal_message import MessageDAL
+from band_tracker.db.errors import DALError
 
 
 class MessageManager:
@@ -73,4 +75,32 @@ class MessageManager:
             message_type=msg_type,
             user_id=user.id,
             message_tg_id=msg.id,
+        )
+
+    def _create_notification_text(self, notification: Notification) -> str:
+        new_artists_str = ", ".join(
+            [artist.name for artist in notification.target_artists]
+        )
+        result = f"!!! {notification.event.title} !!!\n"
+        result += f"{new_artists_str} going to be there!"
+        date_str = notification.event.date.strftime("%d/%m/%Y")
+        result += f"Starts at {date_str}"
+        return result
+
+    async def send_notification(self, notification: Notification) -> None:
+        text = self._create_notification_text(notification)
+        callback_data = f"event {notification.event.id}"
+        button = InlineKeyboardButton(
+            text=notification.event.title, callback_data=callback_data
+        )
+        markup = InlineKeyboardMarkup([[button]])
+        user = await self.dal.get_user_by_uuid(notification.user.id)
+        if user is None:
+            raise DALError("Can't find user!")
+        await self.send_text(
+            text=text,
+            markup=markup,
+            user=user,
+            msg_type=MessageType.NOTIFICATION,
+            delete_prev=False,
         )

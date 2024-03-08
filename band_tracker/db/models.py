@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as EnumDB
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy import text as alchemy_text
 from sqlalchemy.dialects.postgresql import UUID as UUID_PG
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -165,6 +165,63 @@ class ArtistGenreDB(Base):
     )
 
 
+class EventUserDB(Base):
+    __tablename__ = "event_user"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
+    event_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("event.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("event.id", ondelete="CASCADE"),
+        index=True,
+    )
+    is_notified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    notifications: Mapped[list["NotificationDB"]] = relationship(
+        back_populates="event_user"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "user_id", name="unique_event_user"),
+    )
+
+
+class NotificationDB(Base):
+    __tablename__ = "notification"
+
+    id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        primary_key=True,
+        server_default=alchemy_text("gen_random_uuid()"),
+    )
+    event_user_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("event_user.id", ondelete="CASCADE"),
+    )
+    artist_id: Mapped[UUID] = mapped_column(
+        UUID_PG(as_uuid=True),
+        ForeignKey("artist.id", ondelete="CASCADE"),
+    )
+    is_notified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+
+    event_user: Mapped[EventUserDB] = relationship(back_populates="notifications")
+
+    __table_args__ = (
+        UniqueConstraint("artist_id", "event_user_id", name="unique_notification"),
+    )
+
+
 class ArtistTMDataDB(Base):
     __tablename__ = "artist_tm_data"
 
@@ -194,7 +251,7 @@ class EventArtistDB(Base):
         UUID_PG(as_uuid=True),
         ForeignKey("event.id", ondelete="CASCADE"),
     )
-    notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     event: Mapped[EventDB] = relationship(back_populates="event_artist", viewonly=True)
     artist: Mapped[ArtistDB] = relationship(
