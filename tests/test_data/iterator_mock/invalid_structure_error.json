@@ -1,10 +1,2 @@
 {
-  "_embedded": {
-    "attractions": []
-  },
-  "_links": {
-    "self": {
-      "href": ""
-    }
-  }
 }
